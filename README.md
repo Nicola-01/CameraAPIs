@@ -6,6 +6,10 @@ Progetto corso Embedded 9CFU - UNIPD
 
 git pull origin main
 
+
   ? git add <file>
+  
   ? git commit <commento>
+  
 git push --force origin main
+  
