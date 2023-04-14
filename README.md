@@ -4,8 +4,8 @@ Progetto corso Embedded 9CFU - UNIPD
 
 # Comandi git
 
-git pull origin main\n
-  ? git add <file>\n
-  ? git commit <commento>\n
-git push --force origin main\n
+git pull origin main__
+  ? git add <file>__
+  ? git commit <commento>__
+git push --force origin main__
   
