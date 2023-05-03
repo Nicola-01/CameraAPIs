@@ -8,6 +8,3 @@ git pull origin main<br/>
   ? git add <file><br/>
   ? git commit <commento><br/>
 git push --force origin main<br/>
-
-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-prova22
