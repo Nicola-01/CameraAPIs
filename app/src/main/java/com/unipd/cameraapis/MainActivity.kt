@@ -98,7 +98,7 @@ class MainActivity : AppCompatActivity() {
 
         cameraExecutor = Executors.newSingleThreadExecutor()
 
-
+        shoot?.setBackgroundResource(R.drawable.rounded_corner_red);
     }
 
     private fun startCamera() {
@@ -159,6 +159,7 @@ class MainActivity : AppCompatActivity() {
         // Set up image capture listener, which is triggered after photo has
         // been taken
         shoot?.startAnimation(scaleDown)
+        viewBinding.viewFinder.startAnimation(scaleUp)
         imageCapture.takePicture(
             outputOptions,
             ContextCompat.getMainExecutor(this),
@@ -180,6 +181,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun captureVideo() : Boolean {
+        viewBinding.BTShoots.setBackgroundResource(R.drawable.rounded_corner_red);
         return true
     }
 
