@@ -52,8 +52,13 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var cameraExecutor: ExecutorService
 
+    // Select back camera as a default
+    // dichiarato qui per poterlo usare in rotateCamera()
+    var cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+
     var shoot : Button? = null
     var flash : Button? = null
+    var rotation : Button? = null
     var currFlashMode : FlashModes = FlashModes.OFF
     var scaleDown: Animation? = null
     var scaleUp: Animation? = null
@@ -97,6 +102,8 @@ class MainActivity : AppCompatActivity() {
         shoot = viewBinding.BTShoots
         //var shoot : Button = viewBinding.BTShoots
 
+        rotation = viewBinding.BTRotation
+
 
         scaleDown = AnimationUtils.loadAnimation(this,R.anim.scale_down)
         scaleUp = AnimationUtils.loadAnimation(this,R.anim.scale_up)
@@ -108,6 +115,8 @@ class MainActivity : AppCompatActivity() {
 //            Log.d(TAG,"LongClickListener")
 //            true
 //        })
+
+        rotation?.setOnClickListener { rotateCamera() }
 
         cameraExecutor = Executors.newSingleThreadExecutor()
 
@@ -131,7 +140,7 @@ class MainActivity : AppCompatActivity() {
             imageCapture = ImageCapture.Builder().build()
 
             // Select back camera as a default
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+            cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
             try {
                 // Unbind use cases before rebinding
@@ -191,6 +200,46 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         )
+    }
+
+    private fun rotateCamera() {
+        if(cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA){
+            val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
+
+            cameraProviderFuture.addListener({
+                // Used to bind the lifecycle of cameras to the lifecycle owner
+                val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
+
+                // Preview
+                val preview = Preview.Builder()
+                    .build()
+                    .also {
+                        it.setSurfaceProvider(viewBinding.viewFinder.surfaceProvider)
+                    }
+
+                cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
+                Log.d(TAG, "Front Camera selected")
+
+                imageCapture = ImageCapture.Builder().build()
+
+                try {
+                    // Unbind use cases before rebinding
+                    cameraProvider.unbindAll()
+
+                    // Bind use cases to camera
+                    cameraProvider.bindToLifecycle(
+                        this, cameraSelector, preview, imageCapture)
+
+                } catch(exc: Exception) {
+                    Log.e(TAG, "Use case binding failed", exc)
+                }
+
+            }, ContextCompat.getMainExecutor(this))
+        }
+        else {
+            Log.d(TAG, "Chiamata a start Camera() dopo else") //messaggio di test
+            startCamera()
+        }
     }
 
     private fun captureVideo() : Boolean {
