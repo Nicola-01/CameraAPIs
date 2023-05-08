@@ -15,7 +15,9 @@ import android.view.animation.AnimationUtils
 import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.camera2.Camera2Config
 import androidx.camera.core.*
+import androidx.camera.core.ImageCapture.FlashMode
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.*
 import androidx.camera.video.VideoCapture
@@ -34,6 +36,9 @@ import java.util.concurrent.Executors
 
 typealias LumaListener = (luma: Double) -> Unit
 
+const val OFF_TEXT = "OFF"
+const val ON_TEXT = "ON"
+const val AUTO_TEXT = "A"
 
 class MainActivity : AppCompatActivity() {
 
@@ -48,6 +53,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var cameraExecutor: ExecutorService
 
     var shoot : Button? = null
+    var flash : Button? = null
+    var currFlashMode : FlashModes = FlashModes.OFF
     var scaleDown: Animation? = null
     var scaleUp: Animation? = null
     var startVideo: Animation? = null
@@ -82,8 +89,14 @@ class MainActivity : AppCompatActivity() {
                 this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         }
 
+        //<editor-fold desc= "FLASH INIT">
+        flash = viewBinding.BTFlash
+        flash?.setOnClickListener { switchFlashMode() }
+        //</editor-fold>
+
         shoot = viewBinding.BTShoots
         //var shoot : Button = viewBinding.BTShoots
+
 
         scaleDown = AnimationUtils.loadAnimation(this,R.anim.scale_down)
         scaleUp = AnimationUtils.loadAnimation(this,R.anim.scale_up)
@@ -204,6 +217,24 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    //<editor-fold desc= "FLASH METHODS">
+    private fun switchFlashMode() {
+        currFlashMode = FlashModes.next(currFlashMode)
+        when(currFlashMode) {
+            FlashModes.OFF -> {
+                imageCapture?.flashMode = ImageCapture.FLASH_MODE_OFF
+                flash?.text = OFF_TEXT
+            }
+            FlashModes.ON -> {
+                imageCapture?.flashMode = ImageCapture.FLASH_MODE_ON
+                flash?.text = ON_TEXT
+            }
+            FlashModes.AUTO -> {
+                imageCapture?.flashMode = ImageCapture.FLASH_MODE_AUTO
+                flash?.text = AUTO_TEXT
+            }
+        }
+    }
     private class LuminosityAnalyzer(private val listener: LumaListener) : ImageAnalysis.Analyzer {
 
         private fun ByteBuffer.toByteArray(): ByteArray {
@@ -225,6 +256,7 @@ class MainActivity : AppCompatActivity() {
             image.close()
         }
     }
+    //</editor-fold>
 
     override fun onDestroy() {
         super.onDestroy()
