@@ -244,6 +244,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun captureVideo() : Boolean {
         viewBinding.BTShoots.setBackgroundResource(R.drawable.rounded_corner_red);
+        //shoot?.setBackgroundColor(ContextCompat.getColor(this, R.color.red))
         return true
     }
 

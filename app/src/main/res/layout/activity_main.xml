@@ -11,19 +11,17 @@
         android:id="@+id/BT_flash"
         android:layout_width="50dp"
         android:layout_height="50dp"
-        android:layout_marginStart="15dp"
-        android:layout_marginTop="5dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:layout_marginStart="16dp"
+        app:layout_constraintBottom_toTopOf="@+id/guideline"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <Button
         android:id="@+id/BT_rotation"
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:layout_marginEnd="15dp"
-        android:layout_marginTop="5dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintBottom_toTopOf="@+id/guideline"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <androidx.camera.view.PreviewView
         android:id="@+id/viewFinder"
@@ -46,15 +44,18 @@
         android:orientation="vertical"
         app:layout_constraintGuide_percent="0.5" />
 
+    <!--android:background="@drawable/rounded_corner"-->
+
     <Button
         android:id="@+id/BT_shoots"
-        android:layout_width="80dp"
-        android:layout_height="80dp"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/viewFinder"
-        app:layout_constraintVertical_bias="0.111" />
+        app:layout_constraintTop_toTopOf="@+id/guideline2"
+        app:layout_constraintVertical_bias="0.0" />
+<!--android:background="@drawable/rounded_corner_red"-->
 
     <SeekBar
         android:id="@+id/SB_zoom"
@@ -65,5 +66,19 @@
         android:progress="5"
         app:layout_constraintBottom_toBottomOf="@+id/viewFinder"
         tools:layout_editor_absoluteX="4dp" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_end="676dp" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_begin="629dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
