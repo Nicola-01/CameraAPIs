@@ -12,10 +12,12 @@ import android.util.Log
 import android.view.ContextMenu
 import android.view.Menu
 import android.view.MenuItem
+import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.Button
+import android.widget.SeekBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
@@ -24,6 +26,7 @@ import androidx.camera.video.*
 import androidx.camera.video.VideoCapture
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker
 import com.unipd.cameraapis.databinding.ActivityMainBinding
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
@@ -51,12 +54,14 @@ class MainActivity : AppCompatActivity() {
     var cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
     var shoot : Button? = null
+    lateinit var SB_zoom : SeekBar
     var flash : Button? = null
     var rotation : Button? = null
     var currFlashMode : FlashModes = FlashModes.OFF
     var scaleDown: Animation? = null
     var scaleUp: Animation? = null
     var startVideo: Animation? = null
+    lateinit var cameraControl:CameraControl
 
     companion object {
         //private val TAG = MainActivity::class.simpleName
@@ -108,6 +113,22 @@ class MainActivity : AppCompatActivity() {
         // Set up the listeners for take photo and video capture buttons
         shoot?.setOnClickListener { takePhoto() }
         shoot?.setOnLongClickListener{ captureVideo() }
+
+    /* Non va
+            SB_zoom.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                    changeZoom(progress)
+                }
+
+                // OnSeekBarChangeListener is an interface,
+                // so an implementation must be provided for all the methods
+                override fun onStartTrackingTouch(seek: SeekBar) = Unit
+                override fun onStopTrackingTouch(seek: SeekBar) = Unit
+            })
+        */
+
+
+
 //        shoot.setOnLongClickListener(OnLongClickListener {
 //            Log.d(TAG,"LongClickListener")
 //            true
@@ -116,8 +137,6 @@ class MainActivity : AppCompatActivity() {
         rotation?.setOnClickListener { rotateCamera() }
 
         cameraExecutor = Executors.newSingleThreadExecutor()
-
-        shoot?.setBackgroundResource(R.drawable.rounded_corner_red);
     }
 
     private fun startCamera() {
@@ -134,6 +153,11 @@ class MainActivity : AppCompatActivity() {
                     it.setSurfaceProvider(viewBinding.viewFinder.surfaceProvider)
                 }
 
+            val recorder = Recorder.Builder()
+                .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
+                .build()
+            videoCapture = VideoCapture.withOutput(recorder)
+
             imageCapture = ImageCapture.Builder().setFlashMode(ImageCapture.FLASH_MODE_OFF).build()
 
             // Select back camera as a default
@@ -144,7 +168,8 @@ class MainActivity : AppCompatActivity() {
                 cameraProvider.unbindAll()
 
                 // Bind use cases to camera
-                cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
+                val camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture)
+                cameraControl = camera.cameraControl;
             } catch(exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
             }
@@ -199,6 +224,69 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    private fun captureVideo() : Boolean {
+        val videoCapture = this.videoCapture ?: return true
+
+        //viewBinding.videoCaptureButton.isEnabled = false
+
+        val curRecording = recording
+        if (curRecording != null) {
+            // Stop the current recording session.
+            curRecording.stop()
+            recording = null
+            return true
+        }
+
+        // create and start a new recording session
+        val name = SimpleDateFormat(FILENAME_FORMAT, Locale.US)
+            .format(System.currentTimeMillis())
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+            put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+                put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/CameraX-Video")
+            }
+        }
+
+        val mediaStoreOutputOptions = MediaStoreOutputOptions
+            .Builder(contentResolver, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
+            .setContentValues(contentValues)
+            .build()
+        recording = videoCapture.output
+            .prepareRecording(this, mediaStoreOutputOptions)
+            .apply {
+                if (PermissionChecker.checkSelfPermission(this@MainActivity,
+                        Manifest.permission.RECORD_AUDIO) ==
+                    PermissionChecker.PERMISSION_GRANTED)
+                {
+                    withAudioEnabled()
+                }
+            }
+            .start(ContextCompat.getMainExecutor(this)) { recordEvent ->
+                when(recordEvent) {
+                    is VideoRecordEvent.Start -> {
+                        viewBinding.BTShoots.setBackgroundResource(R.drawable.rounded_corner_red);
+                    }
+                    is VideoRecordEvent.Finalize -> {
+                        if (!recordEvent.hasError()) {
+                            val msg = "Video capture succeeded: " +
+                                    "${recordEvent.outputResults.outputUri}"
+                            Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT)
+                                .show()
+                            Log.d(TAG, msg)
+                        } else {
+                            recording?.close()
+                            recording = null
+                            Log.e(TAG, "Video capture ends with error: " +
+                                    "${recordEvent.error}")
+                        }
+                        viewBinding.BTShoots.setBackgroundResource(R.drawable.rounded_corner);
+                    }
+                }
+            }
+        return true
+    }
+
     private fun rotateCamera() {
         if(cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA){
             val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
@@ -239,10 +327,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun captureVideo() : Boolean {
-        viewBinding.BTShoots.setBackgroundResource(R.drawable.rounded_corner_red);
-        //shoot?.setBackgroundColor(ContextCompat.getColor(this, R.color.red))
-        return true
+    private fun changeZoom(progress : Int)
+    {
+        cameraControl.setZoomRatio(2f)
     }
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
