@@ -9,11 +9,19 @@
 
     <Button
         android:id="@+id/BT_flash"
-        android:layout_width="50dp"
+        android:layout_width="80dp"
         android:layout_height="50dp"
+<<<<<<< HEAD
         android:layout_marginStart="16dp"
         app:layout_constraintBottom_toTopOf="@+id/guideline"
         app:layout_constraintStart_toStartOf="parent" />
+=======
+        android:layout_marginStart="15dp"
+        android:layout_marginTop="5dp"
+        android:text="AUTO"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+>>>>>>> dev
 
     <Button
         android:id="@+id/BT_rotation"
