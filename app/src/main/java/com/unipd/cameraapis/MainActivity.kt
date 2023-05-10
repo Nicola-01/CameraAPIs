@@ -1,18 +1,14 @@
 package com.unipd.cameraapis
 
 import android.Manifest
-import android.R.attr
-import android.R.attr.button
 import android.content.ContentValues
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
-import android.view.ContextMenu
 import android.view.Menu
 import android.view.MenuItem
-import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
@@ -28,6 +24,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
 import com.unipd.cameraapis.databinding.ActivityMainBinding
+import java.lang.IllegalArgumentException
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.*
@@ -55,7 +52,7 @@ class MainActivity : AppCompatActivity() {
 
     var shoot : Button? = null
     lateinit var SB_zoom : SeekBar
-    var flash : Button? = null
+    lateinit var flash : Button
     var rotation : Button? = null
     var currFlashMode : FlashModes = FlashModes.OFF
     var scaleDown: Animation? = null
@@ -95,10 +92,20 @@ class MainActivity : AppCompatActivity() {
 
         //<editor-fold desc= "FLASH INIT">
         flash = viewBinding.BTFlash
-        flash?.text = currFlashMode.mode
-        flash?.setOnClickListener { switchFlashMode() }
-        registerForContextMenu(flash)
-        flash?.setOnLongClickListener { selectFlashMode() }
+        flash.text = currFlashMode.text
+        flash.setOnClickListener { switchFlashMode() }
+        flash.setOnCreateContextMenuListener { menu, v, menuInfo ->
+            menu.setHeaderTitle("Flash")
+            for(mode in FlashModes.values()) {
+                var item: MenuItem = menu.add(Menu.NONE, mode.ordinal, Menu.NONE, mode.text)
+                item.setOnMenuItemClickListener { i: MenuItem? ->
+                    selectFlashMode(i?.itemId)
+                    true // Signifies you have consumed this event, so propogation can stop.
+                }
+            }
+        }
+        flash.setOnLongClickListener(View::showContextMenu)
+        //flash.setOnLongClickListener { selectFlashMode() }
         //</editor-fold>
 
         shoot = viewBinding.BTShoots
@@ -354,6 +361,20 @@ class MainActivity : AppCompatActivity() {
     //<editor-fold desc= "FLASH METHODS">
     private fun switchFlashMode() {
         currFlashMode = FlashModes.next(currFlashMode)
+        setFlashMode()
+        flash.text = currFlashMode.text
+    }
+
+    private fun selectFlashMode(ordinal: Int?): Boolean {
+        if(ordinal == null) {
+            throw IllegalArgumentException()
+        }
+        currFlashMode = FlashModes.values()[ordinal]
+        setFlashMode()
+        flash.text = currFlashMode.text
+        return true
+    }
+    private fun setFlashMode() {
         when(currFlashMode) {
             FlashModes.OFF -> {
                 imageCapture?.flashMode = ImageCapture.FLASH_MODE_OFF
@@ -365,12 +386,6 @@ class MainActivity : AppCompatActivity() {
                 imageCapture?.flashMode = ImageCapture.FLASH_MODE_AUTO
             }
         }
-        flash?.text = currFlashMode.mode
-    }
-
-    private fun selectFlashMode(): Boolean {
-        openContextMenu(flash)
-        return true
     }
 
 
@@ -396,34 +411,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
     //</editor-fold>
-
-    override fun onCreateContextMenu(menu: ContextMenu, v: View, menuInfo: ContextMenu.ContextMenuInfo) {
-        menu.setHeaderTitle("Flash")
-        FlashModes.values().forEachIndexed {index, value ->
-            menu.add(Menu.NONE, index, Menu.NONE, value.mode)
-        }
-    }
-
-    override fun onContextItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            FlashModes.OFF.ordinal -> {
-                imageCapture?.flashMode = ImageCapture.FLASH_MODE_OFF
-                flash?.text = currFlashMode.mode
-                true
-            }
-            FlashModes.ON.ordinal -> {
-                imageCapture?.flashMode = ImageCapture.FLASH_MODE_ON
-                flash?.text = currFlashMode.mode
-                true
-            }
-            FlashModes.AUTO.ordinal -> {
-                imageCapture?.flashMode = ImageCapture.FLASH_MODE_AUTO
-                flash?.text = currFlashMode.mode
-                true
-            }
-            else -> super.onContextItemSelected(item)
-        }
-    }
 
     override fun onDestroy() {
         super.onDestroy()

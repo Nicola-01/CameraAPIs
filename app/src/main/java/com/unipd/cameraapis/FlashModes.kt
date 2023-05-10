@@ -2,7 +2,7 @@ package com.unipd.cameraapis
 
 import androidx.camera.core.ImageCapture.FlashMode
 
-enum class FlashModes(val mode: String) {
+enum class FlashModes(val text: String) {
     OFF("OFF"),
     ON("ON"),
     AUTO("AUTO");
