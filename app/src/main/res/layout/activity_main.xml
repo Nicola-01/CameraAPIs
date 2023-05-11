@@ -63,8 +63,9 @@
         style="@style/Widget.AppCompat.SeekBar"
         android:layout_width="match_parent"
         android:layout_height="59dp"
-        android:max="35"
-        android:progress="5"
+        android:max="100"
+        android:min="0"
+        android:progress="25"
         app:layout_constraintBottom_toBottomOf="@+id/viewFinder"
         tools:layout_editor_absoluteX="4dp" />
 

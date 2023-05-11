@@ -16,20 +16,33 @@ import android.widget.Button
 import android.widget.SeekBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.camera.core.*
+import androidx.camera.core.CameraControl
+import androidx.camera.core.CameraInfo
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.CameraSelector.*
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.ImageProxy
+import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.video.*
+import androidx.camera.video.MediaStoreOutputOptions
+import androidx.camera.video.Quality
+import androidx.camera.video.QualitySelector
+import androidx.camera.video.Recorder
+import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
+import androidx.camera.video.VideoRecordEvent
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
 import com.unipd.cameraapis.databinding.ActivityMainBinding
-import java.lang.IllegalArgumentException
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+
 
 
 typealias LumaListener = (luma: Double) -> Unit
@@ -51,15 +64,22 @@ class MainActivity : AppCompatActivity() {
     var cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
     var shoot : Button? = null
-    lateinit var SB_zoom : SeekBar
-    lateinit var flash : Button
+    private lateinit var SB_zoom : SeekBar
+    private lateinit var flash : Button
     var rotation : Button? = null
     var currFlashMode : FlashModes = FlashModes.OFF
     var scaleDown: Animation? = null
     var scaleUp: Animation? = null
-    var startVideo: Animation? = null
-    lateinit var cameraControl:CameraControl
-
+    private lateinit var cameraControl:CameraControl
+    private lateinit var availableCameraInfos: MutableList<CameraInfo>
+    private lateinit var cameraProvider: ProcessCameraProvider
+    private lateinit var preview: Preview
+    private lateinit var recorder: Recorder
+    private var currentCamera = 0;
+    // 0 -> back default
+    // 1 -> front default grand angolare
+    // 2 -> back grand angolare
+    // 3 -> front normale
     companion object {
         //private val TAG = MainActivity::class.simpleName
         private const val TAG = "CameraXApp"
@@ -121,18 +141,20 @@ class MainActivity : AppCompatActivity() {
         shoot?.setOnClickListener { takePhoto() }
         shoot?.setOnLongClickListener{ captureVideo() }
 
-    /* Non va
-            SB_zoom.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                    changeZoom(progress)
-                }
+        SB_zoom = viewBinding.SBZoom
 
-                // OnSeekBarChangeListener is an interface,
-                // so an implementation must be provided for all the methods
-                override fun onStartTrackingTouch(seek: SeekBar) = Unit
-                override fun onStopTrackingTouch(seek: SeekBar) = Unit
-            })
-        */
+        SB_zoom.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                changeZoom(progress)
+            }
+
+            // OnSeekBarChangeListener is an interface,
+            // so an implementation must be provided for all the methods
+            override fun onStartTrackingTouch(seek: SeekBar) = Unit
+            override fun onStopTrackingTouch(seek: SeekBar) = Unit
+        })
+
+
 
 
 
@@ -151,16 +173,16 @@ class MainActivity : AppCompatActivity() {
 
         cameraProviderFuture.addListener({
             // Used to bind the lifecycle of cameras to the lifecycle owner
-            val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
+            cameraProvider = cameraProviderFuture.get()
 
             // Preview
-            val preview = Preview.Builder()
+            preview = Preview.Builder()
                 .build()
                 .also {
                     it.setSurfaceProvider(viewBinding.viewFinder.surfaceProvider)
                 }
 
-            val recorder = Recorder.Builder()
+            recorder = Recorder.Builder()
                 .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
                 .build()
             videoCapture = VideoCapture.withOutput(recorder)
@@ -169,6 +191,10 @@ class MainActivity : AppCompatActivity() {
 
             // Select back camera as a default
             cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+
+            // Crea un oggetto CameraSelector per la fotocamera ultra grandangolare
+            availableCameraInfos = cameraProvider.availableCameraInfos
+            Log.i(TAG, "[startCamera] available cameras:$availableCameraInfos")
 
             try {
                 // Unbind use cases before rebinding
@@ -300,14 +326,14 @@ class MainActivity : AppCompatActivity() {
 
             cameraProviderFuture.addListener({
                 // Used to bind the lifecycle of cameras to the lifecycle owner
-                val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
+                //cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
 
                 // Preview
-                val preview = Preview.Builder()
+                /*val preview = Preview.Builder()
                     .build()
                     .also {
                         it.setSurfaceProvider(viewBinding.viewFinder.surfaceProvider)
-                    }
+                    }*/
 
                 cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
                 Log.d(TAG, "Front Camera selected")
@@ -336,7 +362,66 @@ class MainActivity : AppCompatActivity() {
 
     private fun changeZoom(progress : Int)
     {
-        cameraControl.setZoomRatio(2f)
+        var reBuild = false; // evito di costruitr la camera ogni volta
+        var zoomLv : Float = 0.toFloat() // va da 0 a 100
+        // SB_zoom va da 0 a 100, quindi i primi 25 valori sono per lo zoom con la grand angolare, gli altri per la camera normale
+        // non sono riuscito a recoperare la telephoto
+        // 0 -> back default
+        // 1 -> front default grand angolare
+        // 2 -> back grand angolare
+        // 3 -> front normale
+
+        if(progress<25)
+        {
+            zoomLv = progress/24.toFloat()
+
+            if(currentCamera==0) // se sono in back default
+            {
+                cameraSelector = availableCameraInfos[2].cameraSelector // passo in back grand angolare
+                currentCamera = 2
+                reBuild=true
+            }
+            else if(currentCamera==3) // se sono in front normale
+            {
+                cameraSelector = availableCameraInfos[1].cameraSelector // passo in front grand angolare
+                currentCamera = 1
+                reBuild=true;
+            }
+        }
+        else
+        {
+            zoomLv = (progress-25)/75.toFloat()
+
+            if(currentCamera==2) // se sono in back grand angolare
+            {
+                cameraSelector = availableCameraInfos[0].cameraSelector // passo in back default
+                currentCamera = 0
+                reBuild=true;
+            }
+            else if(currentCamera==1) // se sono in front grand angolare
+            {
+                cameraSelector = availableCameraInfos[3].cameraSelector // front in normale
+                currentCamera = 3
+                reBuild=true;
+            }
+        }
+
+
+       if(reBuild)
+       {
+           imageCapture = ImageCapture.Builder().build()
+
+           try {
+               cameraProvider.unbindAll()            // Unbind use cases before rebinding
+               cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture) // Bind use cases to camera
+
+           } catch(exc: Exception) {
+               Log.e(TAG, "Use case binding failed", exc)
+           }
+       }
+
+        cameraControl.setLinearZoom(zoomLv)
+        Log.d(TAG,"Zoom lv: " + zoomLv)
     }
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
