@@ -72,6 +72,8 @@
         android:progressTint="@android:color/transparent"
         android:thumbTint="@color/white"
         android:tickMark="@drawable/rounded_corner"
+        android:layout_marginRight="20dp"
+        android:layout_marginLeft="20dp"
         app:layout_constraintBottom_toBottomOf="@+id/viewFinder"
         app:tickVisible="true"
         tools:layout_editor_absoluteX="10dp" />
@@ -115,6 +117,18 @@
         android:id="@+id/space"
         android:layout_width="10dp"
         android:layout_height="35dp"
+        app:layout_constraintBottom_toTopOf="@+id/SB_zoom"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/BT_zoomRec"
+        android:layout_width="45dp"
+        android:layout_height="35dp"
+        android:background="@drawable/rounded_corner"
+        android:text="1.0x"
+        android:textSize="10sp"
+        android:visibility="invisible"
         app:layout_constraintBottom_toTopOf="@+id/SB_zoom"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />

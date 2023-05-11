@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
+import android.view.HapticFeedbackConstants
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -14,6 +15,7 @@ import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.Button
 import android.widget.SeekBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraControl
@@ -72,6 +74,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var BT_zoom1_0 : Button
     private lateinit var BT_zoom0_5 : Button
+    private lateinit var BT_zoomRec : Button
     private lateinit var SB_zoom : SeekBar
 
     private lateinit var scaleDown: Animation
@@ -81,7 +84,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var cameraProvider: ProcessCameraProvider
     private lateinit var preview: Preview
     private lateinit var recorder: Recorder
-    private var currentCamera = 0;
+    private var currentCamera = 0
+    private var isRecording = false
     // 0 -> back default
     // 1 -> front default grand angolare
     // 2 -> back grand angolare
@@ -137,6 +141,7 @@ class MainActivity : AppCompatActivity() {
         BT_shoot = viewBinding.BTShoots
         BT_zoom1_0 = viewBinding.BT10
         BT_zoom0_5 = viewBinding.BT05
+        BT_zoomRec = viewBinding.BTZoomRec
 
         rotation = viewBinding.BTRotation
 
@@ -146,7 +151,10 @@ class MainActivity : AppCompatActivity() {
         scaleUp = AnimationUtils.loadAnimation(this,R.anim.scale_up)
 
         // Set up the listeners for take photo and video capture buttons
-        BT_shoot.setOnClickListener { takePhoto() }
+        BT_shoot.setOnClickListener {
+            it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+            takePhoto()
+        }
         BT_shoot.setOnLongClickListener{ captureVideo() }
         BT_zoom1_0.setOnClickListener { SB_zoom.setProgress(25) }
         BT_zoom0_5.setOnClickListener{ SB_zoom.setProgress(0) }
@@ -155,6 +163,7 @@ class MainActivity : AppCompatActivity() {
         SB_zoom.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 changeZoom(progress)
+                SB_zoom.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
             }
             override fun onStartTrackingTouch(seek: SeekBar) = Unit
             override fun onStopTrackingTouch(seek: SeekBar) = Unit
@@ -246,7 +255,6 @@ class MainActivity : AppCompatActivity() {
                 override fun
                         onImageSaved(output: ImageCapture.OutputFileResults){
                     val msg = "Photo capture succeeded: ${output.savedUri}"
-
                     Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
                     Log.d(TAG, msg)
                 }
@@ -295,22 +303,27 @@ class MainActivity : AppCompatActivity() {
             .start(ContextCompat.getMainExecutor(this)) { recordEvent ->
                 when(recordEvent) {
                     is VideoRecordEvent.Start -> {
+                        isRecording = true
+                        BT_zoom1_0.visibility = View.INVISIBLE
+                        BT_zoom0_5.visibility = View.INVISIBLE
+                        BT_zoomRec.visibility = View.VISIBLE
                         BT_shoot.setBackgroundResource(R.drawable.rounded_corner_red);
                     }
                     is VideoRecordEvent.Finalize -> {
                         if (!recordEvent.hasError()) {
-                            val msg = "Video capture succeeded: " +
-                                    "${recordEvent.outputResults.outputUri}"
-                            Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT)
-                                .show()
+                            val msg = "Video capture succeeded: " + "${recordEvent.outputResults.outputUri}"
+                            Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
                             Log.d(TAG, msg)
                         } else {
                             recording?.close()
                             recording = null
-                            Log.e(TAG, "Video capture ends with error: " +
-                                    "${recordEvent.error}")
+                            Log.e(TAG, "Video capture ends with error: " + "${recordEvent.error}")
                         }
                         BT_shoot.setBackgroundResource(R.drawable.rounded_corner);
+                        BT_zoom1_0.visibility = View.VISIBLE
+                        BT_zoom0_5.visibility = View.VISIBLE
+                        BT_zoomRec.visibility = View.INVISIBLE
+                        isRecording = false
                     }
                 }
             }
@@ -368,43 +381,78 @@ class MainActivity : AppCompatActivity() {
         // 2 -> back grand angolare
         // 3 -> front normale
 
-        if(progress<25)
-        {
-            zoomLv = progress/24.toFloat()
+        //? sperimentalmente ho trovato che sul mio dispositivo (S21) al valore di zoom = 0.54 (progress = 13)
+        // circa lo zoom della camera grand angolare corrisponde al valore della camera principale a 1.0x
 
-            if(currentCamera==0) // se sono in back default
-            {
-                cameraSelector = availableCameraInfos[2].cameraSelector // passo in back grand angolare
-                currentCamera = 2
-                reBuild=true
-            }
-            else if(currentCamera==3) // se sono in front normale
-            {
-                cameraSelector = availableCameraInfos[1].cameraSelector // passo in front grand angolare
-                currentCamera = 1
-                reBuild=true;
-            }
+        // lo zoom della grand angolare va da 0.5 a 1
+
+
+        //val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        //val cameraId = cameraManager.cameraIdList.first() // seleziona la prima fotocamera
+        //val characteristics = cameraManager.getCameraCharacteristics(cameraId)
+        //val maxZoom = characteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM)
+        // -> zoom massimo fotocamera principale = 8;
+
+        if(isRecording)
+        {
+            zoomLv = progress/100.toFloat()
         }
         else
         {
-            zoomLv = (progress-25)/75.toFloat()
+            if(progress<25)
+            {
+                zoomLv = progress/46.toFloat()
 
-            if(currentCamera==2) // se sono in back grand angolare
-            {
-                cameraSelector = availableCameraInfos[0].cameraSelector // passo in back default
-                currentCamera = 0
-                reBuild=true;
+                if(currentCamera==0) // se sono in back default
+                {
+                    cameraSelector = availableCameraInfos[2].cameraSelector // passo in back grand angolare
+                    currentCamera = 2
+                    reBuild=true
+                }
+                else if(currentCamera==3) // se sono in front normale
+                {
+                    cameraSelector = availableCameraInfos[1].cameraSelector // passo in front grand angolare
+                    currentCamera = 1
+                    reBuild=true;
+                }
             }
-            else if(currentCamera==1) // se sono in front grand angolare
+            else
             {
-                cameraSelector = availableCameraInfos[3].cameraSelector // front in normale
-                currentCamera = 3
-                reBuild=true;
+                zoomLv = (progress-25)/75.toFloat()
+
+                if(currentCamera==2) // se sono in back grand angolare
+                {
+                    cameraSelector = availableCameraInfos[0].cameraSelector // passo in back default
+                    currentCamera = 0
+                    reBuild=true;
+                }
+                else if(currentCamera==1) // se sono in front grand angolare
+                {
+                    cameraSelector = availableCameraInfos[3].cameraSelector // front in normale
+                    currentCamera = 3
+                    reBuild=true;
+                }
             }
         }
 
+        BT_zoom0_5.setText("0.5x")
+        BT_zoom1_0.setText("1.0x")
 
-       if(reBuild)
+        if(currentCamera==0) // camera normale 1 -> 8
+        {
+            BT_zoomRec.setText((zoomLv*7+1).toString().substring(0,3) + "x")
+            BT_zoom1_0.setText((zoomLv*7+1).toString().substring(0,3) + "x")
+        }
+        else // camera grand angolare 0.5 -> 8
+        {
+            BT_zoomRec.setText((zoomLv*7.5+0.5).toString().substring(0,3) + "x")
+            BT_zoom0_5.setText((zoomLv+0.5).toString().substring(0,3) + "x")
+        }
+
+        //TODO dovrei far si che quando passo da video a foto e vic. sistema il valore dello zoom mostrato
+
+
+       if(reBuild && !isRecording) // se sta registrando non cambia fotocamera
        {
            imageCapture = ImageCapture.Builder().build()
 
