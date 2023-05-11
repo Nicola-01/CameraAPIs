@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/dark_gray"
     tools:context=".MainActivity">
 
 
@@ -13,6 +13,7 @@
         android:layout_width="80dp"
         android:layout_height="50dp"
         android:layout_marginStart="16dp"
+        android:background="@color/white"
         app:layout_constraintBottom_toTopOf="@+id/guideline"
         app:layout_constraintStart_toStartOf="parent" />
 
@@ -21,6 +22,7 @@
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:layout_marginEnd="15dp"
+        android:background="@color/white"
         app:layout_constraintBottom_toTopOf="@+id/guideline"
         app:layout_constraintEnd_toEndOf="parent" />
 
@@ -61,13 +63,18 @@
     <SeekBar
         android:id="@+id/SB_zoom"
         style="@style/Widget.AppCompat.SeekBar"
-        android:layout_width="match_parent"
-        android:layout_height="59dp"
+        android:layout_width="fill_parent"
+        android:layout_height="35dp"
         android:max="100"
         android:min="0"
         android:progress="25"
+        android:progressBackgroundTint="@color/dark_gray"
+        android:progressTint="@android:color/transparent"
+        android:thumbTint="@color/white"
+        android:tickMark="@drawable/rounded_corner"
         app:layout_constraintBottom_toBottomOf="@+id/viewFinder"
-        tools:layout_editor_absoluteX="4dp" />
+        app:tickVisible="true"
+        tools:layout_editor_absoluteX="10dp" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline"
@@ -82,5 +89,34 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         app:layout_constraintGuide_begin="629dp" />
+
+    <Button
+        android:id="@+id/BT_0.5"
+        android:layout_width="45dp"
+        android:layout_height="35dp"
+        android:background="@drawable/rounded_corner"
+        android:text="0.5x"
+        android:textSize="10sp"
+        app:layout_constraintBottom_toTopOf="@+id/SB_zoom"
+        app:layout_constraintEnd_toStartOf="@+id/space" />
+
+    <Button
+        android:id="@+id/BT_1.0"
+        android:layout_width="45dp"
+        android:layout_height="35dp"
+        android:background="@drawable/rounded_corner"
+        android:contextClickable="false"
+        android:text="1.0x"
+        android:textSize="10sp"
+        app:layout_constraintBottom_toTopOf="@+id/SB_zoom"
+        app:layout_constraintStart_toEndOf="@+id/space" />
+
+    <Space
+        android:id="@+id/space"
+        android:layout_width="10dp"
+        android:layout_height="35dp"
+        app:layout_constraintBottom_toTopOf="@+id/SB_zoom"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

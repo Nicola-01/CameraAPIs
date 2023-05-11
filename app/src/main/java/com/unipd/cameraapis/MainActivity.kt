@@ -63,13 +63,19 @@ class MainActivity : AppCompatActivity() {
     // dichiarato qui per poterlo usare in rotateCamera()
     var cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
-    var shoot : Button? = null
-    private lateinit var SB_zoom : SeekBar
-    private lateinit var flash : Button
-    var rotation : Button? = null
+    private lateinit var BT_shoot : Button
+    private lateinit var flash : Button //TODO sarebbe meglio se si chiamassa BT_flash
+    //TODO (Per rinominare tutte le occorrenze (fare attenzione perchè rinomina tutto cio che contiene la parola da sostituire in tutti i file) ctrl + shift+ R)
+    var rotation : Button? = null       //TODO rednere private lateinit e togliere ? quando lo si usa, serebeb meglio se si chiamasse BT_rotation
+    //TODO (Per rinominare tutte le occorrenze (fare attenzione perchè rinomina tutto cio che contiene la parola da sostituire in tutti i file) ctrl + shift+ R)
     var currFlashMode : FlashModes = FlashModes.OFF
-    var scaleDown: Animation? = null
-    var scaleUp: Animation? = null
+
+    private lateinit var BT_zoom1_0 : Button
+    private lateinit var BT_zoom0_5 : Button
+    private lateinit var SB_zoom : SeekBar
+
+    private lateinit var scaleDown: Animation
+    private lateinit var scaleUp: Animation
     private lateinit var cameraControl:CameraControl
     private lateinit var availableCameraInfos: MutableList<CameraInfo>
     private lateinit var cameraProvider: ProcessCameraProvider
@@ -128,40 +134,31 @@ class MainActivity : AppCompatActivity() {
         //flash.setOnLongClickListener { selectFlashMode() }
         //</editor-fold>
 
-        shoot = viewBinding.BTShoots
-        //var shoot : Button = viewBinding.BTShoots
+        BT_shoot = viewBinding.BTShoots
+        BT_zoom1_0 = viewBinding.BT10
+        BT_zoom0_5 = viewBinding.BT05
 
         rotation = viewBinding.BTRotation
 
+        SB_zoom = viewBinding.SBZoom
 
         scaleDown = AnimationUtils.loadAnimation(this,R.anim.scale_down)
         scaleUp = AnimationUtils.loadAnimation(this,R.anim.scale_up)
 
         // Set up the listeners for take photo and video capture buttons
-        shoot?.setOnClickListener { takePhoto() }
-        shoot?.setOnLongClickListener{ captureVideo() }
+        BT_shoot.setOnClickListener { takePhoto() }
+        BT_shoot.setOnLongClickListener{ captureVideo() }
+        BT_zoom1_0.setOnClickListener { SB_zoom.setProgress(25) }
+        BT_zoom0_5.setOnClickListener{ SB_zoom.setProgress(0) }
 
-        SB_zoom = viewBinding.SBZoom
 
         SB_zoom.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 changeZoom(progress)
             }
-
-            // OnSeekBarChangeListener is an interface,
-            // so an implementation must be provided for all the methods
             override fun onStartTrackingTouch(seek: SeekBar) = Unit
             override fun onStopTrackingTouch(seek: SeekBar) = Unit
         })
-
-
-
-
-
-//        shoot.setOnLongClickListener(OnLongClickListener {
-//            Log.d(TAG,"LongClickListener")
-//            true
-//        })
 
         rotation?.setOnClickListener { rotateCamera() }
 
@@ -235,7 +232,7 @@ class MainActivity : AppCompatActivity() {
 
         // Set up image capture listener, which is triggered after photo has
         // been taken
-        shoot?.startAnimation(scaleDown)
+        BT_shoot.startAnimation(scaleDown)
         viewBinding.viewFinder.startAnimation(scaleUp)
         imageCapture.takePicture(
             outputOptions,
@@ -298,7 +295,7 @@ class MainActivity : AppCompatActivity() {
             .start(ContextCompat.getMainExecutor(this)) { recordEvent ->
                 when(recordEvent) {
                     is VideoRecordEvent.Start -> {
-                        viewBinding.BTShoots.setBackgroundResource(R.drawable.rounded_corner_red);
+                        BT_shoot.setBackgroundResource(R.drawable.rounded_corner_red);
                     }
                     is VideoRecordEvent.Finalize -> {
                         if (!recordEvent.hasError()) {
@@ -313,7 +310,7 @@ class MainActivity : AppCompatActivity() {
                             Log.e(TAG, "Video capture ends with error: " +
                                     "${recordEvent.error}")
                         }
-                        viewBinding.BTShoots.setBackgroundResource(R.drawable.rounded_corner);
+                        BT_shoot.setBackgroundResource(R.drawable.rounded_corner);
                     }
                 }
             }
@@ -413,8 +410,9 @@ class MainActivity : AppCompatActivity() {
 
            try {
                cameraProvider.unbindAll()            // Unbind use cases before rebinding
-               cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture) // Bind use cases to camera
-
+               val camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture) // devo ricostruire la camera ogni volta
+               // in quato cambio la camera
+               cameraControl = camera.cameraControl
            } catch(exc: Exception) {
                Log.e(TAG, "Use case binding failed", exc)
            }
