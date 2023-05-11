@@ -10,6 +10,7 @@ import android.util.Log
 import android.view.HapticFeedbackConstants
 import android.view.Menu
 import android.view.MenuItem
+import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
@@ -85,11 +86,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var preview: Preview
     private lateinit var recorder: Recorder
     private var currentCamera = 0
-    private var isRecording = false
     // 0 -> back default
     // 1 -> front default grand angolare
     // 2 -> back grand angolare
     // 3 -> front normale
+    private var isRecording = false
+
+    private lateinit var scaleGestureDetector: ScaleGestureDetector
     companion object {
         //private val TAG = MainActivity::class.simpleName
         private const val TAG = "CameraXApp"
@@ -169,11 +172,21 @@ class MainActivity : AppCompatActivity() {
             override fun onStopTrackingTouch(seek: SeekBar) = Unit
         })
 
+        scaleGestureDetector = ScaleGestureDetector(this, ScaleGestureListener()) //TODO: pinch in/out
+
         rotation?.setOnClickListener { rotateCamera() }
 
         cameraExecutor = Executors.newSingleThreadExecutor()
     }
 
+    private inner class ScaleGestureListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+        override fun onScale(detector: ScaleGestureDetector): Boolean {
+            var scaleFactor = detector.scaleFactor
+            // Aggiorna lo zoom della fotocamera
+            Log.d(TAG, "[zoom] $scaleFactor")
+            return true
+        }
+    }
     private fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
 
