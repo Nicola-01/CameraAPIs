@@ -347,93 +347,47 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun rotateCamera() { // id = 0 default back, id = 1 front default
-        //se sono in back default o in back grandangolare (id=2 ??) passo alla frontale
-        if(cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA){
-            val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-
-            cameraProviderFuture.addListener({
-                // Used to bind the lifecycle of cameras to the lifecycle owner
-                //cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
-
-                // Preview
-                /*val preview = Preview.Builder()
-                    .build()
-                    .also {
-                        it.setSurfaceProvider(viewBinding.viewFinder.surfaceProvider)
-                    }*/
-
-                cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
-                Log.d(TAG, "Front Camera selected")
-
-                imageCapture = ImageCapture.Builder().build()
-
-                try {
-                    // Unbind use cases before rebinding
-                    cameraProvider.unbindAll()
-
-                    // Bind use cases to camera
-                    cameraProvider.bindToLifecycle(
-                        this, cameraSelector, preview, imageCapture)
-
-                } catch(exc: Exception) {
-                    Log.e(TAG, "Use case binding failed", exc)
-                }
-
-            }, ContextCompat.getMainExecutor(this))
+        var reBuild = false
+        if(currentCamera==0)
+        {
+            cameraSelector = availableCameraInfos[1].cameraSelector // passo in front
+            currentCamera = 1
+            reBuild=true
         }
-        else {
-            if(cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA)
-                startCamera()
-            else
-                if(cameraSelector == availableCameraInfos[2].cameraSelector){   //back grandangolare ?
-                    val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-
-                    cameraProviderFuture.addListener({
-                        cameraSelector = availableCameraInfos[1].cameraSelector
-                        Log.d(TAG, "Front Grand Angolare Camera selected")
-
-                        imageCapture = ImageCapture.Builder().build()
-
-                        try {
-                            // Unbind use cases before rebinding
-                            cameraProvider.unbindAll()
-
-                            // Bind use cases to camera
-                            cameraProvider.bindToLifecycle(
-                                this, cameraSelector, preview, imageCapture)
-
-                        } catch(exc: Exception) {
-                            Log.e(TAG, "Use case binding failed", exc)
-                        }
-
-                    }, ContextCompat.getMainExecutor(this))
-                }
-                else{
-                    val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-
-                    cameraProviderFuture.addListener({
-                        cameraSelector = availableCameraInfos[2].cameraSelector
-                        Log.d(TAG, "Front Grand Angolare Camera selected")
-
-                        imageCapture = ImageCapture.Builder().build()
-
-                        try {
-                            // Unbind use cases before rebinding
-                            cameraProvider.unbindAll()
-
-                            // Bind use cases to camera
-                            cameraProvider.bindToLifecycle(
-                                this, cameraSelector, preview, imageCapture)
-
-                        } catch(exc: Exception) {
-                            Log.e(TAG, "Use case binding failed", exc)
-                        }
-
-                    }, ContextCompat.getMainExecutor(this))
-                }
-
-
+        else if(currentCamera==1)
+        {
+            cameraSelector = availableCameraInfos[0].cameraSelector // passo in back
+            currentCamera = 0
+            reBuild=true
         }
+        else if(currentCamera==2)
+        {
+            cameraSelector = availableCameraInfos[0].cameraSelector // passo in back, dovrei mettere la camera 3
+            currentCamera = 0
+            reBuild=true
+        }
+        /*
+        else if(currentCamera==3)
+        {
+            cameraSelector = availableCameraInfos[2].cameraSelector // passo in front grand-angolare
+            currentCamera = 2
+            reBuild=true
+        }
+        */
+        if(reBuild && !isRecording) // se sta registrando non cambia fotocamera
+        {
+            imageCapture = ImageCapture.Builder().build()
+
+            try {
+                cameraProvider.unbindAll()            // Unbind use cases before rebinding
+                val camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture) // devo ricostruire la camera ogni volta
+                // in quato cambio la camera
+                cameraControl = camera.cameraControl
+            } catch(exc: Exception) {
+                Log.e(TAG, "Use case binding failed", exc)
+            }
+        }
+
     }
 
     private fun changeZoom(progress : Int)
