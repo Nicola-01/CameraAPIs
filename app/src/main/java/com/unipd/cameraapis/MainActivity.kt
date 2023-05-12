@@ -255,6 +255,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        if(currFlashMode == FlashModes.ON) { cameraControl.enableTorch(true) }
+
         val mediaStoreOutputOptions = MediaStoreOutputOptions
             .Builder(contentResolver, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
             .setContentValues(contentValues)
@@ -287,6 +289,7 @@ class MainActivity : AppCompatActivity() {
                             Log.e(TAG, "Video capture ends with error: " +
                                     "${recordEvent.error}")
                         }
+                        if(currFlashMode == FlashModes.ON) { cameraControl.enableTorch(false) }
                         viewBinding.BTShoots.setBackgroundResource(R.drawable.rounded_corner);
                     }
                 }
