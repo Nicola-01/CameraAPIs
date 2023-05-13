@@ -2,6 +2,7 @@ package com.unipd.cameraapis
 
 import android.Manifest
 import android.content.ContentValues
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -10,13 +11,12 @@ import android.util.Log
 import android.view.HapticFeedbackConstants
 import android.view.Menu
 import android.view.MenuItem
+import android.view.MotionEvent
+import android.view.OrientationEventListener
+import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
-import android.view.MotionEvent
-import android.view.ScaleGestureDetector
-import android.view.ScaleGestureDetector.SimpleOnScaleGestureListener
-import android.widget.TextView
 import android.widget.Button
 import android.widget.SeekBar
 import android.widget.Toast
@@ -24,7 +24,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.CameraX
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -47,7 +46,6 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-
 
 
 typealias LumaListener = (luma: Double) -> Unit
@@ -74,6 +72,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var BT_rotation : Button
     var currFlashMode : FlashModes = FlashModes.OFF
 
+    private lateinit var BT_gallery : Button
+
     private lateinit var BT_zoom1_0 : Button
     private lateinit var BT_zoom0_5 : Button
     private lateinit var BT_zoomRec : Button
@@ -92,6 +92,7 @@ class MainActivity : AppCompatActivity() {
     // 2 -> back grand angolare
     // 3 -> front normale
     private var isRecording = false
+    private var orientationEventListener: OrientationEventListener? = null
 
     private lateinit var scaleGestureDetector: ScaleGestureDetector
     companion object {
@@ -178,10 +179,44 @@ class MainActivity : AppCompatActivity() {
         scaleGestureDetector = ScaleGestureDetector(this, ScaleGestureListener()) //pinch in/out
 
 
+
         BT_rotation.setOnClickListener { rotateCamera() }
 
         cameraExecutor = Executors.newSingleThreadExecutor()
+
+        BT_gallery = findViewById(R.id.BT_gallery)
+
+        BT_gallery.setOnClickListener{//TODO: aprire galleria
+            val intent = Intent(Intent.ACTION_PICK)
+            intent.type = "image/*"
+            //rotateButton(90)
+        }
+
+
+        orientationEventListener = object : OrientationEventListener(this) { //TODO: girare tasti fotocamera
+            override fun onOrientationChanged(orientation: Int) {
+                Log.d(TAG, "[orientation]")
+                when (orientation) {
+                    in 45..134 -> {
+                        Log.d(TAG,"[orientation] Land sx $orientation" )
+                    }
+                    in 135..224 -> {
+                        // Rovescio
+                        Log.d(TAG,"[orientation] Rovescio $orientation" )
+                    }
+                    in 225..314 -> {
+                        // Landscape destra
+                        Log.d(TAG,"[orientation] Land dx $orientation" )
+                    }
+                    else -> {
+                        // Verticale
+                        Log.d(TAG,"[orientation] Verticale $orientation" )
+                    }
+                }
+            }
+        }
     }
+
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         Log.d(TAG, "[Here] $event")
@@ -428,20 +463,8 @@ class MainActivity : AppCompatActivity() {
         // circa lo zoom della camera grand angolare corrisponde al valore della camera principale a 1.0x
 
         // lo zoom della grand angolare va da 0.5 a 1
-
-
-        //val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
-        //val cameraId = cameraManager.cameraIdList.first() // seleziona la prima fotocamera
-        //val characteristics = cameraManager.getCameraCharacteristics(cameraId)
-        //val maxZoom = characteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM)
-        // -> zoom massimo fotocamera principale = 8;
-
-
-
         if(isRecording)
-        {
             zoomLv = progress/100.toFloat()
-        }
         else
         {
             if(progress<25)
@@ -513,6 +536,16 @@ class MainActivity : AppCompatActivity() {
 
         cameraControl.setLinearZoom(zoomLv)
         Log.d(TAG,"Zoom lv: " + zoomLv)
+    }
+
+    private fun rotateButton(angle : Int)
+    {
+        BT_gallery.rotation = angle.toFloat()
+        BT_rotation.rotation = angle.toFloat()
+        flash.rotation = angle.toFloat()
+        BT_zoom0_5.rotation = angle.toFloat()
+        BT_zoom1_0.rotation = angle.toFloat()
+
     }
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {

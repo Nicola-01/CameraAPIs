@@ -139,7 +139,7 @@
         app:layout_constraintTop_toTopOf="@+id/BT_shoots" />
 
     <Button
-        android:id="@+id/button"
+        android:id="@+id/BT_gallery"
         android:layout_width="45dp"
         android:layout_height="45dp"
         android:background="@drawable/gallery"
