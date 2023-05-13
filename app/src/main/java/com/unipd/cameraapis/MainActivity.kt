@@ -10,10 +10,13 @@ import android.util.Log
 import android.view.HapticFeedbackConstants
 import android.view.Menu
 import android.view.MenuItem
-import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
+import android.view.MotionEvent
+import android.view.ScaleGestureDetector
+import android.view.ScaleGestureDetector.SimpleOnScaleGestureListener
+import android.widget.TextView
 import android.widget.Button
 import android.widget.SeekBar
 import android.widget.Toast
@@ -21,6 +24,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.CameraX
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -165,7 +169,7 @@ class MainActivity : AppCompatActivity() {
         SB_zoom.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 changeZoom(progress)
-                SB_zoom.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                SB_zoom.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
             }
             override fun onStartTrackingTouch(seek: SeekBar) = Unit
             override fun onStopTrackingTouch(seek: SeekBar) = Unit
@@ -179,12 +183,31 @@ class MainActivity : AppCompatActivity() {
         cameraExecutor = Executors.newSingleThreadExecutor()
     }
 
+    override fun onTouchEvent(event: MotionEvent?): Boolean {
+        Log.d(TAG, "[Here] $event")
+        scaleGestureDetector.onTouchEvent(event!!)
+        return true
+    }
+
     private inner class ScaleGestureListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
         override fun onScale(detector: ScaleGestureDetector): Boolean {
             var scaleFactor = detector.scaleFactor
             // Aggiorna lo zoom della fotocamera
             Log.d(TAG, "[zoom] $scaleFactor")
+
+            if(scaleFactor>1)
+                SB_zoom.setProgress(SB_zoom.progress + 1)
+            else
+                SB_zoom.setProgress(SB_zoom.progress - 1)
             return true
+        }
+
+        override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
+            return super.onScaleBegin(detector)
+        }
+
+        override fun onScaleEnd(detector: ScaleGestureDetector) {
+            super.onScaleEnd(detector)
         }
     }
     private fun startCamera() {
@@ -412,6 +435,8 @@ class MainActivity : AppCompatActivity() {
         //val characteristics = cameraManager.getCameraCharacteristics(cameraId)
         //val maxZoom = characteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM)
         // -> zoom massimo fotocamera principale = 8;
+
+
 
         if(isRecording)
         {
