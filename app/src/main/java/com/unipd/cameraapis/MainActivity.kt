@@ -4,8 +4,13 @@ import android.Manifest
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.Log
 import android.view.HapticFeedbackConstants
@@ -18,7 +23,9 @@ import android.view.View
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.Button
+import android.widget.Chronometer
 import android.widget.SeekBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraControl
@@ -53,7 +60,6 @@ typealias LumaListener = (luma: Double) -> Unit
 
 class MainActivity : AppCompatActivity() {
 
-
     private lateinit var viewBinding: ActivityMainBinding
 
     private var imageCapture: ImageCapture? = null
@@ -79,6 +85,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var BT_zoomRec : Button
     private lateinit var BT_timer : Button
     private lateinit var SB_zoom : SeekBar
+    private lateinit var CM_recTimer : Chronometer
+
 
     private lateinit var scaleDown: Animation
     private lateinit var scaleUp: Animation
@@ -96,6 +104,10 @@ class MainActivity : AppCompatActivity() {
     private var orientationEventListener: OrientationEventListener? = null
 
     private lateinit var scaleGestureDetector: ScaleGestureDetector
+
+    private lateinit var sensorManager : SensorManager
+    private lateinit var gyroscopeSensor : Sensor
+
     companion object {
         //private val TAG = MainActivity::class.simpleName
         private const val TAG = "CameraXApp"
@@ -173,6 +185,8 @@ class MainActivity : AppCompatActivity() {
         BT_zoom1_0 = viewBinding.BT10
         BT_zoom0_5 = viewBinding.BT05
         BT_zoomRec = viewBinding.BTZoomRec
+        CM_recTimer = viewBinding.CMRecTimer
+        CM_recTimer.format = "%02d:%02d:%02d"
         BT_timer = viewBinding.BTTimer
 
         BT_rotation = viewBinding.BTRotation
@@ -212,7 +226,7 @@ class MainActivity : AppCompatActivity() {
             for(mode in TimerModes.values()) {
                 var item: MenuItem = menu.add(Menu.NONE, mode.ordinal, Menu.NONE, mode.text)
                 item.setOnMenuItemClickListener { i: MenuItem? ->
-                    selectFlashMode(i?.itemId)
+                    selectFlashMode(i?.itemId) //TODO: <-- se tengo premuto il pulsante e cambio modalità modifica il flahs
                     true // Signifies you have consumed this event, so propogation can stop.
                 }
             }
@@ -228,7 +242,26 @@ class MainActivity : AppCompatActivity() {
             //rotateButton(90)
         }
 
+        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+        gyroscopeSensor  = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
 
+        val sensorEventListener = object : SensorEventListener {
+            override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
+                // non utilizzato
+            }
+
+            override fun onSensorChanged(event: SensorEvent) {
+                Log.d(TAG,"[orientation] aaaaaaaaaaa" )
+                if (event.sensor.type == Sensor.TYPE_GYROSCOPE) {
+                    val angularSpeedX = event.values[0]
+                    val angularSpeedY = event.values[1]
+                    val angularSpeedZ = event.values[2]
+                    Log.d(TAG,"[orientation] $angularSpeedX" )
+                }
+            }
+        }
+
+        /*
         orientationEventListener = object : OrientationEventListener(this) { //TODO: girare tasti fotocamera
             override fun onOrientationChanged(orientation: Int) {
                 Log.d(TAG, "[orientation]")
@@ -251,6 +284,8 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+        */
+
     }
 
 
@@ -417,11 +452,15 @@ class MainActivity : AppCompatActivity() {
                     is VideoRecordEvent.Start -> {
                         isRecording = true
 
-                        BT_rotation.visibility = View.GONE
+                        BT_rotation.visibility = View.INVISIBLE
                         BT_zoom1_0.visibility = View.INVISIBLE
                         BT_zoom0_5.visibility = View.INVISIBLE
                         BT_zoomRec.visibility = View.VISIBLE
+                        CM_recTimer.visibility = View.VISIBLE
                         BT_shoot.setBackgroundResource(R.drawable.rounded_corner_red);
+                        CM_recTimer.start()
+                        CM_recTimer.base = SystemClock.elapsedRealtime();
+
                     }
                     is VideoRecordEvent.Finalize -> {
                         if (!recordEvent.hasError()) {
@@ -433,12 +472,15 @@ class MainActivity : AppCompatActivity() {
                             recording = null
                             Log.e(TAG, "Video capture ends with error: " + "${recordEvent.error}")
                         }
-                        BT_shoot.setBackgroundResource(R.drawable.rounded_corner);
+                        isRecording = false
+
                         BT_rotation.visibility = View.VISIBLE
                         BT_zoom1_0.visibility = View.VISIBLE
                         BT_zoom0_5.visibility = View.VISIBLE
+                        CM_recTimer.stop()
+                        CM_recTimer.visibility = View.INVISIBLE
                         BT_zoomRec.visibility = View.INVISIBLE
-                        isRecording = false
+                        BT_shoot.setBackgroundResource(R.drawable.rounded_corner);
                     }
                 }
             }
@@ -583,14 +625,14 @@ class MainActivity : AppCompatActivity() {
         Log.d(TAG,"Zoom lv: " + zoomLv)
     }
 
-    private fun rotateButton(angle : Int)
+    private fun rotateButton(angle : Float)
     {
-        BT_gallery.rotation = angle.toFloat()
-        BT_rotation.rotation = angle.toFloat()
-        BT_flash.rotation = angle.toFloat()
-        BT_zoom0_5.rotation = angle.toFloat()
-        BT_zoom1_0.rotation = angle.toFloat()
-
+        BT_gallery.rotation = angle
+        BT_rotation.rotation = angle
+        BT_flash.rotation = angle
+        BT_zoom0_5.rotation = angle
+        BT_zoom1_0.rotation = angle
+        CM_recTimer.rotation = angle
     }
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
@@ -655,7 +697,7 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-
+/*
     private class LuminosityAnalyzer(private val listener: LumaListener) : ImageAnalysis.Analyzer {
 
         private fun ByteBuffer.toByteArray(): ByteArray {
@@ -677,11 +719,14 @@ class MainActivity : AppCompatActivity() {
             image.close()
         }
     }
+
+ */
     //</editor-fold>
 
     override fun onDestroy() {
         super.onDestroy()
         cameraExecutor.shutdown()
+        //sensorManager.unregisterListener(this)
     }
 
 }
