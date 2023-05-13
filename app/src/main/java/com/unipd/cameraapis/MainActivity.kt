@@ -557,14 +557,14 @@ class MainActivity : AppCompatActivity() {
         Log.d(TAG,"Zoom lv: " + zoomLv)
     }
 
-    private fun rotateButton(angle : Int)
+    private fun rotateButton(angle : Float)
     {
-        BT_gallery.rotation = angle.toFloat()
-        BT_rotation.rotation = angle.toFloat()
-        flash.rotation = angle.toFloat()
-        BT_zoom0_5.rotation = angle.toFloat()
-        BT_zoom1_0.rotation = angle.toFloat()
-
+        BT_gallery.rotation = angle
+        BT_rotation.rotation = angle
+        flash.rotation = angle
+        BT_zoom0_5.rotation = angle
+        BT_zoom1_0.rotation = angle
+        BT_timer.rotation = angle
     }
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
