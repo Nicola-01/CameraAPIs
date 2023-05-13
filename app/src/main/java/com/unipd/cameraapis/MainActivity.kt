@@ -126,7 +126,8 @@ class MainActivity : AppCompatActivity() {
 
         //<editor-fold desc= "FLASH INIT">
         flash = viewBinding.BTFlash
-        flash.text = currFlashMode.text
+        //flash.text = currFlashMode.text
+        setFlashIcon(currFlashMode.text)
         flash.setOnClickListener { switchFlashMode() }
         flash.setOnCreateContextMenuListener { menu, v, menuInfo ->
             menu.setHeaderTitle("Flash")
@@ -537,7 +538,8 @@ class MainActivity : AppCompatActivity() {
     private fun switchFlashMode() {
         currFlashMode = FlashModes.next(currFlashMode)
         setFlashMode()
-        flash.text = currFlashMode.text
+        //flash.text = currFlashMode.text
+        setFlashIcon(currFlashMode.text)
     }
 
     private fun selectFlashMode(ordinal: Int?): Boolean {
@@ -546,7 +548,8 @@ class MainActivity : AppCompatActivity() {
         }
         currFlashMode = FlashModes.values()[ordinal]
         setFlashMode()
-        flash.text = currFlashMode.text
+        //flash.text = currFlashMode.text
+        setFlashIcon(currFlashMode.text)
         return true
     }
     private fun setFlashMode() {
@@ -561,6 +564,17 @@ class MainActivity : AppCompatActivity() {
                 imageCapture?.flashMode = ImageCapture.FLASH_MODE_AUTO
             }
         }
+    }
+
+    private fun setFlashIcon(status : String){
+        flash.setBackgroundResource(
+        when(status){
+            "OFF" -> R.drawable.flash_off
+            "ON" -> R.drawable.flash_on
+            "AUTO" -> R.drawable.flash_auto
+            else -> throw IllegalArgumentException("Invalid flash status: $status")
+        }
+        )
     }
 
 

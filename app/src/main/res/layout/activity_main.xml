@@ -10,10 +10,11 @@
 
     <Button
         android:id="@+id/BT_flash"
-        android:layout_width="80dp"
-        android:layout_height="50dp"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
         android:layout_marginStart="16dp"
-        android:background="@color/white"
+        android:background="@drawable/flash_off"
+        android:backgroundTint="@color/white"
         app:layout_constraintBottom_toTopOf="@+id/guideline"
         app:layout_constraintStart_toStartOf="parent" />
 
