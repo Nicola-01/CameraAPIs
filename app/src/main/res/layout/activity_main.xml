@@ -17,15 +17,6 @@
         app:layout_constraintBottom_toTopOf="@+id/guideline"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <Button
-        android:id="@+id/BT_rotation"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:layout_marginEnd="15dp"
-        android:background="@color/white"
-        app:layout_constraintBottom_toTopOf="@+id/guideline"
-        app:layout_constraintEnd_toEndOf="parent" />
-
     <androidx.camera.view.PreviewView
         android:id="@+id/viewFinder"
         android:layout_width="match_parent"
@@ -132,5 +123,29 @@
         app:layout_constraintBottom_toTopOf="@+id/SB_zoom"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/BT_rotation"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
+        android:background="@drawable/rotate"
+        android:backgroundTint="@color/white"
+        android:backgroundTintMode="src_in"
+        app:layout_constraintBottom_toBottomOf="@+id/BT_shoots"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.508"
+        app:layout_constraintStart_toEndOf="@+id/BT_shoots"
+        app:layout_constraintTop_toTopOf="@+id/BT_shoots" />
+
+    <Button
+        android:id="@+id/button"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
+        android:background="@drawable/gallery"
+        android:backgroundTint="@color/white"
+        app:layout_constraintBottom_toBottomOf="@+id/BT_shoots"
+        app:layout_constraintEnd_toStartOf="@+id/BT_shoots"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/BT_shoots" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

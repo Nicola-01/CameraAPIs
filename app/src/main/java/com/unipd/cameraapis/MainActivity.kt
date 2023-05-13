@@ -72,7 +72,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var flash : Button //TODO sarebbe meglio se si chiamassa BT_flash
     //TODO (Per rinominare tutte le occorrenze (fare attenzione perchè rinomina tutto cio che contiene la parola da sostituire in tutti i file) ctrl + shift+ R)
     private lateinit var BT_rotation : Button
-    //TODO (Per rinominare tutte le occorrenze (fare attenzione perchè rinomina tutto cio che contiene la parola da sostituire in tutti i file) ctrl + shift+ R)
     var currFlashMode : FlashModes = FlashModes.OFF
 
     private lateinit var BT_zoom1_0 : Button
@@ -175,7 +174,7 @@ class MainActivity : AppCompatActivity() {
             override fun onStopTrackingTouch(seek: SeekBar) = Unit
         })
 
-        scaleGestureDetector = ScaleGestureDetector(this, ScaleGestureListener()) //TODO: pinch in/out
+        scaleGestureDetector = ScaleGestureDetector(this, ScaleGestureListener()) //pinch in/out
 
 
         BT_rotation.setOnClickListener { rotateCamera() }
