@@ -464,6 +464,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun timerShot(){
 
+        //setTimerIcon(..) // inter 0, 3, 5, 10
     }
 
     private fun changeZoom(progress : Int)
@@ -622,9 +623,19 @@ class MainActivity : AppCompatActivity() {
         when(status){
             "OFF" -> R.drawable.flash_off
             "ON" -> R.drawable.flash_on
-            "AUTO" -> R.drawable.flash_auto
-            else -> throw IllegalArgumentException("Invalid flash status: $status")
+            else -> R.drawable.flash_auto
         }
+        )
+    }
+
+    private fun setTimerIcon(status : Int){
+        BT_timer.setBackgroundResource(
+            when(status){
+                10 -> R.drawable.timer_10
+                5 -> R.drawable.timer_5
+                3 -> R.drawable.timer_3
+                else -> R.drawable.timer_0
+            }
         )
     }
 
