@@ -2,13 +2,18 @@ package com.unipd.cameraapis
 
 import android.Manifest
 import android.content.ContentValues
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
+import android.view.HapticFeedbackConstants
 import android.view.Menu
 import android.view.MenuItem
+import android.view.MotionEvent
+import android.view.OrientationEventListener
+import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
@@ -16,18 +21,29 @@ import android.widget.Button
 import android.widget.SeekBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.camera.core.*
+import androidx.camera.core.CameraControl
+import androidx.camera.core.CameraInfo
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.ImageProxy
+import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.video.*
+import androidx.camera.video.MediaStoreOutputOptions
+import androidx.camera.video.Quality
+import androidx.camera.video.QualitySelector
+import androidx.camera.video.Recorder
+import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
+import androidx.camera.video.VideoRecordEvent
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
 import com.unipd.cameraapis.databinding.ActivityMainBinding
-import java.lang.IllegalArgumentException
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -50,16 +66,36 @@ class MainActivity : AppCompatActivity() {
     // dichiarato qui per poterlo usare in rotateCamera()
     var cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
-    var shoot : Button? = null
-    lateinit var SB_zoom : SeekBar
-    lateinit var flash : Button
-    var rotation : Button? = null
+    private lateinit var BT_shoot : Button
+    private lateinit var flash : Button //TODO sarebbe meglio se si chiamassa BT_flash
+    //TODO (Per rinominare tutte le occorrenze (fare attenzione perchè rinomina tutto cio che contiene la parola da sostituire in tutti i file) ctrl + shift+ R)
+    private lateinit var BT_rotation : Button
     var currFlashMode : FlashModes = FlashModes.OFF
-    var scaleDown: Animation? = null
-    var scaleUp: Animation? = null
-    var startVideo: Animation? = null
-    lateinit var cameraControl:CameraControl
 
+    private lateinit var BT_gallery : Button
+
+    private lateinit var BT_zoom1_0 : Button
+    private lateinit var BT_zoom0_5 : Button
+    private lateinit var BT_zoomRec : Button
+    private lateinit var BT_timer : Button
+    private lateinit var SB_zoom : SeekBar
+
+    private lateinit var scaleDown: Animation
+    private lateinit var scaleUp: Animation
+    private lateinit var cameraControl:CameraControl
+    private lateinit var availableCameraInfos: MutableList<CameraInfo>
+    private lateinit var cameraProvider: ProcessCameraProvider
+    private lateinit var preview: Preview
+    private lateinit var recorder: Recorder
+    private var currentCamera = 0
+    // 0 -> back default
+    // 1 -> front default grand angolare
+    // 2 -> back grand angolare
+    // 3 -> front normale
+    private var isRecording = false
+    private var orientationEventListener: OrientationEventListener? = null
+
+    private lateinit var scaleGestureDetector: ScaleGestureDetector
     companion object {
         //private val TAG = MainActivity::class.simpleName
         private const val TAG = "CameraXApp"
@@ -92,7 +128,8 @@ class MainActivity : AppCompatActivity() {
 
         //<editor-fold desc= "FLASH INIT">
         flash = viewBinding.BTFlash
-        flash.text = currFlashMode.text
+        //flash.text = currFlashMode.text
+        setFlashIcon(currFlashMode.text)
         flash.setOnClickListener { switchFlashMode() }
         flash.setOnCreateContextMenuListener { menu, v, menuInfo ->
             menu.setHeaderTitle("Flash")
@@ -108,59 +145,135 @@ class MainActivity : AppCompatActivity() {
         //flash.setOnLongClickListener { selectFlashMode() }
         //</editor-fold>
 
-        shoot = viewBinding.BTShoots
-        //var shoot : Button = viewBinding.BTShoots
+        BT_shoot = viewBinding.BTShoots
+        BT_zoom1_0 = viewBinding.BT10
+        BT_zoom0_5 = viewBinding.BT05
+        BT_zoomRec = viewBinding.BTZoomRec
+        BT_timer = viewBinding.BTTimer
 
-        rotation = viewBinding.BTRotation
+        BT_rotation = viewBinding.BTRotation
 
+
+        SB_zoom = viewBinding.SBZoom
 
         scaleDown = AnimationUtils.loadAnimation(this,R.anim.scale_down)
         scaleUp = AnimationUtils.loadAnimation(this,R.anim.scale_up)
 
         // Set up the listeners for take photo and video capture buttons
-        shoot?.setOnClickListener { takePhoto() }
-        shoot?.setOnLongClickListener{ captureVideo() }
+        BT_shoot.setOnClickListener {
+            it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+            takePhoto()
+        }
+        BT_shoot.setOnLongClickListener{ captureVideo() }
+        BT_zoom1_0.setOnClickListener { SB_zoom.setProgress(25) }
+        BT_zoom0_5.setOnClickListener{ SB_zoom.setProgress(0) }
 
-    /* Non va
-            SB_zoom.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                    changeZoom(progress)
+
+        SB_zoom.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                changeZoom(progress)
+                SB_zoom.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+            }
+            override fun onStartTrackingTouch(seek: SeekBar) = Unit
+            override fun onStopTrackingTouch(seek: SeekBar) = Unit
+        })
+
+        scaleGestureDetector = ScaleGestureDetector(this, ScaleGestureListener()) //pinch in/out
+
+
+
+        BT_rotation.setOnClickListener { rotateCamera() }
+
+        BT_timer.setOnClickListener { timerShot() }
+        BT_timer.setOnCreateContextMenuListener { menu, v, menuInfo ->
+            menu.setHeaderTitle("Timer")
+            for(mode in TimerModes.values()) {
+                var item: MenuItem = menu.add(Menu.NONE, mode.ordinal, Menu.NONE, mode.text)
+                item.setOnMenuItemClickListener { i: MenuItem? ->
+                    selectFlashMode(i?.itemId)
+                    true // Signifies you have consumed this event, so propogation can stop.
                 }
-
-                // OnSeekBarChangeListener is an interface,
-                // so an implementation must be provided for all the methods
-                override fun onStartTrackingTouch(seek: SeekBar) = Unit
-                override fun onStopTrackingTouch(seek: SeekBar) = Unit
-            })
-        */
-
-
-
-//        shoot.setOnLongClickListener(OnLongClickListener {
-//            Log.d(TAG,"LongClickListener")
-//            true
-//        })
-
-        rotation?.setOnClickListener { rotateCamera() }
+            }
+        }
 
         cameraExecutor = Executors.newSingleThreadExecutor()
+
+        BT_gallery = findViewById(R.id.BT_gallery)
+
+        BT_gallery.setOnClickListener{//TODO: aprire galleria
+            val intent = Intent(Intent.ACTION_PICK)
+            intent.type = "image/*"
+            //rotateButton(90)
+        }
+
+
+        orientationEventListener = object : OrientationEventListener(this) { //TODO: girare tasti fotocamera
+            override fun onOrientationChanged(orientation: Int) {
+                Log.d(TAG, "[orientation]")
+                when (orientation) {
+                    in 45..134 -> {
+                        Log.d(TAG,"[orientation] Land sx $orientation" )
+                    }
+                    in 135..224 -> {
+                        // Rovescio
+                        Log.d(TAG,"[orientation] Rovescio $orientation" )
+                    }
+                    in 225..314 -> {
+                        // Landscape destra
+                        Log.d(TAG,"[orientation] Land dx $orientation" )
+                    }
+                    else -> {
+                        // Verticale
+                        Log.d(TAG,"[orientation] Verticale $orientation" )
+                    }
+                }
+            }
+        }
     }
 
+
+    override fun onTouchEvent(event: MotionEvent?): Boolean {
+        Log.d(TAG, "[Here] $event")
+        scaleGestureDetector.onTouchEvent(event!!)
+        return true
+    }
+
+    private inner class ScaleGestureListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+        override fun onScale(detector: ScaleGestureDetector): Boolean {
+            var scaleFactor = detector.scaleFactor
+            // Aggiorna lo zoom della fotocamera
+            Log.d(TAG, "[zoom] $scaleFactor")
+
+            if(scaleFactor>1)
+                SB_zoom.setProgress(SB_zoom.progress + 1)
+            else
+                SB_zoom.setProgress(SB_zoom.progress - 1)
+            return true
+        }
+
+        override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
+            return super.onScaleBegin(detector)
+        }
+
+        override fun onScaleEnd(detector: ScaleGestureDetector) {
+            super.onScaleEnd(detector)
+        }
+    }
     private fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
 
         cameraProviderFuture.addListener({
             // Used to bind the lifecycle of cameras to the lifecycle owner
-            val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
+            cameraProvider = cameraProviderFuture.get()
 
             // Preview
-            val preview = Preview.Builder()
+            preview = Preview.Builder()
                 .build()
                 .also {
                     it.setSurfaceProvider(viewBinding.viewFinder.surfaceProvider)
                 }
 
-            val recorder = Recorder.Builder()
+            recorder = Recorder.Builder()
                 .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
                 .build()
             videoCapture = VideoCapture.withOutput(recorder)
@@ -169,6 +282,10 @@ class MainActivity : AppCompatActivity() {
 
             // Select back camera as a default
             cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+
+            // Crea un oggetto CameraSelector per la fotocamera ultra grandangolare
+            availableCameraInfos = cameraProvider.availableCameraInfos
+            Log.i(TAG, "[startCamera] available cameras:$availableCameraInfos")
 
             try {
                 // Unbind use cases before rebinding
@@ -209,7 +326,7 @@ class MainActivity : AppCompatActivity() {
 
         // Set up image capture listener, which is triggered after photo has
         // been taken
-        shoot?.startAnimation(scaleDown)
+        BT_shoot.startAnimation(scaleDown)
         viewBinding.viewFinder.startAnimation(scaleUp)
         imageCapture.takePicture(
             outputOptions,
@@ -223,7 +340,6 @@ class MainActivity : AppCompatActivity() {
                 override fun
                         onImageSaved(output: ImageCapture.OutputFileResults){
                     val msg = "Photo capture succeeded: ${output.savedUri}"
-
                     Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
                     Log.d(TAG, msg)
                 }
@@ -255,8 +371,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        if(currFlashMode == FlashModes.ON) { cameraControl.enableTorch(true) }
-
         val mediaStoreOutputOptions = MediaStoreOutputOptions
             .Builder(contentResolver, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
             .setContentValues(contentValues)
@@ -274,72 +388,182 @@ class MainActivity : AppCompatActivity() {
             .start(ContextCompat.getMainExecutor(this)) { recordEvent ->
                 when(recordEvent) {
                     is VideoRecordEvent.Start -> {
-                        viewBinding.BTShoots.setBackgroundResource(R.drawable.rounded_corner_red);
+                        isRecording = true
+
+                        BT_rotation.visibility = View.GONE
+                        BT_zoom1_0.visibility = View.INVISIBLE
+                        BT_zoom0_5.visibility = View.INVISIBLE
+                        BT_zoomRec.visibility = View.VISIBLE
+                        BT_shoot.setBackgroundResource(R.drawable.rounded_corner_red);
                     }
                     is VideoRecordEvent.Finalize -> {
                         if (!recordEvent.hasError()) {
-                            val msg = "Video capture succeeded: " +
-                                    "${recordEvent.outputResults.outputUri}"
-                            Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT)
-                                .show()
+                            val msg = "Video capture succeeded: " + "${recordEvent.outputResults.outputUri}"
+                            Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
                             Log.d(TAG, msg)
                         } else {
                             recording?.close()
                             recording = null
-                            Log.e(TAG, "Video capture ends with error: " +
-                                    "${recordEvent.error}")
+                            Log.e(TAG, "Video capture ends with error: " + "${recordEvent.error}")
                         }
-                        if(currFlashMode == FlashModes.ON) { cameraControl.enableTorch(false) }
-                        viewBinding.BTShoots.setBackgroundResource(R.drawable.rounded_corner);
+                        BT_shoot.setBackgroundResource(R.drawable.rounded_corner);
+                        BT_rotation.visibility = View.VISIBLE
+                        BT_zoom1_0.visibility = View.VISIBLE
+                        BT_zoom0_5.visibility = View.VISIBLE
+                        BT_zoomRec.visibility = View.INVISIBLE
+                        isRecording = false
                     }
                 }
             }
         return true
     }
 
-    private fun rotateCamera() {
-        if(cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA){
-            val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-
-            cameraProviderFuture.addListener({
-                // Used to bind the lifecycle of cameras to the lifecycle owner
-                val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
-
-                // Preview
-                val preview = Preview.Builder()
-                    .build()
-                    .also {
-                        it.setSurfaceProvider(viewBinding.viewFinder.surfaceProvider)
-                    }
-
-                cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
-                Log.d(TAG, "Front Camera selected")
-
-                imageCapture = ImageCapture.Builder().build()
-
-                try {
-                    // Unbind use cases before rebinding
-                    cameraProvider.unbindAll()
-
-                    // Bind use cases to camera
-                    cameraProvider.bindToLifecycle(
-                        this, cameraSelector, preview, imageCapture)
-
-                } catch(exc: Exception) {
-                    Log.e(TAG, "Use case binding failed", exc)
-                }
-
-            }, ContextCompat.getMainExecutor(this))
+    private fun rotateCamera() { // id = 0 default back, id = 1 front default
+        var reBuild = false
+        if(currentCamera==0)
+        {
+            cameraSelector = availableCameraInfos[1].cameraSelector // passo in front
+            currentCamera = 1
+            reBuild=true
         }
-        else {
-            Log.d(TAG, "Chiamata a start Camera() dopo else") //messaggio di test
-            startCamera()
+        else if(currentCamera==1)
+        {
+            cameraSelector = availableCameraInfos[0].cameraSelector // passo in back
+            currentCamera = 0
+            reBuild=true
         }
+        else if(currentCamera==2)
+        {
+            cameraSelector = availableCameraInfos[0].cameraSelector // passo in back, dovrei mettere la camera 3
+            currentCamera = 0
+            reBuild=true
+        }
+        /*
+        else if(currentCamera==3)
+        {
+            cameraSelector = availableCameraInfos[2].cameraSelector // passo in front grand-angolare
+            currentCamera = 2
+            reBuild=true
+        }
+        */
+        if(reBuild && !isRecording) // se sta registrando non cambia fotocamera
+        {
+            imageCapture = ImageCapture.Builder().build()
+
+            try {
+                cameraProvider.unbindAll()            // Unbind use cases before rebinding
+                val camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture) // devo ricostruire la camera ogni volta
+                // in quato cambio la camera
+                cameraControl = camera.cameraControl
+            } catch(exc: Exception) {
+                Log.e(TAG, "Use case binding failed", exc)
+            }
+        }
+
+    }
+
+    private fun timerShot(){
+
     }
 
     private fun changeZoom(progress : Int)
     {
-        cameraControl.setZoomRatio(2f)
+        var reBuild = false; // evito di costruitr la camera ogni volta
+        var zoomLv : Float = 0.toFloat() // va da 0 a 100
+        // SB_zoom va da 0 a 100, quindi i primi 25 valori sono per lo zoom con la grand angolare, gli altri per la camera normale
+        // non sono riuscito a recoperare la telephoto
+        // 0 -> back default
+        // 1 -> front default grand angolare
+        // 2 -> back grand angolare
+        // 3 -> front normale
+
+        //? sperimentalmente ho trovato che sul mio dispositivo (S21) al valore di zoom = 0.54 (progress = 13)
+        // circa lo zoom della camera grand angolare corrisponde al valore della camera principale a 1.0x
+
+        // lo zoom della grand angolare va da 0.5 a 1
+        if(isRecording)
+            zoomLv = progress/100.toFloat()
+        else
+        {
+            if(progress<25)
+            {
+                zoomLv = progress/46.toFloat()
+
+                if(currentCamera==0) // se sono in back default
+                {
+                    cameraSelector = availableCameraInfos[2].cameraSelector // passo in back grand angolare
+                    currentCamera = 2
+                    reBuild=true
+                }
+                else if(currentCamera==3) // se sono in front normale
+                {
+                    cameraSelector = availableCameraInfos[1].cameraSelector // passo in front grand angolare
+                    currentCamera = 1
+                    reBuild=true;
+                }
+            }
+            else
+            {
+                zoomLv = (progress-25)/75.toFloat()
+
+                if(currentCamera==2) // se sono in back grand angolare
+                {
+                    cameraSelector = availableCameraInfos[0].cameraSelector // passo in back default
+                    currentCamera = 0
+                    reBuild=true;
+                }
+                else if(currentCamera==1) // se sono in front grand angolare
+                {
+                    cameraSelector = availableCameraInfos[3].cameraSelector // front in normale
+                    currentCamera = 3
+                    reBuild=true;
+                }
+            }
+        }
+
+        BT_zoom0_5.setText("0.5x")
+        BT_zoom1_0.setText("1.0x")
+
+        if(currentCamera==0) // camera normale 1 -> 8
+        {
+            BT_zoomRec.setText((zoomLv*7+1).toString().substring(0,3) + "x")
+            BT_zoom1_0.setText((zoomLv*7+1).toString().substring(0,3) + "x")
+        }
+        else // camera grand angolare 0.5 -> 8
+        {
+            BT_zoomRec.setText((zoomLv*7.5+0.5).toString().substring(0,3) + "x")
+            BT_zoom0_5.setText((zoomLv+0.5).toString().substring(0,3) + "x")
+        }
+
+        //TODO dovrei far si che quando passo da video a foto e vic. sistema il valore dello zoom mostrato
+
+
+       if(reBuild && !isRecording) // se sta registrando non cambia fotocamera
+       {
+           imageCapture = ImageCapture.Builder().build()
+
+           try {
+               cameraProvider.unbindAll()            // Unbind use cases before rebinding
+               val camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture) // devo ricostruire la camera ogni volta
+               // in quato cambio la camera
+               cameraControl = camera.cameraControl
+           } catch(exc: Exception) {
+               Log.e(TAG, "Use case binding failed", exc)
+           }
+       }
+
+        cameraControl.setLinearZoom(zoomLv)
+        Log.d(TAG,"Zoom lv: " + zoomLv)
+    }
+
+    private fun rotateButton(angle : Int)
+    {
+        BT_gallery.rotation = angle.toFloat()
+        BT_rotation.rotation = angle.toFloat()
+        flash.rotation = angle.toFloat()
+        BT_zoom0_5.rotation = angle.toFloat()
+        BT_zoom1_0.rotation = angle.toFloat()
+
     }
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
@@ -365,7 +589,8 @@ class MainActivity : AppCompatActivity() {
     private fun switchFlashMode() {
         currFlashMode = FlashModes.next(currFlashMode)
         setFlashMode()
-        flash.text = currFlashMode.text
+        //flash.text = currFlashMode.text
+        setFlashIcon(currFlashMode.text)
     }
 
     private fun selectFlashMode(ordinal: Int?): Boolean {
@@ -374,7 +599,8 @@ class MainActivity : AppCompatActivity() {
         }
         currFlashMode = FlashModes.values()[ordinal]
         setFlashMode()
-        flash.text = currFlashMode.text
+        //flash.text = currFlashMode.text
+        setFlashIcon(currFlashMode.text)
         return true
     }
     private fun setFlashMode() {
@@ -389,6 +615,17 @@ class MainActivity : AppCompatActivity() {
                 imageCapture?.flashMode = ImageCapture.FLASH_MODE_AUTO
             }
         }
+    }
+
+    private fun setFlashIcon(status : String){
+        flash.setBackgroundResource(
+        when(status){
+            "OFF" -> R.drawable.flash_off
+            "ON" -> R.drawable.flash_on
+            "AUTO" -> R.drawable.flash_auto
+            else -> throw IllegalArgumentException("Invalid flash status: $status")
+        }
+        )
     }
 
 
