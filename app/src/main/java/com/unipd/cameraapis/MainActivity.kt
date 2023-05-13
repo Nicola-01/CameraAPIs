@@ -77,6 +77,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var BT_zoom1_0 : Button
     private lateinit var BT_zoom0_5 : Button
     private lateinit var BT_zoomRec : Button
+    private lateinit var BT_timer : Button
     private lateinit var SB_zoom : SeekBar
 
     private lateinit var scaleDown: Animation
@@ -148,6 +149,7 @@ class MainActivity : AppCompatActivity() {
         BT_zoom1_0 = viewBinding.BT10
         BT_zoom0_5 = viewBinding.BT05
         BT_zoomRec = viewBinding.BTZoomRec
+        BT_timer = viewBinding.BTTimer
 
         BT_rotation = viewBinding.BTRotation
 
@@ -181,6 +183,18 @@ class MainActivity : AppCompatActivity() {
 
 
         BT_rotation.setOnClickListener { rotateCamera() }
+
+        BT_timer.setOnClickListener { timerShot() }
+        BT_timer.setOnCreateContextMenuListener { menu, v, menuInfo ->
+            menu.setHeaderTitle("Timer")
+            for(mode in TimerModes.values()) {
+                var item: MenuItem = menu.add(Menu.NONE, mode.ordinal, Menu.NONE, mode.text)
+                item.setOnMenuItemClickListener { i: MenuItem? ->
+                    selectFlashMode(i?.itemId)
+                    true // Signifies you have consumed this event, so propogation can stop.
+                }
+            }
+        }
 
         cameraExecutor = Executors.newSingleThreadExecutor()
 
@@ -445,6 +459,10 @@ class MainActivity : AppCompatActivity() {
                 Log.e(TAG, "Use case binding failed", exc)
             }
         }
+
+    }
+
+    private fun timerShot(){
 
     }
 
