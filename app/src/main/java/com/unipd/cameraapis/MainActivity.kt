@@ -24,6 +24,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -67,13 +68,12 @@ class MainActivity : AppCompatActivity() {
     var cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
     private lateinit var BT_shoot : Button
-    private lateinit var flash : Button //TODO sarebbe meglio se si chiamassa BT_flash
-    //TODO (Per rinominare tutte le occorrenze (fare attenzione perchè rinomina tutto cio che contiene la parola da sostituire in tutti i file) ctrl + shift+ R)
+    private lateinit var BT_flash : Button
     private lateinit var BT_rotation : Button
     var currFlashMode : FlashModes = FlashModes.OFF
 
+    private lateinit var viewFinder : View
     private lateinit var BT_gallery : Button
-
     private lateinit var BT_zoom1_0 : Button
     private lateinit var BT_zoom0_5 : Button
     private lateinit var BT_zoomRec : Button
@@ -126,12 +126,38 @@ class MainActivity : AppCompatActivity() {
                 this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         }
 
+        viewFinder = viewBinding.viewFinder
+
+        viewFinder.setOnTouchListener(View.OnTouchListener setOnTouchListener@{ view: View, motionEvent: MotionEvent ->
+            when (motionEvent.action) {
+                MotionEvent.ACTION_DOWN -> return@setOnTouchListener true
+                MotionEvent.ACTION_UP -> {
+                    // Get the MeteringPointFactory from PreviewView
+                    val factory = viewBinding.viewFinder.getMeteringPointFactory()
+
+                    // Create a MeteringPoint from the tap coordinates
+                    val point = factory.createPoint(motionEvent.x, motionEvent.y)
+
+                    // Create a MeteringAction from the MeteringPoint, you can configure it to specify the metering mode
+                    val action = FocusMeteringAction.Builder(point).build()
+
+                    // Trigger the focus and metering. The method returns a ListenableFuture since the operation
+                    // is asynchronous. You can use it get notified when the focus is successful or if it fails.
+                    cameraControl.startFocusAndMetering(action)
+
+                    return@setOnTouchListener true
+                }
+
+                else -> return@setOnTouchListener false
+            }
+        })
+
         //<editor-fold desc= "FLASH INIT">
-        flash = viewBinding.BTFlash
+        BT_flash = viewBinding.BTFlash
         //flash.text = currFlashMode.text
         setFlashIcon(currFlashMode.text)
-        flash.setOnClickListener { switchFlashMode() }
-        flash.setOnCreateContextMenuListener { menu, v, menuInfo ->
+        BT_flash.setOnClickListener { switchFlashMode() }
+        BT_flash.setOnCreateContextMenuListener { menu, v, menuInfo ->
             menu.setHeaderTitle("Flash")
             for(mode in FlashModes.values()) {
                 var item: MenuItem = menu.add(Menu.NONE, mode.ordinal, Menu.NONE, mode.text)
@@ -141,8 +167,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-        flash.setOnLongClickListener(View::showContextMenu)
-        //flash.setOnLongClickListener { selectFlashMode() }
         //</editor-fold>
 
         BT_shoot = viewBinding.BTShoots
@@ -179,8 +203,6 @@ class MainActivity : AppCompatActivity() {
         })
 
         scaleGestureDetector = ScaleGestureDetector(this, ScaleGestureListener()) //pinch in/out
-
-
 
         BT_rotation.setOnClickListener { rotateCamera() }
 
@@ -300,6 +322,11 @@ class MainActivity : AppCompatActivity() {
 
         }, ContextCompat.getMainExecutor(this))
     }
+
+    //<editor-fold desc= "FOCUS METHODS">
+
+
+    //</editor-fold>
 
     private fun takePhoto() {
         Log.d(TAG,"ClickListener")
@@ -560,7 +587,7 @@ class MainActivity : AppCompatActivity() {
     {
         BT_gallery.rotation = angle.toFloat()
         BT_rotation.rotation = angle.toFloat()
-        flash.rotation = angle.toFloat()
+        BT_flash.rotation = angle.toFloat()
         BT_zoom0_5.rotation = angle.toFloat()
         BT_zoom1_0.rotation = angle.toFloat()
 
@@ -618,7 +645,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setFlashIcon(status : String){
-        flash.setBackgroundResource(
+        BT_flash.setBackgroundResource(
         when(status){
             "OFF" -> R.drawable.flash_off
             "ON" -> R.drawable.flash_on
