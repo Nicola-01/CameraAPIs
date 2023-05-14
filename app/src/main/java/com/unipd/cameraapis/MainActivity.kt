@@ -4,10 +4,6 @@ import android.Manifest
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
 import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
@@ -60,7 +56,7 @@ import java.util.concurrent.Executors
 
 typealias LumaListener = (luma: Double) -> Unit
 
-class MainActivity : AppCompatActivity(), SensorEventListener {
+class MainActivity : AppCompatActivity() {
 
 
     private lateinit var viewBinding: ActivityMainBinding
@@ -110,10 +106,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var isRecording = false
 
     private lateinit var scaleGestureDetector: ScaleGestureDetector
-
-    private lateinit var sensorManager : SensorManager
-    var orientation : Float = 0f // corrisponde al angolo, se il cell è in veticale è 0
-    // se è sul lato sinistro è 90, superiore è 180, destro è 270
 
     companion object {
         //private val TAG = MainActivity::class.simpleName
@@ -179,7 +171,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         BT_flash.setOnCreateContextMenuListener { menu, v, menuInfo ->
             menu.setHeaderTitle("Flash")
             for(mode in FlashModes.values()) {
-                var item: MenuItem = menu.add(Menu.NONE, mode.ordinal, Menu.NONE, mode.text)
+                val item: MenuItem = menu.add(Menu.NONE, mode.ordinal, Menu.NONE, mode.text)
                 item.setOnMenuItemClickListener { i: MenuItem? ->
                     selectFlashMode(i?.itemId)
                     true // Signifies you have consumed this event, so propogation can stop.
@@ -233,7 +225,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         BT_timer.setOnCreateContextMenuListener { menu, v, menuInfo ->
             menu.setHeaderTitle("Timer")
             for(mode in TimerModes.values()) {
-                var item: MenuItem = menu.add(Menu.NONE, mode.ordinal, Menu.NONE, mode.text)
+                val item: MenuItem = menu.add(Menu.NONE, mode.ordinal, Menu.NONE, mode.text)
                 item.setOnMenuItemClickListener { i: MenuItem? ->
                     selectTimerMode(i?.itemId)
                     true // Signifies you have consumed this event, so propogation can stop.
@@ -251,53 +243,32 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             //rotateButton(90)
         }
 
-        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
     }
 
-    override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
-        // non utilizzato
-    }
-
-    override fun onSensorChanged(event: SensorEvent) {
-        synchronized(this) {
-            if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
-                val x = event.values[0]
-                val y = event.values[1]
-                val z = event.values[2]
-                getOrientation(x.toDouble(), y.toDouble(), z.toDouble())
-            }
-        }
-    }
-
-    fun getOrientation(x: Double, y: Double, z: Double)
-    {
-        val g = 9.81f // Accelerazione di gravità
-        val pitch = Math.atan2(x, Math.sqrt(y * y + z * z)) * 180 / Math.PI
-        val roll = Math.atan2(y, Math.sqrt(x * x + z * z)) * 180 / Math.PI
-        val norm = Math.sqrt(x * x + y * y + z * z)
-        val cosTheta = z / norm
-        val theta = Math.acos(cosTheta) * 180 / Math.PI - 90
-        when { // appoggiato sul tavolo
-            theta < -45 -> 90f  // schermo verso l'alto
-            theta > 45 -> 270f  // schermo verso il basso
-            else -> when { // cell su asse verticale
-                roll < -45 -> orientation = 180f  // sottospora
-                roll > 45 -> orientation = 0f     //dritto
-                else -> when { // cell su asse orrizzontale
-                    pitch < -45 -> orientation = 270f // lato destro
-                    pitch > 45 -> orientation = 90f   // lato sinistro
-                    else -> 0f
+    private val orientationEventListener by lazy {
+        object : OrientationEventListener(this) {
+            override fun onOrientationChanged(orientation: Int) {
+                if (orientation == ORIENTATION_UNKNOWN) {
+                    return
                 }
+
+                val rotation = when (orientation) {
+                    in 45 .. 135 -> 270
+                    in 135 .. 225 -> 180
+                    in 225 .. 315 -> 90
+                    else -> 0
+                }
+                Log.d(TAG,"[orientation] $rotation" )
+
+                if(!isRecording) // gira solo se non sta registrando, per salvare i video nel orientamento corretto
+                {
+                    rotateButton(rotation.toFloat())
+                    // Surface.ROTATION_0 è = 0, ROTATION_90 = 1, ... ROTATION_270 = 3, quindi = orientation/90
+                    videoCapture?.targetRotation = rotation/90
+                }
+                imageCapture?.targetRotation = rotation/90 // è fuori dal if, in questo modo l'immagine è sempre orientata correttamente
             }
         }
-        Log.d(TAG,"[orientation] $orientation" )
-        if(!isRecording) // gira solo se non sta registrando, per salvare i video nel orientamento corretto
-        {
-            rotateButton(orientation)
-            // Surface.ROTATION_0 è = 0, ROTATION_90 = 1, ... ROTATION_270 = 3, quindi = orientation/90
-            videoCapture?.targetRotation = (orientation/90f).toInt()
-        }
-        imageCapture?.targetRotation = (orientation/90f).toInt() // è fuori dal if, in questo modo l'immagine è sempre orientata correttamente
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
@@ -308,14 +279,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     private inner class ScaleGestureListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
         override fun onScale(detector: ScaleGestureDetector): Boolean {
-            var scaleFactor = detector.scaleFactor
+            val scaleFactor = detector.scaleFactor
             // Aggiorna lo zoom della fotocamera
             Log.d(TAG, "[zoom] $scaleFactor")
 
             if(scaleFactor>1)
-                SB_zoom.setProgress(SB_zoom.progress + 1)
+                SB_zoom.progress = SB_zoom.progress + 1
             else
-                SB_zoom.setProgress(SB_zoom.progress - 1)
+                SB_zoom.progress = SB_zoom.progress - 1
             return true
         }
 
@@ -361,7 +332,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
                 // Bind use cases to camera
                 val camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture)
-                cameraControl = camera.cameraControl;
+                cameraControl = camera.cameraControl
             } catch(exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
             }
@@ -460,7 +431,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             .start(ContextCompat.getMainExecutor(this)) { recordEvent ->
                 when(recordEvent) {
                     is VideoRecordEvent.Start -> {
-                        startRecording(true);
+                        startRecording(true)
                     }
                     is VideoRecordEvent.Finalize -> {
                         if (!recordEvent.hasError()) {
@@ -472,7 +443,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                             recording = null
                             Log.e(TAG, "Video capture ends with error: " + "${recordEvent.error}")
                         }
-                        startRecording(false);
+                        startRecording(false)
                     }
                 }
             }
@@ -539,30 +510,30 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     private fun startRecording(status : Boolean)
     {
-        var view_ph : Int
-        var view_vi : Int
+        val viewPH : Int
+        val viewVI : Int
         isRecording = status
         if(status){
-            view_ph = View.INVISIBLE
-            view_vi = View.VISIBLE
+            viewPH = View.INVISIBLE
+            viewVI = View.VISIBLE
 
-            BT_shoot.setBackgroundResource(R.drawable.rounded_corner_red);
-            CM_recTimer.base = SystemClock.elapsedRealtime();
+            BT_shoot.setBackgroundResource(R.drawable.rounded_corner_red)
+            CM_recTimer.base = SystemClock.elapsedRealtime()
             CM_recTimer.start()
         }
         else
         {
-            view_ph = View.VISIBLE
-            view_vi = View.INVISIBLE
+            viewPH = View.VISIBLE
+            viewVI = View.INVISIBLE
             CM_recTimer.stop()
-            BT_shoot.setBackgroundResource(R.drawable.rounded_corner);
+            BT_shoot.setBackgroundResource(R.drawable.rounded_corner)
         }
 
-        BT_rotation.visibility = view_ph
-        BT_zoom1_0.visibility = view_ph
-        BT_zoom0_5.visibility = view_ph
-        BT_zoomRec.visibility = view_vi
-        CM_recTimer.visibility = view_vi
+        BT_rotation.visibility = viewPH
+        BT_zoom1_0.visibility = viewPH
+        BT_zoom0_5.visibility = viewPH
+        BT_zoomRec.visibility = viewVI
+        CM_recTimer.visibility = viewVI
 
         // se inizio a registrare non posso più cambiare camera,
         // quindi devo sistemare il valore della progration bar
@@ -580,8 +551,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     private fun changeZoom(progress : Int)
     {
-        var reBuild = false; // evito di costruitr la camera ogni volta
-        var maxzoom : Int = 8
+        var reBuild = false // evito di costruitr la camera ogni volta
+        val maxzoom = 8
         // SB_zoom va da 0 a 100, quindi i primi 25 valori sono per lo zoom con la grand angolare, gli altri per la camera normale
         // non sono riuscito a recoperare la telephoto
         // 0 -> back default
@@ -611,7 +582,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 {
                     cameraSelector = availableCameraInfos[1].cameraSelector // passo in front grand angolare
                     currentCamera = 1
-                    reBuild=true;
+                    reBuild=true
                 }
             }
             else
@@ -622,29 +593,29 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 {
                     cameraSelector = availableCameraInfos[0].cameraSelector // passo in back default
                     currentCamera = 0
-                    reBuild=true;
+                    reBuild=true
                 }
                 else if(currentCamera==1) // se sono in front grand angolare
                 {
                     cameraSelector = availableCameraInfos[3].cameraSelector // front in normale
                     currentCamera = 3
-                    reBuild=true;
+                    reBuild=true
                 }
             }
         }
 
-        BT_zoom0_5.setText("0.5x")
-        BT_zoom1_0.setText("1.0x")
+        BT_zoom0_5.text = "0.5x"
+        BT_zoom1_0.text = "1.0x"
 
         if(currentCamera==0 || currentCamera == 3) // camera normale 1 -> 8
         {
-            BT_zoomRec.setText((zoomLv*(maxzoom-1)+1).toString().substring(0,3) + "x") // (zoomLv*(maxzoom-1)+1) fa si che visualizzi 8x come massimo e 1x come minimo
-            BT_zoom1_0.setText((zoomLv*(maxzoom-1)+1).toString().substring(0,3) + "x")
+            BT_zoomRec.text = (zoomLv*(maxzoom-1)+1).toString().substring(0,3) + "x" // (zoomLv*(maxzoom-1)+1) fa si che visualizzi 8x come massimo e 1x come minimo
+            BT_zoom1_0.text = (zoomLv*(maxzoom-1)+1).toString().substring(0,3) + "x"
         }
         else // camera grand angolare 0.5 -> 8
         {
-            BT_zoomRec.setText((zoomLv*(maxzoom-0.5)+0.5).toString().substring(0,3) + "x") // (zoomLv*(maxzoom-0.5)+0.5) fa si che visualizzi 8x come massimo e 0.5x come minimo
-            BT_zoom0_5.setText((zoomLv+0.5).toString().substring(0,3) + "x")
+            BT_zoomRec.text = (zoomLv*(maxzoom-0.5)+0.5).toString().substring(0,3) + "x" // (zoomLv*(maxzoom-0.5)+0.5) fa si che visualizzi 8x come massimo e 0.5x come minimo
+            BT_zoom0_5.text = (zoomLv+0.5).toString().substring(0,3) + "x"
         }
 
        if(reBuild && !isRecording) // se sta registrando non cambia fotocamera
@@ -698,7 +669,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private fun switchTimerMode() {
         currTimerMode = TimerModes.next(currTimerMode)
         setTimerMode()
-        //flash.text = currFlashMode.text
         setTimerIcon(currTimerMode.text)
     }
 
@@ -708,7 +678,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
         currTimerMode = TimerModes.values()[ordinal]
         setTimerMode()
-        //flash.text = currFlashMode.text
         setTimerIcon(currTimerMode.text)
         return true
     }
@@ -734,8 +703,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 "OFF" -> R.drawable.timer_0
                 "3" -> R.drawable.timer_3
                 "5" -> R.drawable.timer_5
-                "10" -> R.drawable.timer_10
-                else -> throw IllegalArgumentException("Invalid timer status: $status")
+                else -> R.drawable.timer_10
             }
         )
     }
@@ -744,7 +712,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private fun switchFlashMode() {
         currFlashMode = FlashModes.next(currFlashMode)
         setFlashMode()
-        //flash.text = currFlashMode.text
         setFlashIcon(currFlashMode.text)
     }
 
@@ -754,7 +721,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
         currFlashMode = FlashModes.values()[ordinal]
         setFlashMode()
-        //flash.text = currFlashMode.text
         setFlashIcon(currFlashMode.text)
         return true
     }
@@ -777,13 +743,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         when(status){
             "OFF" -> R.drawable.flash_off
             "ON" -> R.drawable.flash_on
-            "AUTO" -> R.drawable.flash_auto
-            else -> throw IllegalArgumentException("Invalid flash status: $status")
+            else -> R.drawable.flash_auto
         }
         )
     }
 
-
+    /*
     private class LuminosityAnalyzer(private val listener: LumaListener) : ImageAnalysis.Analyzer {
 
         private fun ByteBuffer.toByteArray(): ByteArray {
@@ -804,21 +769,26 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
             image.close()
         }
-    }
+    } */
     //</editor-fold>
 
     override fun onResume()
     {
         super.onResume()
-        val acc: Sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-        // Register this class as a listener for the accelerometer sensor
-        sensorManager.registerListener(this, acc, SensorManager.SENSOR_DELAY_UI)
     }
     override fun onPause()
     {
-        // Unregister listener
-        sensorManager.unregisterListener(this)
         super.onPause()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        orientationEventListener.enable()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        orientationEventListener.disable()
     }
 
     override fun onDestroy() {
