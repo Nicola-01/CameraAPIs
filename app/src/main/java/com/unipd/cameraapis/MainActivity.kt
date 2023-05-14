@@ -4,9 +4,14 @@ import android.Manifest
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.Log
 import android.view.HapticFeedbackConstants
@@ -19,6 +24,7 @@ import android.view.View
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.Button
+import android.widget.Chronometer
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
@@ -53,7 +59,7 @@ import java.util.concurrent.Executors
 
 typealias LumaListener = (luma: Double) -> Unit
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), SensorEventListener {
 
 
     private lateinit var viewBinding: ActivityMainBinding
@@ -83,6 +89,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var BT_zoomRec : Button
     private lateinit var BT_timer : Button
     private lateinit var SB_zoom : SeekBar
+    private lateinit var CM_recTimer : Chronometer
     private lateinit var countDownText : TextView
     private lateinit var timer: CountDownTimer
 
@@ -99,9 +106,13 @@ class MainActivity : AppCompatActivity() {
     // 2 -> back grand angolare
     // 3 -> front normale
     private var isRecording = false
-    private var orientationEventListener: OrientationEventListener? = null
 
     private lateinit var scaleGestureDetector: ScaleGestureDetector
+
+    private lateinit var sensorManager : SensorManager
+    var orientation : Float = 0f // corrisponde al angolo, se il cell è in veticale è 0
+    // se è sul lato sinistro è 90, superiore è 180, destro è 270
+
     companion object {
         //private val TAG = MainActivity::class.simpleName
         private const val TAG = "CameraXApp"
@@ -179,6 +190,8 @@ class MainActivity : AppCompatActivity() {
         BT_zoom1_0 = viewBinding.BT10
         BT_zoom0_5 = viewBinding.BT05
         BT_zoomRec = viewBinding.BTZoomRec
+        CM_recTimer = viewBinding.CMRecTimer
+        CM_recTimer.format = "%02d:%02d:%02d"
         BT_timer = viewBinding.BTTimer
         countDownText = viewBinding.TextTimer
 
@@ -235,26 +248,42 @@ class MainActivity : AppCompatActivity() {
             //rotateButton(90)
         }
 
+        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+    }
 
-        orientationEventListener = object : OrientationEventListener(this) { //TODO: girare tasti fotocamera
-            override fun onOrientationChanged(orientation: Int) {
-                Log.d(TAG, "[orientation]")
-                when (orientation) {
-                    in 45..134 -> {
-                        Log.d(TAG,"[orientation] Land sx $orientation" )
-                    }
-                    in 135..224 -> {
-                        // Rovescio
-                        Log.d(TAG,"[orientation] Rovescio $orientation" )
-                    }
-                    in 225..314 -> {
-                        // Landscape destra
-                        Log.d(TAG,"[orientation] Land dx $orientation" )
-                    }
-                    else -> {
-                        // Verticale
-                        Log.d(TAG,"[orientation] Verticale $orientation" )
-                    }
+    override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
+        // non utilizzato
+    }
+
+    override fun onSensorChanged(event: SensorEvent) {
+        synchronized(this) {
+            if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
+                val x = event.values[0]
+                val y = event.values[1]
+                val z = event.values[2]
+                getOrientation(x.toDouble(), y.toDouble(), z.toDouble())
+            }
+        }
+    }
+
+    fun getOrientation(x: Double, y: Double, z: Double)
+    {
+        val g = 9.81f // Accelerazione di gravità
+        val pitch = Math.atan2(x, Math.sqrt(y * y + z * z)) * 180 / Math.PI
+        val roll = Math.atan2(y, Math.sqrt(x * x + z * z)) * 180 / Math.PI
+        val norm = Math.sqrt(x * x + y * y + z * z)
+        val cosTheta = z / norm
+        val theta = Math.acos(cosTheta) * 180 / Math.PI - 90
+        when { // appoggiato sul tavolo
+            theta < -45 -> 90f  // schermo verso l'alto
+            theta > 45 -> 270f  // schermo verso il basso
+            else -> when { // cell su asse verticale
+                roll < -45 -> orientation = 180f  // sottospora
+                roll > 45 -> orientation = 0f     //dritto
+                else -> when { // cell su asse orrizzontale
+                    pitch < -45 -> orientation = 270f // lato destro
+                    pitch > 45 -> orientation = 90f   // lato sinistro
+                    else -> 0f
                 }
             }
         }
@@ -262,7 +291,6 @@ class MainActivity : AppCompatActivity() {
         if(!isRecording) // gira solo se non sta registrando, per salvare i video nel orientamento corretto
             rotateButton(orientation)
     }
-
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         Log.d(TAG, "[Here] $event")
@@ -426,11 +454,14 @@ class MainActivity : AppCompatActivity() {
                     is VideoRecordEvent.Start -> {
                         isRecording = true
 
-                        BT_rotation.visibility = View.GONE
+                        BT_rotation.visibility = View.INVISIBLE
                         BT_zoom1_0.visibility = View.INVISIBLE
                         BT_zoom0_5.visibility = View.INVISIBLE
                         BT_zoomRec.visibility = View.VISIBLE
+                        CM_recTimer.visibility = View.VISIBLE
                         BT_shoot.setBackgroundResource(R.drawable.rounded_corner_red);
+                        CM_recTimer.start()
+                        CM_recTimer.base = SystemClock.elapsedRealtime();
                     }
                     is VideoRecordEvent.Finalize -> {
                         if (!recordEvent.hasError()) {
@@ -442,12 +473,15 @@ class MainActivity : AppCompatActivity() {
                             recording = null
                             Log.e(TAG, "Video capture ends with error: " + "${recordEvent.error}")
                         }
-                        BT_shoot.setBackgroundResource(R.drawable.rounded_corner);
+                        isRecording = false
+
                         BT_rotation.visibility = View.VISIBLE
                         BT_zoom1_0.visibility = View.VISIBLE
                         BT_zoom0_5.visibility = View.VISIBLE
+                        CM_recTimer.stop()
+                        CM_recTimer.visibility = View.INVISIBLE
                         BT_zoomRec.visibility = View.INVISIBLE
-                        isRecording = false
+                        BT_shoot.setBackgroundResource(R.drawable.rounded_corner);
                     }
                 }
             }
@@ -604,14 +638,15 @@ class MainActivity : AppCompatActivity() {
         Log.d(TAG,"Zoom lv: " + zoomLv)
     }
 
-    private fun rotateButton(angle : Int)
+    private fun rotateButton(angle : Float)
     {
-        BT_gallery.rotation = angle.toFloat()
-        BT_rotation.rotation = angle.toFloat()
-        BT_flash.rotation = angle.toFloat()
-        BT_zoom0_5.rotation = angle.toFloat()
-        BT_zoom1_0.rotation = angle.toFloat()
-
+        BT_gallery.rotation = angle
+        BT_rotation.rotation = angle
+        BT_flash.rotation = angle
+        BT_timer.rotation = angle
+        BT_zoom0_5.rotation = angle
+        BT_zoom1_0.rotation = angle
+        CM_recTimer.rotation = angle
     }
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
@@ -744,6 +779,20 @@ class MainActivity : AppCompatActivity() {
         }
     }
     //</editor-fold>
+
+    override fun onResume()
+    {
+        super.onResume()
+        val acc: Sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        // Register this class as a listener for the accelerometer sensor
+        sensorManager.registerListener(this, acc, SensorManager.SENSOR_DELAY_UI)
+    }
+    override fun onPause()
+    {
+        // Unregister listener
+        sensorManager.unregisterListener(this)
+        super.onPause()
+    }
 
     override fun onDestroy() {
         super.onDestroy()
