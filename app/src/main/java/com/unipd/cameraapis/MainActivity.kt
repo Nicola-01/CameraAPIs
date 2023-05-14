@@ -20,6 +20,7 @@ import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.OrientationEventListener
 import android.view.ScaleGestureDetector
+import android.view.Surface
 import android.view.View
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
@@ -291,7 +292,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
         Log.d(TAG,"[orientation] $orientation" )
         if(!isRecording) // gira solo se non sta registrando, per salvare i video nel orientamento corretto
+        {
             rotateButton(orientation)
+            // Surface.ROTATION_0 è = 0, ROTATION_90 = 1, ... ROTATION_270 = 3, quindi = orientation/90
+            videoCapture?.targetRotation = (orientation/90f).toInt()
+        }
+        imageCapture?.targetRotation = (orientation/90f).toInt() // è fuori dal if, in questo modo l'immagine è sempre orientata correttamente
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
