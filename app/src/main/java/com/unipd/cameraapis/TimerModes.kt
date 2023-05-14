@@ -2,7 +2,7 @@ package com.unipd.cameraapis
 
 enum class TimerModes(val text: String) {
     OFF("OFF"),
-    ON_2("2"),
+    ON_3("3"),
     ON_5("5"),
     ON_10("10");
     companion object {

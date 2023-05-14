@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.provider.MediaStore
 import android.util.Log
 import android.view.HapticFeedbackConstants
@@ -19,6 +20,7 @@ import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.Button
 import android.widget.SeekBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraControl
@@ -47,6 +49,7 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 
 typealias LumaListener = (luma: Double) -> Unit
@@ -71,6 +74,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var BT_flash : Button
     private lateinit var BT_rotation : Button
     var currFlashMode : FlashModes = FlashModes.OFF
+    var currTimerMode : TimerModes = TimerModes.OFF
+    var countdown : Long = 0
 
     private lateinit var viewFinder : View
     private lateinit var BT_gallery : Button
@@ -79,6 +84,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var BT_zoomRec : Button
     private lateinit var BT_timer : Button
     private lateinit var SB_zoom : SeekBar
+    private lateinit var countDownText : TextView
+    private lateinit var timer: CountDownTimer
 
     private lateinit var scaleDown: Animation
     private lateinit var scaleUp: Animation
@@ -174,6 +181,7 @@ class MainActivity : AppCompatActivity() {
         BT_zoom0_5 = viewBinding.BT05
         BT_zoomRec = viewBinding.BTZoomRec
         BT_timer = viewBinding.BTTimer
+        countDownText = viewBinding.TextTimer
 
         BT_rotation = viewBinding.BTRotation
 
@@ -186,7 +194,7 @@ class MainActivity : AppCompatActivity() {
         // Set up the listeners for take photo and video capture buttons
         BT_shoot.setOnClickListener {
             it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
-            takePhoto()
+            timerShot()
         }
         BT_shoot.setOnLongClickListener{ captureVideo() }
         BT_zoom1_0.setOnClickListener { SB_zoom.setProgress(25) }
@@ -206,13 +214,13 @@ class MainActivity : AppCompatActivity() {
 
         BT_rotation.setOnClickListener { rotateCamera() }
 
-        BT_timer.setOnClickListener { timerShot() }
+        BT_timer.setOnClickListener { switchTimerMode() }
         BT_timer.setOnCreateContextMenuListener { menu, v, menuInfo ->
             menu.setHeaderTitle("Timer")
             for(mode in TimerModes.values()) {
                 var item: MenuItem = menu.add(Menu.NONE, mode.ordinal, Menu.NONE, mode.text)
                 item.setOnMenuItemClickListener { i: MenuItem? ->
-                    selectFlashMode(i?.itemId)
+                    selectTimerMode(i?.itemId)
                     true // Signifies you have consumed this event, so propogation can stop.
                 }
             }
@@ -491,6 +499,21 @@ class MainActivity : AppCompatActivity() {
 
     private fun timerShot(){
 
+        val oldCountdown : Long = countdown // variabile d'appoggio
+        timer = object : CountDownTimer(oldCountdown*1000, 1000){
+            override fun onTick(remainingMillis: Long) {
+                countDownText.text = (remainingMillis/1000).toString()
+                Log.d(TAG, "Secondi rimanenti: "+remainingMillis/1000)
+            }
+
+            override fun onFinish() {
+                countDownText.text = ""
+                takePhoto()
+            }
+
+        }.start()
+        countdown = oldCountdown
+        Log.d(TAG, "Secondi ristabiliti: "+countdown)
     }
 
     private fun changeZoom(progress : Int)
@@ -610,6 +633,51 @@ class MainActivity : AppCompatActivity() {
                 finish()
             }
         }
+    }
+
+    private fun switchTimerMode() {
+        currTimerMode = TimerModes.next(currTimerMode)
+        setTimerMode()
+        //flash.text = currFlashMode.text
+        setTimerIcon(currTimerMode.text)
+    }
+
+    private fun selectTimerMode(ordinal: Int?): Boolean{
+        if(ordinal == null) {
+            throw IllegalArgumentException()
+        }
+        currTimerMode = TimerModes.values()[ordinal]
+        setTimerMode()
+        //flash.text = currFlashMode.text
+        setTimerIcon(currTimerMode.text)
+        return true
+    }
+    private fun setTimerMode(){
+        when(currTimerMode){
+            TimerModes.OFF -> {
+                countdown = 0
+            }
+            TimerModes.ON_3 -> {
+                countdown = 3
+            }
+            TimerModes.ON_5 -> {
+                countdown = 5
+            }
+            TimerModes.ON_10 -> {
+                countdown = 10
+            }
+        }
+    }
+    private fun setTimerIcon(status : String){
+        BT_timer.setBackgroundResource(
+            when(status){
+                "OFF" -> R.drawable.timer_0
+                "3" -> R.drawable.timer_3
+                "5" -> R.drawable.timer_5
+                "10" -> R.drawable.timer_10
+                else -> throw IllegalArgumentException("Invalid timer status: $status")
+            }
+        )
     }
 
     //<editor-fold desc= "FLASH METHODS">
