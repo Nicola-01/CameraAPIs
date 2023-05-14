@@ -87,6 +87,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var BT_timer : Button
     private lateinit var BT_grid : Button
     private lateinit var SB_zoom : SeekBar
+    private val changeCameraSeekBar = 50
     private lateinit var CM_recTimer : Chronometer
     private lateinit var countDownText : TextView
     private lateinit var timer: CountDownTimer
@@ -229,7 +230,8 @@ class MainActivity : AppCompatActivity() {
         SB_zoom.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 changeZoom(progress)
-                SB_zoom.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                if(progress%5 == 0 && fromUser) // ogni 5 do un feedback, e solo se muovo manualmente la SB
+                    SB_zoom.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
             }
             override fun onStartTrackingTouch(seek: SeekBar) = Unit
             override fun onStopTrackingTouch(seek: SeekBar) = Unit
@@ -479,6 +481,7 @@ class MainActivity : AppCompatActivity() {
             cameraSelector = availableCameraInfos[0].cameraSelector // passo in back
             currentCamera = 0
         }
+        SB_zoom.progress = changeCameraSeekBar
         /*
         else if(currentCamera==2)
         {
@@ -561,9 +564,9 @@ class MainActivity : AppCompatActivity() {
         else
         {
             if(currentCamera==0 || currentCamera==3)
-                SB_zoom.progress = (zoomLv*75).toInt() + 25
+                SB_zoom.progress = (zoomLv*(SB_zoom.max - changeCameraSeekBar)).toInt() + changeCameraSeekBar
             else
-                SB_zoom.progress = (zoomLv*46).toInt()
+                SB_zoom.progress = (zoomLv*SB_zoom.max*0.54).toInt()
         }
     }
 
@@ -578,17 +581,19 @@ class MainActivity : AppCompatActivity() {
         // 2 -> back grand angolare
         // 3 -> front normale
 
-        //? sperimentalmente ho trovato che sul mio dispositivo (S21) al valore di zoom = 0.54 (progress = 13)
-        // circa lo zoom della camera grand angolare corrisponde al valore della camera principale a 1.0x
+        //? sperimentalmente ho trovato che sul mio dispositivo (S21) al valore di zoomLv = 0.54  circa
+        // lo zoom della camera grand angolare corrisponde al valore della camera principale a 1.0x
+
+
 
         // lo zoom della grand angolare va da 0.5 a 1
         if(isRecording)
-            zoomLv = progress/100.toFloat()
+            zoomLv = progress/SB_zoom.max.toFloat()
         else
         {
-            if(progress<25)
+            if(progress<changeCameraSeekBar)
             {
-                zoomLv = progress/46.toFloat()
+                zoomLv = progress/(SB_zoom.max*0.54).toFloat()
 
                 if(currentCamera==0) // se sono in back default
                 {
@@ -605,7 +610,7 @@ class MainActivity : AppCompatActivity() {
             }
             else
             {
-                zoomLv = (progress-25)/75.toFloat()
+                zoomLv = (progress-changeCameraSeekBar)/(SB_zoom.max - changeCameraSeekBar).toFloat()
 
                 if(currentCamera==2) // se sono in back grand angolare
                 {
