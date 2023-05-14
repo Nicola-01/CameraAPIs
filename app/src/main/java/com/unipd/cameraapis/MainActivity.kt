@@ -58,7 +58,7 @@ import java.util.concurrent.Executors
 
 typealias LumaListener = (luma: Double) -> Unit
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), SensorEventListener {
 
     private lateinit var viewBinding: ActivityMainBinding
 
@@ -106,7 +106,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var scaleGestureDetector: ScaleGestureDetector
 
     private lateinit var sensorManager : SensorManager
-    private lateinit var gyroscopeSensor : Sensor
+
+    var orientation : Float = 0f // corrisponde al angolo, se il cell è in veticale è 0
+    // se è sul lato sinistro è 90, superiore è 180, destro è 270
 
     companion object {
         //private val TAG = MainActivity::class.simpleName
@@ -243,49 +245,47 @@ class MainActivity : AppCompatActivity() {
         }
 
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
-        gyroscopeSensor  = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
 
-        val sensorEventListener = object : SensorEventListener {
-            override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
-                // non utilizzato
+    }
+
+    override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
+        // non utilizzato
+    }
+
+    override fun onSensorChanged(event: SensorEvent) {
+        synchronized(this) {
+            if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
+                val x = event.values[0]
+                val y = event.values[1]
+                val z = event.values[2]
+                getOrientation(x.toDouble(), y.toDouble(), z.toDouble())
             }
+        }
+    }
 
-            override fun onSensorChanged(event: SensorEvent) {
-                Log.d(TAG,"[orientation] aaaaaaaaaaa" )
-                if (event.sensor.type == Sensor.TYPE_GYROSCOPE) {
-                    val angularSpeedX = event.values[0]
-                    val angularSpeedY = event.values[1]
-                    val angularSpeedZ = event.values[2]
-                    Log.d(TAG,"[orientation] $angularSpeedX" )
+    fun getOrientation(x: Double, y: Double, z: Double)
+    {
+        val g = 9.81f // Accelerazione di gravità
+        val pitch = Math.atan2(x, Math.sqrt(y * y + z * z)) * 180 / Math.PI
+        val roll = Math.atan2(y, Math.sqrt(x * x + z * z)) * 180 / Math.PI
+        val norm = Math.sqrt(x * x + y * y + z * z)
+        val cosTheta = z / norm
+        val theta = Math.acos(cosTheta) * 180 / Math.PI - 90
+        when { // appoggiato sul tavolo
+            theta < -45 -> 90f  // schermo verso l'alto
+            theta > 45 -> 270f  // schermo verso il basso
+            else -> when { // cell su asse verticale
+                roll < -45 -> orientation = 180f  // sottospora
+                roll > 45 -> orientation = 0f     //dritto
+                else -> when { // cell su asse orrizzontale
+                    pitch < -45 -> orientation = 270f // lato destro
+                    pitch > 45 -> orientation = 90f   // lato sinistro
+                    else -> 0f
                 }
             }
         }
-
-        /*
-        orientationEventListener = object : OrientationEventListener(this) { //TODO: girare tasti fotocamera
-            override fun onOrientationChanged(orientation: Int) {
-                Log.d(TAG, "[orientation]")
-                when (orientation) {
-                    in 45..134 -> {
-                        Log.d(TAG,"[orientation] Land sx $orientation" )
-                    }
-                    in 135..224 -> {
-                        // Rovescio
-                        Log.d(TAG,"[orientation] Rovescio $orientation" )
-                    }
-                    in 225..314 -> {
-                        // Landscape destra
-                        Log.d(TAG,"[orientation] Land dx $orientation" )
-                    }
-                    else -> {
-                        // Verticale
-                        Log.d(TAG,"[orientation] Verticale $orientation" )
-                    }
-                }
-            }
-        }
-        */
-
+        Log.d(TAG,"[orientation] $orientation" )
+        rotateButton(orientation)
     }
 
 
@@ -630,6 +630,7 @@ class MainActivity : AppCompatActivity() {
         BT_gallery.rotation = angle
         BT_rotation.rotation = angle
         BT_flash.rotation = angle
+        BT_timer.rotation = angle
         BT_zoom0_5.rotation = angle
         BT_zoom1_0.rotation = angle
         CM_recTimer.rotation = angle
@@ -684,6 +685,20 @@ class MainActivity : AppCompatActivity() {
                 imageCapture?.flashMode = ImageCapture.FLASH_MODE_AUTO
             }
         }
+    }
+
+    override fun onResume()
+    {
+        super.onResume()
+        val acc: Sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        // Register this class as a listener for the accelerometer sensor
+        sensorManager.registerListener(this, acc, SensorManager.SENSOR_DELAY_UI)
+    }
+    override fun onPause()
+    {
+        // Unregister listener
+        sensorManager.unregisterListener(this)
+        super.onPause()
     }
 
     private fun setFlashIcon(status : String){
