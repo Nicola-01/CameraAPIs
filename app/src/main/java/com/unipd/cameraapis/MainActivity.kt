@@ -4,6 +4,12 @@ import android.Manifest
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Point
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
@@ -16,12 +22,12 @@ import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.OrientationEventListener
 import android.view.ScaleGestureDetector
-import android.view.Surface
 import android.view.View
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.Button
 import android.widget.Chronometer
+import android.widget.ImageView
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
@@ -30,10 +36,8 @@ import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.FocusMeteringAction
-import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.MediaStoreOutputOptions
@@ -47,7 +51,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
 import com.unipd.cameraapis.databinding.ActivityMainBinding
-import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.ExecutorService
@@ -80,6 +83,7 @@ class MainActivity : AppCompatActivity() {
     var countdown : Long = 0
 
     private lateinit var viewFinder : View
+    private lateinit var imageView : ImageView
     private lateinit var BT_gallery : Button
     private lateinit var BT_zoom1_0 : Button
     private lateinit var BT_zoom0_5 : Button
@@ -91,6 +95,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var countDownText : TextView
     private lateinit var timer: CountDownTimer
 
+    private lateinit var focusCircle: Drawable
     private lateinit var scaleDown: Animation
     private lateinit var scaleUp: Animation
     private lateinit var cameraControl:CameraControl
@@ -138,9 +143,9 @@ class MainActivity : AppCompatActivity() {
             ActivityCompat.requestPermissions(
                 this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         }
-
+        //TODO sistemare perché non funziona
+        //<editor-fold desc= "FOCUS INIT">
         viewFinder = viewBinding.viewFinder
-
         viewFinder.setOnTouchListener(View.OnTouchListener setOnTouchListener@{ view: View, motionEvent: MotionEvent ->
             when (motionEvent.action) {
                 MotionEvent.ACTION_DOWN -> return@setOnTouchListener true
@@ -164,6 +169,34 @@ class MainActivity : AppCompatActivity() {
                 else -> return@setOnTouchListener false
             }
         })
+
+        imageView = viewBinding.imageView
+        val resource = resources
+        try {
+            focusCircle = Drawable.createFromXml(resource, resource.getXml(R.xml.focus_circle))
+        }
+        catch (ex: java.lang.Exception) {
+            Log.e("Error", "Exception loading drawable");
+        }
+        imageView.setOnTouchListener (View.OnTouchListener setOnTouchListener@{view: View, motionEvent: MotionEvent ->
+            when (motionEvent.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    val tempBitmap = Bitmap.createBitmap(imageView.width, imageView.height, Bitmap.Config.RGB_565)
+                    val tempCanvas = Canvas(tempBitmap)
+                    val point = Point(motionEvent.x.toInt(), motionEvent.y.toInt())
+                    focusCircle.draw(tempCanvas)
+                    return@setOnTouchListener true
+                }
+                MotionEvent.ACTION_UP -> {
+                    val tempBitmap = Bitmap.createBitmap(imageView.width, imageView.height, Bitmap.Config.RGB_565)
+                    val tempCanvas = Canvas(tempBitmap)
+                    imageView.setImageBitmap(tempBitmap)
+                    return@setOnTouchListener true
+                }
+                else -> return@setOnTouchListener false
+            }
+        })
+        //</editor-fold>
 
         //<editor-fold desc= "FLASH INIT">
         BT_flash = viewBinding.BTFlash
@@ -432,6 +465,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        if(currFlashMode == FlashModes.ON) { cameraControl.enableTorch(true) }
+
         val mediaStoreOutputOptions = MediaStoreOutputOptions
             .Builder(contentResolver, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
             .setContentValues(contentValues)
@@ -454,12 +489,14 @@ class MainActivity : AppCompatActivity() {
                     is VideoRecordEvent.Finalize -> {
                         if (!recordEvent.hasError()) {
                             val msg = "Video capture succeeded: " + "${recordEvent.outputResults.outputUri}"
+                            if(currFlashMode == FlashModes.ON) { cameraControl.enableTorch(false) }
                             Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
                             Log.d(TAG, msg)
                         } else {
                             recording?.close()
                             recording = null
                             Log.e(TAG, "Video capture ends with error: " + "${recordEvent.error}")
+                            if(currFlashMode == FlashModes.ON) { cameraControl.enableTorch(false) }
                         }
                         startRecording(false)
                     }
