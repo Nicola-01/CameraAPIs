@@ -139,10 +139,9 @@
 
     <Button
         android:id="@+id/BT_rotation"
-        android:layout_width="45dp"
-        android:layout_height="45dp"
+        android:layout_width="55dp"
+        android:layout_height="55dp"
         android:background="@drawable/rotate"
-        android:backgroundTint="@color/white"
         android:backgroundTintMode="src_in"
         app:layout_constraintBottom_toBottomOf="@+id/BT_shoots"
         app:layout_constraintEnd_toEndOf="parent"
@@ -152,10 +151,9 @@
 
     <Button
         android:id="@+id/BT_gallery"
-        android:layout_width="45dp"
-        android:layout_height="45dp"
+        android:layout_width="55dp"
+        android:layout_height="55dp"
         android:background="@drawable/gallery"
-        android:backgroundTint="@color/white"
         app:layout_constraintBottom_toBottomOf="@+id/BT_shoots"
         app:layout_constraintEnd_toStartOf="@+id/BT_shoots"
         app:layout_constraintStart_toStartOf="parent"

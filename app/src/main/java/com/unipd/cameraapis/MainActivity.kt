@@ -101,6 +101,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private lateinit var preview: Preview
     private lateinit var recorder: Recorder
     private var currentCamera = 0
+    private var zoomLv : Float = 0.toFloat() // va da 0 a 1
     // 0 -> back default
     // 1 -> front default grand angolare
     // 2 -> back grand angolare
@@ -224,7 +225,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         scaleGestureDetector = ScaleGestureDetector(this, ScaleGestureListener()) //pinch in/out
 
-        BT_rotation.setOnClickListener { rotateCamera() }
+        BT_rotation.setOnClickListener { rotateCamera()
+            SB_zoom.performHapticFeedback(HapticFeedbackConstants.CONFIRM)}
 
         BT_timer.setOnClickListener { switchTimerMode() }
         BT_timer.setOnCreateContextMenuListener { menu, v, menuInfo ->
@@ -452,16 +454,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             .start(ContextCompat.getMainExecutor(this)) { recordEvent ->
                 when(recordEvent) {
                     is VideoRecordEvent.Start -> {
-                        isRecording = true
-
-                        BT_rotation.visibility = View.INVISIBLE
-                        BT_zoom1_0.visibility = View.INVISIBLE
-                        BT_zoom0_5.visibility = View.INVISIBLE
-                        BT_zoomRec.visibility = View.VISIBLE
-                        CM_recTimer.visibility = View.VISIBLE
-                        BT_shoot.setBackgroundResource(R.drawable.rounded_corner_red);
-                        CM_recTimer.start()
-                        CM_recTimer.base = SystemClock.elapsedRealtime();
+                        startRecording(true);
                     }
                     is VideoRecordEvent.Finalize -> {
                         if (!recordEvent.hasError()) {
@@ -473,15 +466,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                             recording = null
                             Log.e(TAG, "Video capture ends with error: " + "${recordEvent.error}")
                         }
-                        isRecording = false
-
-                        BT_rotation.visibility = View.VISIBLE
-                        BT_zoom1_0.visibility = View.VISIBLE
-                        BT_zoom0_5.visibility = View.VISIBLE
-                        CM_recTimer.stop()
-                        CM_recTimer.visibility = View.INVISIBLE
-                        BT_zoomRec.visibility = View.INVISIBLE
-                        BT_shoot.setBackgroundResource(R.drawable.rounded_corner);
+                        startRecording(false);
                     }
                 }
             }
@@ -489,25 +474,23 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     private fun rotateCamera() { // id = 0 default back, id = 1 front default
-        var reBuild = false
-        if(currentCamera==0)
+        if(currentCamera== 0 || currentCamera == 2)
         {
             cameraSelector = availableCameraInfos[1].cameraSelector // passo in front
             currentCamera = 1
-            reBuild=true
         }
-        else if(currentCamera==1)
+        else if(currentCamera==1 || currentCamera==2)
         {
             cameraSelector = availableCameraInfos[0].cameraSelector // passo in back
             currentCamera = 0
-            reBuild=true
         }
+        /*
         else if(currentCamera==2)
         {
             cameraSelector = availableCameraInfos[0].cameraSelector // passo in back, dovrei mettere la camera 3
             currentCamera = 0
             reBuild=true
-        }
+        } */
         /*
         else if(currentCamera==3)
         {
@@ -516,7 +499,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             reBuild=true
         }
         */
-        if(reBuild && !isRecording) // se sta registrando non cambia fotocamera
+        if(!isRecording) // se sta registrando non cambia fotocamera
         {
             imageCapture = ImageCapture.Builder().build()
 
@@ -535,7 +518,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private fun timerShot(){
         timer = object : CountDownTimer(countdown*1000, 1000){
             override fun onTick(remainingMillis: Long) {
-                countDownText.text = (remainingMillis/1000).toString()
+                countDownText.text = (remainingMillis/1000 + 1).toString()
                 Log.d(TAG, "Secondi rimanenti: "+remainingMillis/1000)
             }
 
@@ -548,10 +531,51 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         Log.d(TAG, "Secondi ristabiliti: "+countdown)
     }
 
+    private fun startRecording(status : Boolean)
+    {
+        var view_ph : Int
+        var view_vi : Int
+        isRecording = status
+        if(status){
+            view_ph = View.INVISIBLE
+            view_vi = View.VISIBLE
+
+            BT_shoot.setBackgroundResource(R.drawable.rounded_corner_red);
+            CM_recTimer.base = SystemClock.elapsedRealtime();
+            CM_recTimer.start()
+        }
+        else
+        {
+            view_ph = View.VISIBLE
+            view_vi = View.INVISIBLE
+            CM_recTimer.stop()
+            BT_shoot.setBackgroundResource(R.drawable.rounded_corner);
+        }
+
+        BT_rotation.visibility = view_ph
+        BT_zoom1_0.visibility = view_ph
+        BT_zoom0_5.visibility = view_ph
+        BT_zoomRec.visibility = view_vi
+        CM_recTimer.visibility = view_vi
+
+        // se inizio a registrare non posso più cambiare camera,
+        // quindi devo sistemare il valore della progration bar
+        if(status) {
+            SB_zoom.progress = (zoomLv*SB_zoom.max).toInt()
+        }
+        else
+        {
+            if(currentCamera==0 || currentCamera==3)
+                SB_zoom.progress = (zoomLv*75).toInt() + 25
+            else
+                SB_zoom.progress = (zoomLv*46).toInt()
+        }
+    }
+
     private fun changeZoom(progress : Int)
     {
         var reBuild = false; // evito di costruitr la camera ogni volta
-        var zoomLv : Float = 0.toFloat() // va da 0 a 100
+        var maxzoom : Int = 8
         // SB_zoom va da 0 a 100, quindi i primi 25 valori sono per lo zoom con la grand angolare, gli altri per la camera normale
         // non sono riuscito a recoperare la telephoto
         // 0 -> back default
@@ -606,19 +630,16 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         BT_zoom0_5.setText("0.5x")
         BT_zoom1_0.setText("1.0x")
 
-        if(currentCamera==0) // camera normale 1 -> 8
+        if(currentCamera==0 || currentCamera == 3) // camera normale 1 -> 8
         {
-            BT_zoomRec.setText((zoomLv*7+1).toString().substring(0,3) + "x")
-            BT_zoom1_0.setText((zoomLv*7+1).toString().substring(0,3) + "x")
+            BT_zoomRec.setText((zoomLv*(maxzoom-1)+1).toString().substring(0,3) + "x") // (zoomLv*(maxzoom-1)+1) fa si che visualizzi 8x come massimo e 1x come minimo
+            BT_zoom1_0.setText((zoomLv*(maxzoom-1)+1).toString().substring(0,3) + "x")
         }
         else // camera grand angolare 0.5 -> 8
         {
-            BT_zoomRec.setText((zoomLv*7.5+0.5).toString().substring(0,3) + "x")
+            BT_zoomRec.setText((zoomLv*(maxzoom-0.5)+0.5).toString().substring(0,3) + "x") // (zoomLv*(maxzoom-0.5)+0.5) fa si che visualizzi 8x come massimo e 0.5x come minimo
             BT_zoom0_5.setText((zoomLv+0.5).toString().substring(0,3) + "x")
         }
-
-        //TODO dovrei far si che quando passo da video a foto e vic. sistema il valore dello zoom mostrato
-
 
        if(reBuild && !isRecording) // se sta registrando non cambia fotocamera
        {
