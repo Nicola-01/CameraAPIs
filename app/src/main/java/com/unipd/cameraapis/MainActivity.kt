@@ -258,6 +258,9 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+        Log.d(TAG,"[orientation] $orientation" )
+        if(!isRecording) // gira solo se non sta registrando, per salvare i video nel orientamento corretto
+            rotateButton(orientation)
     }
 
 
@@ -371,8 +374,7 @@ class MainActivity : AppCompatActivity() {
                     Log.e(TAG, "Photo capture failed: ${exc.message}", exc)
                 }
 
-                override fun
-                        onImageSaved(output: ImageCapture.OutputFileResults){
+                override fun onImageSaved(output: ImageCapture.OutputFileResults){
                     val msg = "Photo capture succeeded: ${output.savedUri}"
                     Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
                     Log.d(TAG, msg)
