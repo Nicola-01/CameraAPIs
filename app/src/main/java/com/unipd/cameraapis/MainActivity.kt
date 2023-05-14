@@ -85,6 +85,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var BT_zoom0_5 : Button
     private lateinit var BT_zoomRec : Button
     private lateinit var BT_timer : Button
+    private lateinit var BT_grid : Button
     private lateinit var SB_zoom : SeekBar
     private lateinit var CM_recTimer : Chronometer
     private lateinit var countDownText : TextView
@@ -104,6 +105,7 @@ class MainActivity : AppCompatActivity() {
     // 2 -> back grand angolare
     // 3 -> front normale
     private var isRecording = false
+    private var grid = true
 
     private lateinit var scaleGestureDetector: ScaleGestureDetector
 
@@ -187,6 +189,7 @@ class MainActivity : AppCompatActivity() {
         CM_recTimer = viewBinding.CMRecTimer
         CM_recTimer.format = "%02d:%02d:%02d"
         BT_timer = viewBinding.BTTimer
+        BT_grid = viewBinding.BTGrid
         countDownText = viewBinding.TextTimer
 
         BT_rotation = viewBinding.BTRotation
@@ -205,6 +208,22 @@ class MainActivity : AppCompatActivity() {
         BT_shoot.setOnLongClickListener{ captureVideo() }
         BT_zoom1_0.setOnClickListener { SB_zoom.setProgress(25) }
         BT_zoom0_5.setOnClickListener{ SB_zoom.setProgress(0) }
+        BT_grid.setOnClickListener {
+            grid =! grid
+            val view : Int
+            if(grid){
+                BT_grid.setBackgroundResource(R.drawable.grid_off)
+                view = View.VISIBLE
+            }
+            else{
+                BT_grid.setBackgroundResource(R.drawable.grid_on)
+                view = View.INVISIBLE
+            }
+            viewBinding.GRVert1.visibility = view
+            viewBinding.GRVert2.visibility = view
+            viewBinding.GRHoriz1.visibility = view
+            viewBinding.GRHoriz2.visibility = view
+        }
 
 
         SB_zoom.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -240,7 +259,6 @@ class MainActivity : AppCompatActivity() {
         BT_gallery.setOnClickListener{//TODO: aprire galleria
             val intent = Intent(Intent.ACTION_PICK)
             intent.type = "image/*"
-            //rotateButton(90)
         }
 
     }

@@ -12,7 +12,7 @@
         android:id="@+id/BT_flash"
         android:layout_width="35dp"
         android:layout_height="35dp"
-        android:layout_marginStart="16dp"
+        android:layout_marginStart="24dp"
         android:background="@drawable/flash_off"
         android:backgroundTint="@color/white"
         app:layout_constraintBottom_toTopOf="@+id/guideline"
@@ -163,11 +163,22 @@
         android:id="@+id/BT_timer"
         android:layout_width="35dp"
         android:layout_height="35dp"
-        android:layout_marginEnd="16dp"
+        android:layout_marginEnd="24dp"
         android:background="@drawable/timer_0"
         android:backgroundTint="@color/white"
         app:layout_constraintBottom_toTopOf="@+id/guideline"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.75" />
+
+    <Button
+        android:id="@+id/BT_grid"
+        android:layout_width="35dp"
+        android:layout_height="35dp"
+        android:layout_marginEnd="24dp"
+        android:background="@drawable/grid_off"
+        app:layout_constraintBottom_toTopOf="@+id/guideline"
+        app:layout_constraintEnd_toStartOf="@+id/BT_timer"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.75" />
 
@@ -195,5 +206,57 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/GR_vert1"
+        android:layout_width="1dp"
+        android:layout_height="0dp"
+        android:alpha="0.5"
+        android:background="@android:color/white"
+        android:elevation="2dp"
+        app:layout_constraintBottom_toBottomOf="@+id/viewFinder"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.33"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/viewFinder" />
+
+    <View
+        android:id="@+id/GR_vert2"
+        android:layout_width="1dp"
+        android:layout_height="0dp"
+        android:alpha="0.5"
+        android:background="@android:color/white"
+        android:elevation="2dp"
+        app:layout_constraintBottom_toBottomOf="@+id/viewFinder"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.67"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/viewFinder" />
+
+    <View
+        android:id="@+id/GR_horiz1"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:alpha="0.5"
+        android:background="@android:color/white"
+        android:elevation="2dp"
+        app:layout_constraintBottom_toBottomOf="@+id/viewFinder"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/viewFinder"
+        app:layout_constraintVertical_bias="0.33" />
+
+    <View
+        android:id="@+id/GR_horiz2"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:alpha="0.5"
+        android:background="@android:color/white"
+        android:elevation="2dp"
+        app:layout_constraintBottom_toBottomOf="@+id/viewFinder"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/viewFinder"
+        app:layout_constraintVertical_bias="0.67" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
