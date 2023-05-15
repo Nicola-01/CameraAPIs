@@ -95,6 +95,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var CM_recTimer : Chronometer
     private lateinit var countDownText : TextView
     private lateinit var timer: CountDownTimer
+    private lateinit var FocusCircle : View
 
     private lateinit var focusCircle: Drawable
     private lateinit var scaleDown: Animation
@@ -227,6 +228,7 @@ class MainActivity : AppCompatActivity() {
         countDownText = viewBinding.TextTimer
 
         BT_rotation = viewBinding.BTRotation
+        FocusCircle = viewBinding.FocusCircle
 
 
         SB_zoom = viewBinding.SBZoom

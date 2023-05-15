@@ -38,6 +38,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:rotation="0" />
+
     </androidx.camera.view.PreviewView>
 
     <androidx.constraintlayout.widget.Guideline
@@ -186,6 +187,13 @@
         app:layout_constraintEnd_toStartOf="@+id/BT_timer"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.75" />
+
+    <View
+        android:id="@+id/FocusCircle"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:background="@drawable/focus_circle"
+        tools:layout_editor_absoluteY="64dp" />
 
     <Chronometer
         android:id="@+id/CM_RecTimer"
