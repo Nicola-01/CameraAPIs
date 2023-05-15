@@ -2,6 +2,7 @@ package com.unipd.cameraapis
 
 import android.Manifest
 import android.content.ContentValues
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -10,6 +11,8 @@ import android.graphics.Paint
 import android.graphics.Point
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
+import android.hardware.Camera
+import android.hardware.camera2.CameraManager
 import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
@@ -39,6 +42,7 @@ import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
+import androidx.camera.core.ZoomState
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Quality
@@ -103,6 +107,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var cameraControl:CameraControl
     private lateinit var availableCameraInfos: MutableList<CameraInfo>
     private lateinit var cameraProvider: ProcessCameraProvider
+    private lateinit var cameraManager : CameraManager
+    private lateinit var camera : androidx.camera.core.Camera
     private lateinit var preview: Preview
     private lateinit var recorder: Recorder
     private var currentCamera = 0
@@ -244,6 +250,7 @@ class MainActivity : AppCompatActivity() {
         }
 
 
+
         SB_zoom.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 changeZoom(progress)
@@ -360,14 +367,17 @@ class MainActivity : AppCompatActivity() {
 
             // Crea un oggetto CameraSelector per la fotocamera ultra grandangolare
             availableCameraInfos = cameraProvider.availableCameraInfos
-            Log.i(TAG, "[startCamera] available cameras:$availableCameraInfos")
+            Log.i(TAG, "[startCamera] available cameras Info:$availableCameraInfos")
+            cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+            var availableCamera : Array<String> = cameraManager.getCameraIdList()
+            Log.i(TAG, "[startCamera] available cameras:${availableCamera.toString()}")
 
             try {
                 // Unbind use cases before rebinding
                 cameraProvider.unbindAll()
 
                 // Bind use cases to camera
-                val camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture)
+                camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture)
                 cameraControl = camera.cameraControl
             } catch(exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
@@ -523,7 +533,7 @@ class MainActivity : AppCompatActivity() {
 
             try {
                 cameraProvider.unbindAll()            // Unbind use cases before rebinding
-                val camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture) // devo ricostruire la camera ogni volta
+                camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture) // devo ricostruire la camera ogni volta
                 // in quato cambio la camera
                 cameraControl = camera.cameraControl
             } catch(exc: Exception) {
@@ -661,13 +671,15 @@ class MainActivity : AppCompatActivity() {
             BT_zoom0_5.text = (zoomLv+0.5).toString().substring(0,3) + "x"
         }
 
+
+
        if(reBuild && !isRecording) // se sta registrando non cambia fotocamera
        {
            imageCapture = ImageCapture.Builder().build()
 
            try {
                cameraProvider.unbindAll()            // Unbind use cases before rebinding
-               val camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture) // devo ricostruire la camera ogni volta
+               camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture) // devo ricostruire la camera ogni volta
                // in quato cambio la camera
                cameraControl = camera.cameraControl
            } catch(exc: Exception) {
@@ -676,7 +688,11 @@ class MainActivity : AppCompatActivity() {
        }
 
         cameraControl.setLinearZoom(zoomLv)
-        Log.d(TAG,"Zoom lv: " + zoomLv)
+        var zoomState = camera.cameraInfo.zoomState
+        // getZoomRatio -> camerainfo.getZoomRatio
+        // getCameraInfo()
+        zoomState.value?.maxZoomRatio
+        Log.d(TAG,"Zoom lv: $zoomLv, zoomState: ${zoomState.value}" )
         Log.d(TAG,"[current camera] - zoom: " + currentCamera)
     }
 
