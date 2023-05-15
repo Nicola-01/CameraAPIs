@@ -240,7 +240,7 @@ class MainActivity : AppCompatActivity() {
             timerShot()
         }
         BT_shoot.setOnLongClickListener{ captureVideo() }
-        BT_zoom1_0.setOnClickListener { SB_zoom.setProgress(25) }
+        BT_zoom1_0.setOnClickListener { SB_zoom.setProgress(changeCameraSeekBar) }
         BT_zoom0_5.setOnClickListener{ SB_zoom.setProgress(0) }
         BT_grid.setOnClickListener {
             grid =! grid
@@ -295,7 +295,6 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(Intent.ACTION_PICK)
             intent.type = "image/*"
         }
-
     }
 
     private val orientationEventListener by lazy {
@@ -325,7 +324,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        Log.d(TAG, "[Here] $event")
+        Log.d(TAG, "[event type] $event")
         scaleGestureDetector.onTouchEvent(event!!)
         return true
     }
@@ -510,10 +509,10 @@ class MainActivity : AppCompatActivity() {
     private fun rotateCamera() { // id = 0 default back, id = 1 front default
         if(currentCamera== 0 || currentCamera == 2)
         {
-            cameraSelector = availableCameraInfos[1].cameraSelector // passo in front
-            currentCamera = 1
+            cameraSelector = availableCameraInfos[3].cameraSelector // passo in front
+            currentCamera = 3
         }
-        else if(currentCamera==1 || currentCamera==2)
+        else if(currentCamera==1 || currentCamera==3)
         {
             cameraSelector = availableCameraInfos[0].cameraSelector // passo in back
             currentCamera = 0
@@ -547,7 +546,7 @@ class MainActivity : AppCompatActivity() {
                 Log.e(TAG, "Use case binding failed", exc)
             }
         }
-
+        Log.d(TAG,"[current camera]  - rotate: " + currentCamera)
     }
 
     private fun timerShot(){
@@ -694,6 +693,7 @@ class MainActivity : AppCompatActivity() {
 
         cameraControl.setLinearZoom(zoomLv)
         Log.d(TAG,"Zoom lv: " + zoomLv)
+        Log.d(TAG,"[current camera] - zoom: " + currentCamera)
     }
 
     private fun rotateButton(angle : Float)
@@ -705,6 +705,7 @@ class MainActivity : AppCompatActivity() {
         BT_zoom0_5.rotation = angle
         BT_zoom1_0.rotation = angle
         CM_recTimer.rotation = angle
+        BT_grid.rotation = angle
     }
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
