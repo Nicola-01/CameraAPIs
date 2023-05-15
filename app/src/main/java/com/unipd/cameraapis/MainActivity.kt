@@ -83,7 +83,7 @@ class MainActivity : AppCompatActivity() {
     var countdown : Long = 0
 
     private lateinit var viewFinder : View
-    private lateinit var imageView : ImageView
+    private lateinit var focusView : View
     private lateinit var BT_gallery : Button
     private lateinit var BT_zoom1_0 : Button
     private lateinit var BT_zoom0_5 : Button
@@ -145,13 +145,21 @@ class MainActivity : AppCompatActivity() {
             ActivityCompat.requestPermissions(
                 this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         }
-        //TODO sistemare perché non funziona
+
         //<editor-fold desc= "FOCUS INIT">
+        focusView = viewBinding.FocusCircle
+        focusView.visibility = View.INVISIBLE
         viewFinder = viewBinding.viewFinder
         viewFinder.setOnTouchListener(View.OnTouchListener setOnTouchListener@{ view: View, motionEvent: MotionEvent ->
             when (motionEvent.action) {
-                MotionEvent.ACTION_DOWN -> return@setOnTouchListener true
+                MotionEvent.ACTION_DOWN -> {
+                    focusView.x = motionEvent.x
+                    focusView.y = motionEvent.y
+                    focusView.visibility = View.VISIBLE
+                    return@setOnTouchListener true
+                }
                 MotionEvent.ACTION_UP -> {
+                    focusView.visibility = View.INVISIBLE
                     // Get the MeteringPointFactory from PreviewView
                     val factory = viewBinding.viewFinder.getMeteringPointFactory()
 
@@ -172,32 +180,6 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
-        imageView = viewBinding.imageView
-        val resource = resources
-        try {
-            focusCircle = Drawable.createFromXml(resource, resource.getXml(R.xml.focus_circle))
-        }
-        catch (ex: java.lang.Exception) {
-            Log.e("Error", "Exception loading drawable");
-        }
-        imageView.setOnTouchListener (View.OnTouchListener setOnTouchListener@{view: View, motionEvent: MotionEvent ->
-            when (motionEvent.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    val tempBitmap = Bitmap.createBitmap(imageView.width, imageView.height, Bitmap.Config.RGB_565)
-                    val tempCanvas = Canvas(tempBitmap)
-                    val point = Point(motionEvent.x.toInt(), motionEvent.y.toInt())
-                    focusCircle.draw(tempCanvas)
-                    return@setOnTouchListener true
-                }
-                MotionEvent.ACTION_UP -> {
-                    val tempBitmap = Bitmap.createBitmap(imageView.width, imageView.height, Bitmap.Config.RGB_565)
-                    val tempCanvas = Canvas(tempBitmap)
-                    imageView.setImageBitmap(tempBitmap)
-                    return@setOnTouchListener true
-                }
-                else -> return@setOnTouchListener false
-            }
-        })
         //</editor-fold>
 
         //<editor-fold desc= "FLASH INIT">
