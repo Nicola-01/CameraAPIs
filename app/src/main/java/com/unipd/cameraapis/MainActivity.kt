@@ -152,13 +152,25 @@ class MainActivity : AppCompatActivity() {
                 this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         }
 
-        createElement()
-
         cameraExecutor = Executors.newSingleThreadExecutor()
 
+        createElement()
 
         if (savedInstanceState != null) {
+            currentCamera = savedInstanceState.getInt("CurrentCamera")
+            //TODO: Sistemare zoom e camera
+            //val progress : Int= savedInstanceState.getInt("zoomProgress")
+            //SB_zoom.setProgress(progress)
+            grid = savedInstanceState.getBoolean("gridMode")
+            viewGrid(grid);
 
+            var flashMode = savedInstanceState.getString("flashMode")
+            while(currFlashMode.toString() != flashMode)
+                switchFlashMode()
+
+            var timerMode = savedInstanceState.getString("timerMode")
+            while(timerMode.toString() != timerMode)
+                switchTimerMode()
         }
     }
 
@@ -193,22 +205,7 @@ class MainActivity : AppCompatActivity() {
         BT_shoot.setOnLongClickListener{ captureVideo() }
         BT_zoom1_0.setOnClickListener { SB_zoom.setProgress(changeCameraSeekBar) }
         BT_zoom0_5.setOnClickListener{ SB_zoom.setProgress(0) }
-        BT_grid.setOnClickListener {
-            grid =! grid
-            val view : Int
-            if(grid){
-                BT_grid.setBackgroundResource(R.drawable.grid_off)
-                view = View.VISIBLE
-            }
-            else{
-                BT_grid.setBackgroundResource(R.drawable.grid_on)
-                view = View.INVISIBLE
-            }
-            viewBinding.GRVert1.visibility = view
-            viewBinding.GRVert2.visibility = view
-            viewBinding.GRHoriz1.visibility = view
-            viewBinding.GRHoriz2.visibility = view
-        }
+        BT_grid.setOnClickListener { grid =! grid; viewGrid(grid) }
 
         SB_zoom.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
@@ -332,9 +329,9 @@ class MainActivity : AppCompatActivity() {
             Log.d(TAG, "[zoom] $scaleFactor")
 
             if(scaleFactor>1)
-                SB_zoom.progress = SB_zoom.progress + 1
+                SB_zoom.incrementProgressBy(1)
             else
-                SB_zoom.progress = SB_zoom.progress - 1
+                SB_zoom.incrementProgressBy(-1)
             return true
         }
 
@@ -368,14 +365,8 @@ class MainActivity : AppCompatActivity() {
             imageCapture = ImageCapture.Builder().setFlashMode(ImageCapture.FLASH_MODE_OFF).build()
 
             // Select back camera as a default
-            cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
-            // Crea un oggetto CameraSelector per la fotocamera ultra grandangolare
-            availableCameraInfos = cameraProvider.availableCameraInfos
-            Log.i(TAG, "[startCamera] available cameras Info:$availableCameraInfos")
-            cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
-            var availableCamera : Array<String> = cameraManager.getCameraIdList()
-            Log.i(TAG, "[startCamera] available cameras:${availableCamera.toString()}")
+            cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
             try {
                 // Unbind use cases before rebinding
@@ -505,6 +496,22 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
+    private fun viewGrid(status : Boolean)
+    {
+        val view : Int
+        if(status){
+            BT_grid.setBackgroundResource(R.drawable.grid_off)
+            view = View.VISIBLE
+        }
+        else{
+            BT_grid.setBackgroundResource(R.drawable.grid_on)
+            view = View.INVISIBLE
+        }
+        viewBinding.GRVert1.visibility = view
+        viewBinding.GRVert2.visibility = view
+        viewBinding.GRHoriz1.visibility = view
+        viewBinding.GRHoriz2.visibility = view
+    }
     private fun rotateCamera() { // id = 0 default back, id = 1 front default
         if(currentCamera== 0 || currentCamera == 2)
         {
