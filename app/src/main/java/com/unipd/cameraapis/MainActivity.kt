@@ -262,8 +262,8 @@ class MainActivity : AppCompatActivity() {
         viewFinder.setOnTouchListener(View.OnTouchListener setOnTouchListener@{ view: View, motionEvent: MotionEvent ->
             when (motionEvent.action) {
                 MotionEvent.ACTION_DOWN -> {
-                    focusView.x = motionEvent.x
-                    focusView.y = motionEvent.y
+                    focusView.x = viewFinder.x - focusView.width / 2 + motionEvent.x
+                    focusView.y = viewFinder.y - focusView.height / 2 + motionEvent.y
                     focusView.visibility = View.VISIBLE
                     return@setOnTouchListener true
                 }
