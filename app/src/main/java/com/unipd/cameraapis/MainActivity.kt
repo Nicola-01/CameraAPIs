@@ -152,7 +152,113 @@ class MainActivity : AppCompatActivity() {
                 this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         }
 
-        //<editor-fold desc= "FOCUS INIT">
+        createElement()
+
+        cameraExecutor = Executors.newSingleThreadExecutor()
+
+
+        if (savedInstanceState != null) {
+
+        }
+    }
+
+    /** Funzione per istanziare elementi dal activity_main.xml
+     * quindi assagnazione per pulsanti e vari elementi, e i loro lissener
+     */
+    private fun createElement()
+    {
+        BT_shoot = viewBinding.BTShoots
+        BT_zoom1_0 = viewBinding.BT10
+        BT_zoom0_5 = viewBinding.BT05
+        BT_zoomRec = viewBinding.BTZoomRec
+        CM_recTimer = viewBinding.CMRecTimer
+        CM_recTimer.format = "%02d:%02d:%02d"
+        BT_timer = viewBinding.BTTimer
+        BT_grid = viewBinding.BTGrid
+        countDownText = viewBinding.TextTimer
+
+        BT_rotation = viewBinding.BTRotation
+        FocusCircle = viewBinding.FocusCircle
+
+        SB_zoom = viewBinding.SBZoom
+
+        scaleDown = AnimationUtils.loadAnimation(this,R.anim.scale_down)
+        scaleUp = AnimationUtils.loadAnimation(this,R.anim.scale_up)
+
+        // Set up the listeners for take photo and video capture buttons
+        BT_shoot.setOnClickListener {
+            it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+            timerShot()
+        }
+        BT_shoot.setOnLongClickListener{ captureVideo() }
+        BT_zoom1_0.setOnClickListener { SB_zoom.setProgress(changeCameraSeekBar) }
+        BT_zoom0_5.setOnClickListener{ SB_zoom.setProgress(0) }
+        BT_grid.setOnClickListener {
+            grid =! grid
+            val view : Int
+            if(grid){
+                BT_grid.setBackgroundResource(R.drawable.grid_off)
+                view = View.VISIBLE
+            }
+            else{
+                BT_grid.setBackgroundResource(R.drawable.grid_on)
+                view = View.INVISIBLE
+            }
+            viewBinding.GRVert1.visibility = view
+            viewBinding.GRVert2.visibility = view
+            viewBinding.GRHoriz1.visibility = view
+            viewBinding.GRHoriz2.visibility = view
+        }
+
+        SB_zoom.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                changeZoom(progress)
+                if(progress%5 == 0 && fromUser) // ogni 5 do un feedback, e solo se muovo manualmente la SB
+                    SB_zoom.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+            }
+            override fun onStartTrackingTouch(seek: SeekBar) = Unit
+            override fun onStopTrackingTouch(seek: SeekBar) = Unit
+        })
+
+        BT_gallery = findViewById(R.id.BT_gallery)
+
+        BT_gallery.setOnClickListener{//TODO: aprire galleria
+            val intent = Intent(Intent.ACTION_PICK)
+            intent.type = "image/*"
+        }
+
+        scaleGestureDetector = ScaleGestureDetector(this, ScaleGestureListener()) //pinch in/out
+
+        BT_rotation.setOnClickListener { rotateCamera()
+            SB_zoom.performHapticFeedback(HapticFeedbackConstants.CONFIRM)}
+
+        BT_timer.setOnClickListener { switchTimerMode() }
+        BT_timer.setOnCreateContextMenuListener { menu, v, menuInfo ->
+            menu.setHeaderTitle("Timer")
+            for(mode in TimerModes.values()) {
+                val item: MenuItem = menu.add(Menu.NONE, mode.ordinal, Menu.NONE, mode.text)
+                item.setOnMenuItemClickListener { i: MenuItem? ->
+                    selectTimerMode(i?.itemId)
+                    true // Signifies you have consumed this event, so propogation can stop.
+                }
+            }
+        }
+
+        BT_flash = viewBinding.BTFlash
+        //flash.text = currFlashMode.text
+        setFlashIcon(currFlashMode.text)
+        BT_flash.setOnClickListener { switchFlashMode() }
+        BT_flash.setOnCreateContextMenuListener { menu, v, menuInfo ->
+            menu.setHeaderTitle("Flash")
+            for(mode in FlashModes.values()) {
+                val item: MenuItem = menu.add(Menu.NONE, mode.ordinal, Menu.NONE, mode.text)
+                item.setOnMenuItemClickListener { i: MenuItem? ->
+                    selectFlashMode(i?.itemId)
+                    true // Signifies you have consumed this event, so propogation can stop.
+                }
+            }
+        }
+
         focusView = viewBinding.FocusCircle
         focusView.visibility = View.INVISIBLE
         viewFinder = viewBinding.viewFinder
@@ -185,107 +291,6 @@ class MainActivity : AppCompatActivity() {
                 else -> return@setOnTouchListener false
             }
         })
-
-        //</editor-fold>
-
-        //<editor-fold desc= "FLASH INIT">
-        BT_flash = viewBinding.BTFlash
-        //flash.text = currFlashMode.text
-        setFlashIcon(currFlashMode.text)
-        BT_flash.setOnClickListener { switchFlashMode() }
-        BT_flash.setOnCreateContextMenuListener { menu, v, menuInfo ->
-            menu.setHeaderTitle("Flash")
-            for(mode in FlashModes.values()) {
-                val item: MenuItem = menu.add(Menu.NONE, mode.ordinal, Menu.NONE, mode.text)
-                item.setOnMenuItemClickListener { i: MenuItem? ->
-                    selectFlashMode(i?.itemId)
-                    true // Signifies you have consumed this event, so propogation can stop.
-                }
-            }
-        }
-        //</editor-fold>
-
-        BT_shoot = viewBinding.BTShoots
-        BT_zoom1_0 = viewBinding.BT10
-        BT_zoom0_5 = viewBinding.BT05
-        BT_zoomRec = viewBinding.BTZoomRec
-        CM_recTimer = viewBinding.CMRecTimer
-        CM_recTimer.format = "%02d:%02d:%02d"
-        BT_timer = viewBinding.BTTimer
-        BT_grid = viewBinding.BTGrid
-        countDownText = viewBinding.TextTimer
-
-        BT_rotation = viewBinding.BTRotation
-        FocusCircle = viewBinding.FocusCircle
-
-
-        SB_zoom = viewBinding.SBZoom
-
-        scaleDown = AnimationUtils.loadAnimation(this,R.anim.scale_down)
-        scaleUp = AnimationUtils.loadAnimation(this,R.anim.scale_up)
-
-        // Set up the listeners for take photo and video capture buttons
-        BT_shoot.setOnClickListener {
-            it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
-            timerShot()
-        }
-        BT_shoot.setOnLongClickListener{ captureVideo() }
-        BT_zoom1_0.setOnClickListener { SB_zoom.setProgress(changeCameraSeekBar) }
-        BT_zoom0_5.setOnClickListener{ SB_zoom.setProgress(0) }
-        BT_grid.setOnClickListener {
-            grid =! grid
-            val view : Int
-            if(grid){
-                BT_grid.setBackgroundResource(R.drawable.grid_off)
-                view = View.VISIBLE
-            }
-            else{
-                BT_grid.setBackgroundResource(R.drawable.grid_on)
-                view = View.INVISIBLE
-            }
-            viewBinding.GRVert1.visibility = view
-            viewBinding.GRVert2.visibility = view
-            viewBinding.GRHoriz1.visibility = view
-            viewBinding.GRHoriz2.visibility = view
-        }
-
-
-
-        SB_zoom.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                changeZoom(progress)
-                if(progress%5 == 0 && fromUser) // ogni 5 do un feedback, e solo se muovo manualmente la SB
-                    SB_zoom.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
-            }
-            override fun onStartTrackingTouch(seek: SeekBar) = Unit
-            override fun onStopTrackingTouch(seek: SeekBar) = Unit
-        })
-
-        scaleGestureDetector = ScaleGestureDetector(this, ScaleGestureListener()) //pinch in/out
-
-        BT_rotation.setOnClickListener { rotateCamera()
-            SB_zoom.performHapticFeedback(HapticFeedbackConstants.CONFIRM)}
-
-        BT_timer.setOnClickListener { switchTimerMode() }
-        BT_timer.setOnCreateContextMenuListener { menu, v, menuInfo ->
-            menu.setHeaderTitle("Timer")
-            for(mode in TimerModes.values()) {
-                val item: MenuItem = menu.add(Menu.NONE, mode.ordinal, Menu.NONE, mode.text)
-                item.setOnMenuItemClickListener { i: MenuItem? ->
-                    selectTimerMode(i?.itemId)
-                    true // Signifies you have consumed this event, so propogation can stop.
-                }
-            }
-        }
-
-        cameraExecutor = Executors.newSingleThreadExecutor()
-
-        BT_gallery = findViewById(R.id.BT_gallery)
-
-        BT_gallery.setOnClickListener{//TODO: aprire galleria
-            val intent = Intent(Intent.ACTION_PICK)
-            intent.type = "image/*"
-        }
     }
 
     private val orientationEventListener by lazy {
@@ -857,4 +862,12 @@ class MainActivity : AppCompatActivity() {
         cameraExecutor.shutdown()
     }
 
+    override fun onSaveInstanceState(savedInstanceState: Bundle) {
+        super.onSaveInstanceState(savedInstanceState)
+        savedInstanceState.putInt("CurrentCamera",currentCamera)
+        savedInstanceState.putInt("zoomProgress",SB_zoom.progress)
+        savedInstanceState.putString("flashMode",currFlashMode.toString())
+        savedInstanceState.putString("timerMode",currFlashMode.toString())
+        savedInstanceState.putBoolean("gridMode",grid)
+    }
 }
