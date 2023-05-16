@@ -365,8 +365,14 @@ class MainActivity : AppCompatActivity() {
             imageCapture = ImageCapture.Builder().setFlashMode(ImageCapture.FLASH_MODE_OFF).build()
 
             // Select back camera as a default
-
             cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+
+            // Crea un oggetto CameraSelector per la fotocamera ultra grandangolare
+            availableCameraInfos = cameraProvider.availableCameraInfos
+            Log.i(TAG, "[startCamera] available cameras Info:$availableCameraInfos")
+            cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+            var availableCamera : Array<String> = cameraManager.getCameraIdList()
+            Log.i(TAG, "[startCamera] available cameras:${availableCamera.toString()}")
 
             try {
                 // Unbind use cases before rebinding
