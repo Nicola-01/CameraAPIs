@@ -307,14 +307,30 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Non è nel onCreate perchè usa variabili che vengono dichiarate nel startCamera
+     */
     private fun loadFromBundle(savedInstanceState : Bundle?)
     {
         if (savedInstanceState != null) {
             currentCamera = savedInstanceState.getInt("CurrentCamera")
-            //TODO: Sistemare zoom e camera
-            //val progress : Int= savedInstanceState.getInt("zoomProgress")
-            //
-            // SB_zoom.setProgress(progress)
+
+            SB_zoom.progress = savedInstanceState.getInt("zoomProgress")
+
+            cameraSelector = availableCameraInfos[currentCamera].cameraSelector
+            imageCapture = ImageCapture.Builder().build()
+            try {
+                cameraProvider.unbindAll()            // Unbind use cases before rebinding
+                camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture) // devo ricostruire la camera ogni volta
+                // in quato cambio la camera
+                cameraControl = camera.cameraControl
+            } catch(exc: Exception) {
+                Log.e(TAG, "Use case binding failed", exc)
+            }
+
+            zoomLv = savedInstanceState.getFloat("zoomLv")
+            cameraControl.setLinearZoom(zoomLv)
+
             grid = savedInstanceState.getBoolean("gridMode")
             viewGrid(grid);
 
@@ -450,7 +466,7 @@ class MainActivity : AppCompatActivity() {
                 camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture)
                 cameraControl = camera.cameraControl
                 createListener()
-                //loadFromBundle(savedInstanceState)
+                loadFromBundle(savedInstanceState)
             } catch(exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
             }
@@ -829,19 +845,11 @@ class MainActivity : AppCompatActivity() {
         return true
     }
     private fun setTimerMode(){
-        when(currTimerMode){
-            TimerModes.OFF -> {
-                countdown = 0
-            }
-            TimerModes.ON_3 -> {
-                countdown = 3
-            }
-            TimerModes.ON_5 -> {
-                countdown = 5
-            }
-            TimerModes.ON_10 -> {
-                countdown = 10
-            }
+        countdown = when(currTimerMode){
+            TimerModes.OFF -> 0
+            TimerModes.ON_3 -> 3
+            TimerModes.ON_5 -> 5
+            TimerModes.ON_10 -> 10
         }
     }
     private fun setTimerIcon(status : String){
@@ -950,5 +958,6 @@ class MainActivity : AppCompatActivity() {
         savedInstanceState.putString("flashMode",currFlashMode.toString())
         savedInstanceState.putString("timerMode",currFlashMode.toString())
         savedInstanceState.putBoolean("gridMode",grid)
+        savedInstanceState.putFloat("zoomLv",zoomLv)
     }
 }
