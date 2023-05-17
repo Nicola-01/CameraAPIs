@@ -19,6 +19,8 @@ import android.os.CountDownTimer
 import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.Log
+import android.view.GestureDetector
+import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.HapticFeedbackConstants
 import android.view.Menu
 import android.view.MenuItem
@@ -26,6 +28,7 @@ import android.view.MotionEvent
 import android.view.OrientationEventListener
 import android.view.ScaleGestureDetector
 import android.view.View
+import android.view.View.OnTouchListener
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.Button
@@ -121,6 +124,7 @@ class MainActivity : AppCompatActivity() {
     private var grid = true
 
     private lateinit var scaleGestureDetector: ScaleGestureDetector
+
 
     companion object {
         //private val TAG = MainActivity::class.simpleName
@@ -322,6 +326,63 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
+    class OnSwipeTouchListener : OnTouchListener {
+        private lateinit var scrollGestureDetector: GestureDetector
+        override fun onTouch(v: View?, event: MotionEvent): Boolean {
+            return scrollGestureDetector.onTouchEvent(event)
+        }
+        private inner class GestureListener : SimpleOnGestureListener(){
+            private var SWIPE_THRESHOLD : Int = 100
+            private var SWIPE_VELOCITY_THRESHOLD : Int =100
+
+            override fun onFling(e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+                var res : Boolean = false
+                try{
+                    var diffY : Float = e2.getY() - e1.getY()
+                    var diffX : Float= e2.getX() - e1.getX()
+                    if (Math.abs(diffX) > Math.abs(diffY)){
+                        if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD){
+                            if(diffX > 0){
+                                res = onSwipeRight()
+                            }
+                            else {
+                                res = onSwipeLeft()
+                            }
+                        }
+                    }
+                    else {
+                        if (Math.abs(diffY) > SWIPE_THRESHOLD && Math.abs(velocityY) > SWIPE_VELOCITY_THRESHOLD){
+                            if (diffY > 0){
+                                res = onSwipeDown()
+                            }
+                            else{
+                                res = onSwipeUp()
+                            }
+                        }
+                    }
+                }
+                catch(e : Exception){
+                    e.printStackTrace()
+                }
+                return res
+                //return super.onFling(e1, e2, velocityX, velocityY)
+            }
+        }
+
+        fun onSwipeRight() : Boolean {
+            return false
+        }
+        fun onSwipeLeft() : Boolean {
+            return false
+        }
+        fun onSwipeUp() : Boolean {
+            return false
+        }
+        fun onSwipeDown() : Boolean {
+            return false
+        }
+
+    }
     private inner class ScaleGestureListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
         override fun onScale(detector: ScaleGestureDetector): Boolean {
             val scaleFactor = detector.scaleFactor
