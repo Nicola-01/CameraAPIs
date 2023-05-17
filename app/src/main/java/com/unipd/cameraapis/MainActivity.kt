@@ -691,8 +691,6 @@ class MainActivity : AppCompatActivity() {
             BT_zoom0_5.text = (zoomLv+0.5).toString().substring(0,3) + "x"
         }
 
-
-
        if(reBuild && !isRecording) // se sta registrando non cambia fotocamera
        {
            imageCapture = ImageCapture.Builder().build()
