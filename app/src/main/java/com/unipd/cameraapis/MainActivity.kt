@@ -148,6 +148,7 @@ class MainActivity : AppCompatActivity() {
         viewBinding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(viewBinding.root)
 
+        createElement()
         // Request camera permissions
         if (allPermissionsGranted()) {
             startCamera(savedInstanceState)
@@ -182,15 +183,24 @@ class MainActivity : AppCompatActivity() {
         scaleDown = AnimationUtils.loadAnimation(this,R.anim.scale_down)
         scaleUp = AnimationUtils.loadAnimation(this,R.anim.scale_up)
 
+        BT_gallery = findViewById(R.id.BT_gallery)
+
+        scaleGestureDetector = ScaleGestureDetector(this, ScaleGestureListener()) //pinch in/out
+
+        BT_flash = viewBinding.BTFlash
+        //flash.text = currFlashMode.text
+
+        focusView = viewBinding.FocusCircle
+
+        viewFinder = viewBinding.viewFinder
+    }
+
+    private fun createListener()    {
         // Set up the listeners for take photo and video capture buttons
         BT_shoot.setOnClickListener {
             it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
             timerShot()
         }
-        BT_shoot.setOnLongClickListener{ captureVideo() }
-        BT_zoom1_0.setOnClickListener { SB_zoom.setProgress(changeCameraSeekBar) }
-        BT_zoom0_5.setOnClickListener{ SB_zoom.setProgress(0) }
-        BT_grid.setOnClickListener { grid =! grid; viewGrid(grid) }
 
         SB_zoom.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
@@ -202,14 +212,15 @@ class MainActivity : AppCompatActivity() {
             override fun onStopTrackingTouch(seek: SeekBar) = Unit
         })
 
-        BT_gallery = findViewById(R.id.BT_gallery)
+        BT_shoot.setOnLongClickListener{ captureVideo() }
+        BT_zoom1_0.setOnClickListener { SB_zoom.setProgress(changeCameraSeekBar) }
+        BT_zoom0_5.setOnClickListener{ SB_zoom.setProgress(0) }
+        BT_grid.setOnClickListener { grid =! grid; viewGrid(grid) }
 
         BT_gallery.setOnClickListener{//TODO: aprire galleria
             val intent = Intent(Intent.ACTION_PICK)
             intent.type = "image/*"
         }
-
-        scaleGestureDetector = ScaleGestureDetector(this, ScaleGestureListener()) //pinch in/out
 
         BT_rotation.setOnClickListener { rotateCamera()
             SB_zoom.performHapticFeedback(HapticFeedbackConstants.CONFIRM)}
@@ -226,9 +237,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        BT_flash = viewBinding.BTFlash
-        //flash.text = currFlashMode.text
-        setFlashIcon(currFlashMode.text)
+
         BT_flash.setOnClickListener { switchFlashMode() }
         BT_flash.setOnCreateContextMenuListener { menu, v, menuInfo ->
             menu.setHeaderTitle("Flash")
@@ -241,9 +250,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        focusView = viewBinding.FocusCircle
-        focusView.visibility = View.INVISIBLE
-        viewFinder = viewBinding.viewFinder
         viewFinder.setOnTouchListener(View.OnTouchListener setOnTouchListener@{ view: View, motionEvent: MotionEvent ->
             when (motionEvent.action) {
                 MotionEvent.ACTION_DOWN -> {
@@ -306,8 +312,9 @@ class MainActivity : AppCompatActivity() {
         if (savedInstanceState != null) {
             currentCamera = savedInstanceState.getInt("CurrentCamera")
             //TODO: Sistemare zoom e camera
-            val progress : Int= savedInstanceState.getInt("zoomProgress")
-            SB_zoom.setProgress(progress)
+            //val progress : Int= savedInstanceState.getInt("zoomProgress")
+            //
+            // SB_zoom.setProgress(progress)
             grid = savedInstanceState.getBoolean("gridMode")
             viewGrid(grid);
 
@@ -442,7 +449,7 @@ class MainActivity : AppCompatActivity() {
                 // Bind use cases to camera
                 camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture)
                 cameraControl = camera.cameraControl
-                createElement()
+                createListener()
                 //loadFromBundle(savedInstanceState)
             } catch(exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
