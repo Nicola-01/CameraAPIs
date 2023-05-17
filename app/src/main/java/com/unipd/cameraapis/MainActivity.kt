@@ -146,32 +146,13 @@ class MainActivity : AppCompatActivity() {
 
         // Request camera permissions
         if (allPermissionsGranted()) {
-            startCamera()
+            startCamera(savedInstanceState)
         } else {
             ActivityCompat.requestPermissions(
                 this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         }
 
         cameraExecutor = Executors.newSingleThreadExecutor()
-
-        createElement()
-
-        if (savedInstanceState != null) {
-            currentCamera = savedInstanceState.getInt("CurrentCamera")
-            //TODO: Sistemare zoom e camera
-            //val progress : Int= savedInstanceState.getInt("zoomProgress")
-            //SB_zoom.setProgress(progress)
-            grid = savedInstanceState.getBoolean("gridMode")
-            viewGrid(grid);
-
-            var flashMode = savedInstanceState.getString("flashMode")
-            while(currFlashMode.toString() != flashMode)
-                switchFlashMode()
-
-            var timerMode = savedInstanceState.getString("timerMode")
-            while(timerMode.toString() != timerMode)
-                switchTimerMode()
-        }
     }
 
     /** Funzione per istanziare elementi dal activity_main.xml
@@ -316,6 +297,25 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun loadFromBundle(savedInstanceState : Bundle?)
+    {
+        if (savedInstanceState != null) {
+            currentCamera = savedInstanceState.getInt("CurrentCamera")
+            //TODO: Sistemare zoom e camera
+            val progress : Int= savedInstanceState.getInt("zoomProgress")
+            SB_zoom.setProgress(progress)
+            grid = savedInstanceState.getBoolean("gridMode")
+            viewGrid(grid);
+
+            var flashMode = savedInstanceState.getString("flashMode")
+            while(currFlashMode.toString() != flashMode)
+                switchFlashMode()
+
+            var timerMode = savedInstanceState.getString("timerMode")
+            while(timerMode.toString() != timerMode)
+                switchTimerMode()
+        }
+    }
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         Log.d(TAG, "[event type] $event")
         scaleGestureDetector.onTouchEvent(event!!)
@@ -343,7 +343,7 @@ class MainActivity : AppCompatActivity() {
             super.onScaleEnd(detector)
         }
     }
-    private fun startCamera() {
+    private fun startCamera(savedInstanceState : Bundle? = null) {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
 
         cameraProviderFuture.addListener({
@@ -381,6 +381,8 @@ class MainActivity : AppCompatActivity() {
                 // Bind use cases to camera
                 camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture)
                 cameraControl = camera.cameraControl
+                createElement()
+                //loadFromBundle(savedInstanceState)
             } catch(exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
             }
