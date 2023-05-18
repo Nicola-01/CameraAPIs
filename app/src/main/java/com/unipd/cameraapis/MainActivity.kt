@@ -97,6 +97,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var BT_zoomRec : Button
     private lateinit var BT_timer : Button
     private lateinit var BT_grid : Button
+    private lateinit var BT_photoMode : Button
+    private lateinit var BT_recMode : Button
     private lateinit var SB_zoom : SeekBar
     private val changeCameraSeekBar = 50
     private lateinit var CM_recTimer : Chronometer
@@ -120,6 +122,7 @@ class MainActivity : AppCompatActivity() {
     // 1 -> front default grand angolare
     // 2 -> back grand angolare
     // 3 -> front normale
+    private var recordMode = false
     private var isRecording = false
     private var grid = true
 
@@ -173,6 +176,8 @@ class MainActivity : AppCompatActivity() {
         CM_recTimer.format = "%02d:%02d:%02d"
         BT_timer = viewBinding.BTTimer
         BT_grid = viewBinding.BTGrid
+        BT_photoMode = viewBinding.BTPhotoMode
+        BT_recMode = viewBinding.BTRecordMode
         countDownText = viewBinding.TextTimer
 
         BT_rotation = viewBinding.BTRotation
@@ -198,8 +203,8 @@ class MainActivity : AppCompatActivity() {
     private fun createListener()    {
         // Set up the listeners for take photo and video capture buttons
         BT_shoot.setOnClickListener {
-            it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
             timerShot()
+            it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         }
 
         SB_zoom.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -212,10 +217,15 @@ class MainActivity : AppCompatActivity() {
             override fun onStopTrackingTouch(seek: SeekBar) = Unit
         })
 
-        BT_shoot.setOnLongClickListener{ captureVideo() }
+        BT_shoot.setOnLongClickListener{
+            captureVideo() //TODO: timer
+            it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+        }
         BT_zoom1_0.setOnClickListener { SB_zoom.setProgress(changeCameraSeekBar) }
         BT_zoom0_5.setOnClickListener{ SB_zoom.setProgress(0) }
         BT_grid.setOnClickListener { grid =! grid; viewGrid(grid) }
+        BT_photoMode.setOnClickListener { changeMode(false) }
+        BT_recMode.setOnClickListener { changeMode(true) }
 
         BT_gallery.setOnClickListener{//TODO: aprire galleria
             val intent = Intent(Intent.ACTION_PICK)
@@ -281,6 +291,25 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
+    private fun changeMode(record : Boolean) {
+        recordMode = record;
+        val bt1 = if(record) BT_recMode else BT_photoMode
+        val bt2 = if(record) BT_photoMode else BT_recMode
+
+        bt1.setBackgroundTintList(getColorStateList(R.color.white));
+        bt1.setTextColor(getColor(R.color.black))
+
+        //bt2.setBackgroundColor(getColor(R.color.gray_onyx))
+        bt2.setBackgroundTintList(getColorStateList(R.color.gray_onyx));
+        bt2.setTextColor(getColor(R.color.white))
+
+        if(!isRecording)
+            BT_shoot.setBackgroundResource(
+                if(record) R.drawable.rec_button_ui else R.drawable.rounded_corner
+            )
+
+    }
+
     private val orientationEventListener by lazy {
         object : OrientationEventListener(this) {
             override fun onOrientationChanged(orientation: Int) {
@@ -315,21 +344,10 @@ class MainActivity : AppCompatActivity() {
         if (savedInstanceState != null) {
             currentCamera = savedInstanceState.getInt("CurrentCamera")
 
-            SB_zoom.progress = savedInstanceState.getInt("zoomProgress")
+            var progress = savedInstanceState.getInt("zoomProgress")
 
-            cameraSelector = availableCameraInfos[currentCamera].cameraSelector
-            imageCapture = ImageCapture.Builder().build()
-            try {
-                cameraProvider.unbindAll()            // Unbind use cases before rebinding
-                camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture) // devo ricostruire la camera ogni volta
-                // in quato cambio la camera
-                cameraControl = camera.cameraControl
-            } catch(exc: Exception) {
-                Log.e(TAG, "Use case binding failed", exc)
-            }
-
-            zoomLv = savedInstanceState.getFloat("zoomLv")
-            cameraControl.setLinearZoom(zoomLv)
+            SB_zoom.progress = progress
+            changeZoom(progress, true)
 
             grid = savedInstanceState.getBoolean("gridMode")
             viewGrid(grid);
@@ -704,7 +722,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun changeZoom(progress : Int)
+    private fun changeZoom(progress : Int, buildAnyway : Boolean = false)
     {
         var reBuild = false // evito di costruitr la camera ogni volta
         val maxzoom = 8
@@ -731,14 +749,12 @@ class MainActivity : AppCompatActivity() {
 
                 if(currentCamera==0) // se sono in back default
                 {
-                    cameraSelector = availableCameraInfos[2].cameraSelector // passo in back grand angolare
-                    currentCamera = 2
+                    currentCamera = 2 // passo in back grand angolare
                     reBuild=true
                 }
                 else if(currentCamera==3) // se sono in front normale
                 {
-                    cameraSelector = availableCameraInfos[1].cameraSelector // passo in front grand angolare
-                    currentCamera = 1
+                    currentCamera = 1 // passo in front grand angolare
                     reBuild=true
                 }
             }
@@ -748,14 +764,12 @@ class MainActivity : AppCompatActivity() {
 
                 if(currentCamera==2) // se sono in back grand angolare
                 {
-                    cameraSelector = availableCameraInfos[0].cameraSelector // passo in back default
-                    currentCamera = 0
+                    currentCamera = 0 // passo in back default
                     reBuild=true
                 }
                 else if(currentCamera==1) // se sono in front grand angolare
                 {
-                    cameraSelector = availableCameraInfos[3].cameraSelector // front in normale
-                    currentCamera = 3
+                    currentCamera = 3 // front in normale
                     reBuild=true
                 }
             }
@@ -775,9 +789,11 @@ class MainActivity : AppCompatActivity() {
             BT_zoom0_5.text = (zoomLv+0.5).toString().substring(0,3) + "x"
         }
 
-       if(reBuild && !isRecording) // se sta registrando non cambia fotocamera
+       if(buildAnyway || (reBuild && !isRecording)) // se sta registrando non cambia fotocamera
        {
            imageCapture = ImageCapture.Builder().build()
+
+           cameraSelector = availableCameraInfos[currentCamera].cameraSelector
 
            try {
                cameraProvider.unbindAll()            // Unbind use cases before rebinding
@@ -808,6 +824,8 @@ class MainActivity : AppCompatActivity() {
         BT_zoom1_0.rotation = angle
         CM_recTimer.rotation = angle
         BT_grid.rotation = angle
+        BT_recMode.rotation = angle
+        BT_photoMode.rotation = angle
     }
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
@@ -958,6 +976,5 @@ class MainActivity : AppCompatActivity() {
         savedInstanceState.putString("flashMode",currFlashMode.toString())
         savedInstanceState.putString("timerMode",currFlashMode.toString())
         savedInstanceState.putBoolean("gridMode",grid)
-        savedInstanceState.putFloat("zoomLv",zoomLv)
     }
 }
