@@ -9,18 +9,6 @@
     tools:context=".MainActivity">
 
 
-    <Button
-        android:id="@+id/BT_flash"
-        android:layout_width="35dp"
-        android:layout_height="35dp"
-        android:layout_marginStart="24dp"
-        android:background="@drawable/flash_off"
-        android:backgroundTint="@color/white"
-        app:layout_constraintBottom_toTopOf="@+id/guideline"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.75" />
-
     <androidx.camera.view.PreviewView
         android:id="@+id/viewFinder"
         android:layout_width="match_parent"
@@ -40,6 +28,22 @@
         android:orientation="vertical"
         app:layout_constraintGuide_percent="0.5" />
 
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.10" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="101dp"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintGuide_percent="0.8618331" />
+
     <Button
         android:id="@+id/BT_shoots"
         android:layout_width="70dp"
@@ -50,39 +54,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/guideline2"
         app:layout_constraintVertical_bias="0.0" />
-
-    <SeekBar
-        android:id="@+id/SB_zoom"
-        style="@style/Widget.AppCompat.SeekBar"
-        android:layout_width="fill_parent"
-        android:layout_height="35dp"
-        android:max="200"
-        android:min="0"
-        android:progress="50"
-        android:progressBackgroundTint="@color/dark_gray"
-        android:progressTint="@android:color/transparent"
-        android:thumbTint="@color/white"
-        android:tickMark="@drawable/rounded_corner"
-        app:layout_constraintBottom_toBottomOf="@+id/viewFinder"
-        app:layout_constraintEnd_toEndOf="@+id/viewFinder"
-        app:layout_constraintStart_toStartOf="@+id/viewFinder"
-        app:tickVisible="true" />
-
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.07" />
-
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="101dp"
-        android:orientation="horizontal"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintGuide_percent="0.8618331" />
 
     <Button
         android:id="@+id/BT_0.5"
@@ -106,6 +77,23 @@
         android:textSize="10sp"
         app:layout_constraintBottom_toTopOf="@+id/SB_zoom"
         app:layout_constraintStart_toEndOf="@+id/space" />
+
+    <SeekBar
+        android:id="@+id/SB_zoom"
+        style="@style/Widget.AppCompat.SeekBar"
+        android:layout_width="fill_parent"
+        android:layout_height="35dp"
+        android:max="200"
+        android:min="0"
+        android:progress="50"
+        android:progressBackgroundTint="@color/dark_gray"
+        android:progressTint="@android:color/transparent"
+        android:thumbTint="@color/white"
+        android:tickMark="@drawable/rounded_corner"
+        app:layout_constraintBottom_toBottomOf="@+id/viewFinder"
+        app:layout_constraintEnd_toEndOf="@+id/viewFinder"
+        app:layout_constraintStart_toStartOf="@+id/viewFinder"
+        app:tickVisible="true" />
 
     <Space
         android:id="@+id/space"
@@ -170,6 +158,18 @@
         android:background="@drawable/grid_off"
         app:layout_constraintBottom_toTopOf="@+id/guideline"
         app:layout_constraintEnd_toStartOf="@+id/BT_timer"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.75" />
+
+    <Button
+        android:id="@+id/BT_flash"
+        android:layout_width="35dp"
+        android:layout_height="35dp"
+        android:layout_marginStart="24dp"
+        android:background="@drawable/flash_off"
+        android:backgroundTint="@color/white"
+        app:layout_constraintBottom_toTopOf="@+id/guideline"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.75" />
 

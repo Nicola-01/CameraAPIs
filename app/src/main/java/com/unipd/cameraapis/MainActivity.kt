@@ -305,7 +305,7 @@ class MainActivity : AppCompatActivity() {
 
         if(!isRecording)
             BT_shoot.setBackgroundResource(
-                if(record) R.drawable.rec_button_ui else R.drawable.rounded_corner
+                if(record) R.drawable.in_recording_button else R.drawable.rounded_corner
             )
 
     }
