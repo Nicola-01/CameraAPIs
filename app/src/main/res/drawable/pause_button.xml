@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:width="70dp"
+        android:height="70dp"
+        android:drawable="@drawable/rounded_corner" />
+    <item
+        android:width="10dp"
+        android:height="25dp"
+        android:gravity="center"
+        android:right="15dp"
+        android:drawable="@drawable/rounded_rectangle" />
+    <item
+        android:width="10dp"
+        android:height="25dp"
+        android:gravity="center"
+        android:left="15dp"
+        android:drawable="@drawable/rounded_rectangle" />
+</layer-list>

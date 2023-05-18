@@ -5,13 +5,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Paint
-import android.graphics.Point
-import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
-import android.hardware.Camera
 import android.hardware.camera2.CameraManager
 import android.os.Build
 import android.os.Bundle
@@ -33,7 +27,6 @@ import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.Button
 import android.widget.Chronometer
-import android.widget.ImageView
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
@@ -45,7 +38,6 @@ import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
-import androidx.camera.core.ZoomState
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Quality
@@ -54,6 +46,7 @@ import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
+import androidx.constraintlayout.widget.Group
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
@@ -617,10 +610,9 @@ class MainActivity : AppCompatActivity() {
             BT_grid.setBackgroundResource(R.drawable.grid_on)
             view = View.INVISIBLE
         }
-        viewBinding.GRVert1.visibility = view
-        viewBinding.GRVert2.visibility = view
-        viewBinding.GRHoriz1.visibility = view
-        viewBinding.GRHoriz2.visibility = view
+        var grid = findViewById<Group>(R.id.Group_grid)
+        grid.visibility = view
+
     }
     private fun rotateCamera() { // id = 0 default back, id = 1 front default
         if(currentCamera== 0 || currentCamera == 2)

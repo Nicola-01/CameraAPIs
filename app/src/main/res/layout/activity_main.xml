@@ -51,7 +51,28 @@
         android:background="@drawable/rounded_corner"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.501"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/guideline2"
+        app:layout_constraintVertical_bias="0.0" />
+
+    <Button
+        android:id="@+id/BT_pause"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:background="@drawable/pause_button"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/guideline2"
+        app:layout_constraintVertical_bias="0.0" />
+
+    <Button
+        android:id="@+id/BT_stop"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:background="@drawable/stop_button"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/guideline2"
         app:layout_constraintVertical_bias="0.0" />
 
@@ -207,6 +228,12 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="@+id/viewFinder"
         app:layout_constraintVertical_bias="0.41000003" />
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/Group_grid"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:constraint_referenced_ids="GR_vert1,GR_vert2,GR_horiz1,GR_horiz2" />
 
     <View
         android:id="@+id/GR_vert1"
