@@ -1,19 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:width="70dp"
-        android:height="70dp"
-        android:drawable="@drawable/rounded_corner" />
+        android:width="60dp"
+        android:height="60dp">
+        <shape>
+            <corners
+                android:topLeftRadius="100dp"
+                android:topRightRadius="0dp"
+                android:bottomLeftRadius="100dp"
+                android:bottomRightRadius="0dp" />
+            <solid android:color="@color/white"></solid>
+        </shape>
+    </item>
     <item
-        android:width="10dp"
-        android:height="25dp"
+        android:width="8dp"
+        android:height="20dp"
         android:gravity="center"
-        android:right="15dp"
+        android:right="12dp"
         android:drawable="@drawable/rounded_rectangle" />
     <item
-        android:width="10dp"
-        android:height="25dp"
+        android:width="8dp"
+        android:height="20dp"
         android:gravity="center"
-        android:left="15dp"
+        android:left="12dp"
         android:drawable="@drawable/rounded_rectangle" />
 </layer-list>

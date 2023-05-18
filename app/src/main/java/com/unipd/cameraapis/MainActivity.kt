@@ -92,6 +92,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var BT_grid : Button
     private lateinit var BT_photoMode : Button
     private lateinit var BT_recMode : Button
+    private lateinit var BT_stop : Button
+    private lateinit var BT_pause : Button
     private lateinit var SB_zoom : SeekBar
     private val changeCameraSeekBar = 50
     private lateinit var CM_recTimer : Chronometer
@@ -171,6 +173,9 @@ class MainActivity : AppCompatActivity() {
         BT_grid = viewBinding.BTGrid
         BT_photoMode = viewBinding.BTPhotoMode
         BT_recMode = viewBinding.BTRecordMode
+        BT_stop = viewBinding.BTStop
+        BT_pause = viewBinding.BTPause
+
         countDownText = viewBinding.TextTimer
 
         BT_rotation = viewBinding.BTRotation
@@ -193,6 +198,8 @@ class MainActivity : AppCompatActivity() {
         viewFinder = viewBinding.viewFinder
     }
 
+
+
     private fun createListener()    {
         // Set up the listeners for take photo and video capture buttons
         BT_shoot.setOnClickListener {
@@ -214,11 +221,13 @@ class MainActivity : AppCompatActivity() {
             captureVideo() //TODO: timer
             it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         }
+        BT_stop.setOnClickListener{ captureVideo() }
+        BT_pause.setOnClickListener{ pauseVideo() }
         BT_zoom1_0.setOnClickListener { SB_zoom.setProgress(changeCameraSeekBar) }
         BT_zoom0_5.setOnClickListener{ SB_zoom.setProgress(0) }
         BT_grid.setOnClickListener { grid =! grid; viewGrid(grid) }
-        BT_photoMode.setOnClickListener { changeMode(false) }
-        BT_recMode.setOnClickListener { changeMode(true) }
+        BT_photoMode.setOnClickListener { changeMode(false); recOptions() }
+        BT_recMode.setOnClickListener { changeMode(true); recOptions() }
 
         BT_gallery.setOnClickListener{//TODO: aprire galleria
             val intent = Intent(Intent.ACTION_PICK)
@@ -284,6 +293,20 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
+    private fun pauseVideo() {
+        if(isRecording) {
+            recording?.pause()
+            CM_recTimer.stop()
+            BT_pause.setBackgroundResource(R.drawable.play_button)
+        }
+        else {
+            recording?.resume()
+            CM_recTimer.start()
+            BT_pause.setBackgroundResource(R.drawable.pause_button)
+        }
+        isRecording = !isRecording
+    }
+
     private fun changeMode(record : Boolean) {
         recordMode = record;
         val bt1 = if(record) BT_recMode else BT_photoMode
@@ -302,6 +325,7 @@ class MainActivity : AppCompatActivity() {
             )
 
     }
+
 
     private val orientationEventListener by lazy {
         object : OrientationEventListener(this) {
@@ -584,7 +608,7 @@ class MainActivity : AppCompatActivity() {
                         if (!recordEvent.hasError()) {
                             val msg = "Video capture succeeded: " + "${recordEvent.outputResults.outputUri}"
                             if(currFlashMode == FlashModes.ON) { cameraControl.enableTorch(false) }
-                            Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
+                            //Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
                             Log.d(TAG, msg)
                         } else {
                             recording?.close()
@@ -616,15 +640,9 @@ class MainActivity : AppCompatActivity() {
     }
     private fun rotateCamera() { // id = 0 default back, id = 1 front default
         if(currentCamera== 0 || currentCamera == 2)
-        {
-            cameraSelector = availableCameraInfos[3].cameraSelector // passo in front
-            currentCamera = 3
-        }
+            currentCamera = 3 // passo in front, è la camera frontale grand angolare
         else if(currentCamera==1 || currentCamera==3)
-        {
-            cameraSelector = availableCameraInfos[0].cameraSelector // passo in back
-            currentCamera = 0
-        }
+            currentCamera = 0 // passo in back
         SB_zoom.progress = changeCameraSeekBar
         /*
         else if(currentCamera==2)
@@ -644,6 +662,16 @@ class MainActivity : AppCompatActivity() {
         if(!isRecording) // se sta registrando non cambia fotocamera
         {
             imageCapture = ImageCapture.Builder().build()
+
+            try {
+                cameraSelector = availableCameraInfos[currentCamera].cameraSelector
+            }
+            catch (e : Exception){
+                if(currentCamera%2 == 0) // se è camera 0 o 2 è back
+                    cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+                else
+                    cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
+            }
 
             try {
                 cameraProvider.unbindAll()            // Unbind use cases before rebinding
@@ -695,6 +723,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         BT_rotation.visibility = viewPH
+        BT_gallery.visibility = viewPH
         BT_zoom1_0.visibility = viewPH
         BT_zoom0_5.visibility = viewPH
         BT_zoomRec.visibility = viewVI
@@ -712,14 +741,25 @@ class MainActivity : AppCompatActivity() {
             else
                 SB_zoom.progress = (zoomLv*SB_zoom.max*0.54).toInt()
         }
+
+        recOptions()
+    }
+
+    private fun recOptions()
+    {
+        BT_shoot.visibility = if(recordMode && isRecording) View.INVISIBLE else View.VISIBLE
+        findViewById<Group>(R.id.Group_rec).visibility = if(recordMode && isRecording) View.VISIBLE else View.INVISIBLE
     }
 
     private fun changeZoom(progress : Int, buildAnyway : Boolean = false)
     {
         var reBuild = false // evito di costruitr la camera ogni volta
-        val maxzoom = 8
+        // getZoomRatio -> camerainfo.getZoomRatio
+        // getCameraInfo()
+
         // SB_zoom va da 0 a 100, quindi i primi 25 valori sono per lo zoom con la grand angolare, gli altri per la camera normale
         // non sono riuscito a recoperare la telephoto
+        // valori corrispondenti a quale camara (Samsung S21)
         // 0 -> back default
         // 1 -> front default grand angolare
         // 2 -> back grand angolare
@@ -767,6 +807,10 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+
+        var zoomState = camera.cameraInfo.zoomState
+        var maxzoom : Float = zoomState.value?.maxZoomRatio!!
+
         BT_zoom0_5.text = "0.5x"
         BT_zoom1_0.text = "1.0x"
 
@@ -784,8 +828,15 @@ class MainActivity : AppCompatActivity() {
        if(buildAnyway || (reBuild && !isRecording)) // se sta registrando non cambia fotocamera
        {
            imageCapture = ImageCapture.Builder().build()
-
-           cameraSelector = availableCameraInfos[currentCamera].cameraSelector
+            try {
+                cameraSelector = availableCameraInfos[currentCamera].cameraSelector
+            }
+           catch (e : Exception){
+               if(currentCamera%2 == 0) // se è camera 0 o 2 è back
+                   cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+               else
+                   cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
+           }
 
            try {
                cameraProvider.unbindAll()            // Unbind use cases before rebinding
@@ -796,12 +847,7 @@ class MainActivity : AppCompatActivity() {
                Log.e(TAG, "Use case binding failed", exc)
            }
        }
-
         cameraControl.setLinearZoom(zoomLv)
-        var zoomState = camera.cameraInfo.zoomState
-        // getZoomRatio -> camerainfo.getZoomRatio
-        // getCameraInfo()
-        zoomState.value?.maxZoomRatio
         Log.d(TAG,"Zoom lv: $zoomLv, zoomState: ${zoomState.value}" )
         Log.d(TAG,"[current camera] - zoom: " + currentCamera)
     }

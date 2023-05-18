@@ -56,25 +56,30 @@
         app:layout_constraintTop_toTopOf="@+id/guideline2"
         app:layout_constraintVertical_bias="0.0" />
 
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/Group_rec"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="invisible"
+        app:constraint_referenced_ids="BT_pause,BT_stop" />
+
     <Button
         android:id="@+id/BT_pause"
-        android:layout_width="70dp"
-        android:layout_height="70dp"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
         android:background="@drawable/pause_button"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/guideline2"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintBottom_toBottomOf="@+id/BT_shoots"
+        app:layout_constraintEnd_toStartOf="@+id/BT_stop"
+        app:layout_constraintTop_toTopOf="@+id/guideline2" />
 
     <Button
         android:id="@+id/BT_stop"
-        android:layout_width="70dp"
-        android:layout_height="70dp"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
         android:background="@drawable/stop_button"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/guideline2"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintBottom_toBottomOf="@+id/BT_shoots"
+        app:layout_constraintStart_toStartOf="@+id/vertical_centerline"
+        app:layout_constraintTop_toTopOf="@+id/guideline2" />
 
     <Button
         android:id="@+id/BT_0.5"
@@ -294,6 +299,7 @@
         android:background="@drawable/rounded_corner"
         android:backgroundTint="@color/white"
         android:text="FOTO"
+        android:textColor="@color/black"
         app:layout_constraintBottom_toBottomOf="@+id/space2"
         app:layout_constraintEnd_toStartOf="@+id/space2"
         app:layout_constraintTop_toTopOf="@+id/space2" />
