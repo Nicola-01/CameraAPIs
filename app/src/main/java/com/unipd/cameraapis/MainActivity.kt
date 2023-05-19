@@ -122,6 +122,7 @@ class MainActivity : AppCompatActivity() {
     private var recordMode = false
     private var isRecording = false
     private var inPause = false
+    private var timerOn = false
     private var grid = true
 
     private lateinit var scaleGestureDetector: ScaleGestureDetector
@@ -692,8 +693,21 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun timerShot(record : Boolean){
-        if(isRecording && record){
+        if(timerOn)
+        {
+            timerOn = false
+            timer.cancel()
+            countDownText.visibility = INVISIBLE
+            BT_shoot.setBackgroundResource(R.drawable.rounded_corner)
+            return
+        }
+        if(isRecording && record){ // se sto registrando e tengo premuto il pulsante rosso ferma il video
             captureVideo()
+            return
+        }
+        if (isRecording && !record){ // se sto registrando e premo il pulsante rosso
+            // fa una foto senza usare il time
+            takePhoto()
             return
         }
         if(inPause && !recordMode)
@@ -702,19 +716,23 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        timerOn = true
         timer = object : CountDownTimer(countdown*1000, 1000){
             override fun onTick(remainingMillis: Long) {
-                BT_shoot.visibility = INVISIBLE
+                BT_shoot.setBackgroundResource(R.drawable.rounded_stop_button)
                 countDownText.text = (remainingMillis/1000 + 1).toString()
+                countDownText.visibility = VISIBLE
                 Log.d(TAG, "Secondi rimanenti: "+remainingMillis/1000)
             }
             override fun onFinish() {
-                countDownText.text = ""
+                timerOn = false
+                countDownText.visibility = INVISIBLE
                 if(record)
                     captureVideo()
                 else
                     takePhoto()
-                BT_shoot.visibility = VISIBLE
+                //BT_shoot.visibility = VISIBLE
+                BT_shoot.setBackgroundResource(R.drawable.rounded_corner)
             }
 
         }.start()
