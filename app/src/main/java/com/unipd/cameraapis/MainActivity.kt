@@ -300,16 +300,16 @@ class MainActivity : AppCompatActivity() {
 
     private fun pauseVideo() {
         if(inPause) {
-            recording?.pause()
-            CM_recTimer.stop()
-            CM_pauseAt = SystemClock.elapsedRealtime() - CM_recTimer.base
-            BT_pause.setBackgroundResource(R.drawable.play_button)
-        }
-        else {
             recording?.resume()
             CM_recTimer.base = SystemClock.elapsedRealtime() - CM_pauseAt
             CM_recTimer.start()
             BT_pause.setBackgroundResource(R.drawable.pause_button)
+        }
+        else {
+            recording?.pause()
+            CM_recTimer.stop()
+            CM_pauseAt = SystemClock.elapsedRealtime() - CM_recTimer.base
+            BT_pause.setBackgroundResource(R.drawable.play_button)
         }
         inPause = !inPause
     }
@@ -692,10 +692,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun timerShot(record : Boolean){
-        if(isRecording){
+        if(isRecording && record){
             captureVideo()
             return
         }
+        if(inPause && !recordMode)
+        {
+            pauseVideo()
+            return
+        }
+
         timer = object : CountDownTimer(countdown*1000, 1000){
             override fun onTick(remainingMillis: Long) {
                 BT_shoot.visibility = INVISIBLE
