@@ -99,11 +99,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var SB_zoom : SeekBar
     private val changeCameraSeekBar = 50
     private lateinit var CM_recTimer : Chronometer
+    private var CM_pauseAt : Long = 0
     private lateinit var countDownText : TextView
     private lateinit var timer: CountDownTimer
     private lateinit var FocusCircle : View
 
-    private lateinit var focusCircle: Drawable
     private lateinit var scaleDown: Animation
     private lateinit var scaleUp: Animation
     private lateinit var cameraControl:CameraControl
@@ -121,6 +121,7 @@ class MainActivity : AppCompatActivity() {
     // 3 -> front normale
     private var recordMode = false
     private var isRecording = false
+    private var inPause = false
     private var grid = true
 
     private lateinit var scaleGestureDetector: ScaleGestureDetector
@@ -298,17 +299,19 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun pauseVideo() {
-        if(isRecording) {
+        if(inPause) {
             recording?.pause()
             CM_recTimer.stop()
+            CM_pauseAt = SystemClock.elapsedRealtime() - CM_recTimer.base
             BT_pause.setBackgroundResource(R.drawable.play_button)
         }
         else {
             recording?.resume()
+            CM_recTimer.base = SystemClock.elapsedRealtime() - CM_pauseAt
             CM_recTimer.start()
             BT_pause.setBackgroundResource(R.drawable.pause_button)
         }
-        isRecording = !isRecording
+        inPause = !inPause
     }
 
     private fun changeMode(record : Boolean) {
@@ -566,8 +569,6 @@ class MainActivity : AppCompatActivity() {
     private fun captureVideo() : Boolean {
         val videoCapture = this.videoCapture ?: return true
 
-        //viewBinding.videoCaptureButton.isEnabled = false
-
         val curRecording = recording
         if (curRecording != null) {
             // Stop the current recording session.
@@ -607,6 +608,7 @@ class MainActivity : AppCompatActivity() {
                 when(recordEvent) {
                     is VideoRecordEvent.Start -> {
                         startRecording(true)
+                        inPause = false
                     }
                     is VideoRecordEvent.Finalize -> {
                         if (!recordEvent.hasError()) {
@@ -689,43 +691,28 @@ class MainActivity : AppCompatActivity() {
         Log.d(TAG,"[current camera]  - rotate: " + currentCamera)
     }
 
-    private fun timerShot(record:Boolean){
-        if(!record){
-            timer = object : CountDownTimer(countdown*1000, 1000){
-                override fun onTick(remainingMillis: Long) {
-                    BT_shoot.visibility = INVISIBLE
-                    countDownText.text = (remainingMillis/1000 + 1).toString()
-                    Log.d(TAG, "Secondi rimanenti: "+remainingMillis/1000)
-                }
-
-                override fun onFinish() {
-                    countDownText.text = ""
-                    takePhoto()
-                    BT_shoot.visibility = VISIBLE
-                }
-
-            }.start()
-            Log.d(TAG, "Secondi ristabiliti: "+countdown)
+    private fun timerShot(record : Boolean){
+        if(isRecording){
+            captureVideo()
+            return
         }
-        else {
-            if(recordMode)
-                changeMode(recordMode)
-            timer = object : CountDownTimer(countdown*1000, 1000){
-                override fun onTick(remainingMillis: Long) {
-                    BT_shoot.visibility = INVISIBLE
-                    countDownText.text = (remainingMillis/1000 + 1).toString()
-                    Log.d(TAG, "Secondi rimanenti: "+remainingMillis/1000)
-                }
-
-                override fun onFinish() {
-                    countDownText.text = ""
+        timer = object : CountDownTimer(countdown*1000, 1000){
+            override fun onTick(remainingMillis: Long) {
+                BT_shoot.visibility = INVISIBLE
+                countDownText.text = (remainingMillis/1000 + 1).toString()
+                Log.d(TAG, "Secondi rimanenti: "+remainingMillis/1000)
+            }
+            override fun onFinish() {
+                countDownText.text = ""
+                if(record)
                     captureVideo()
-                    BT_shoot.visibility = VISIBLE
-                }
+                else
+                    takePhoto()
+                BT_shoot.visibility = VISIBLE
+            }
 
-            }.start()
-            Log.d(TAG, "Secondi ristabiliti: "+countdown)
-        }
+        }.start()
+        Log.d(TAG, "Secondi ristabiliti: "+countdown)
     }
 
     private fun startRecording(status : Boolean)
@@ -775,6 +762,16 @@ class MainActivity : AppCompatActivity() {
     private fun recOptions()
     {
         BT_shoot.visibility = if(recordMode && isRecording) View.INVISIBLE else View.VISIBLE
+
+        if(recordMode && !isRecording)
+                BT_shoot.setBackgroundResource( R.drawable.in_recording_button)
+        else if(!recordMode)  {
+            if(isRecording)
+                BT_shoot.setBackgroundResource( R.drawable.rounded_corner_red)
+            else
+                BT_shoot.setBackgroundResource( R.drawable.rounded_corner)
+        }
+        //BT_shoot.setBackgroundResource( if(recordMode && !isRecording) R.drawable.in_recording_button else R.drawable.rounded_corner )
         findViewById<Group>(R.id.Group_rec).visibility = if(recordMode && isRecording) View.VISIBLE else View.INVISIBLE
     }
 
@@ -887,6 +884,7 @@ class MainActivity : AppCompatActivity() {
         BT_timer.rotation = angle
         BT_zoom0_5.rotation = angle
         BT_zoom1_0.rotation = angle
+        BT_zoomRec.rotation = angle
         CM_recTimer.rotation = angle
         BT_grid.rotation = angle
         BT_recMode.rotation = angle
