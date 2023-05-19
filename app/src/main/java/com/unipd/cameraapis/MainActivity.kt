@@ -22,7 +22,9 @@ import android.view.MotionEvent
 import android.view.OrientationEventListener
 import android.view.ScaleGestureDetector
 import android.view.View
+import android.view.View.INVISIBLE
 import android.view.View.OnTouchListener
+import android.view.View.VISIBLE
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.Button
@@ -203,7 +205,7 @@ class MainActivity : AppCompatActivity() {
     private fun createListener()    {
         // Set up the listeners for take photo and video capture buttons
         BT_shoot.setOnClickListener {
-            timerShot()
+            timerShot(recordMode)
             it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         }
 
@@ -218,10 +220,14 @@ class MainActivity : AppCompatActivity() {
         })
 
         BT_shoot.setOnLongClickListener{
-            captureVideo() //TODO: timer
+            recordMode = true
+            timerShot(recordMode) //TODO: timer
             it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         }
-        BT_stop.setOnClickListener{ captureVideo() }
+        BT_stop.setOnClickListener{
+            recordMode=true
+            timerShot(recordMode)
+        }
         BT_pause.setOnClickListener{ pauseVideo() }
         BT_zoom1_0.setOnClickListener { SB_zoom.setProgress(changeCameraSeekBar) }
         BT_zoom0_5.setOnClickListener{ SB_zoom.setProgress(0) }
@@ -685,20 +691,43 @@ class MainActivity : AppCompatActivity() {
         Log.d(TAG,"[current camera]  - rotate: " + currentCamera)
     }
 
-    private fun timerShot(){
-        timer = object : CountDownTimer(countdown*1000, 1000){
-            override fun onTick(remainingMillis: Long) {
-                countDownText.text = (remainingMillis/1000 + 1).toString()
-                Log.d(TAG, "Secondi rimanenti: "+remainingMillis/1000)
-            }
+    private fun timerShot(record:Boolean){
+        if(!record){
+            timer = object : CountDownTimer(countdown*1000, 1000){
+                override fun onTick(remainingMillis: Long) {
+                    BT_shoot.visibility = INVISIBLE
+                    countDownText.text = (remainingMillis/1000 + 1).toString()
+                    Log.d(TAG, "Secondi rimanenti: "+remainingMillis/1000)
+                }
 
-            override fun onFinish() {
-                countDownText.text = ""
-                takePhoto()
-            }
+                override fun onFinish() {
+                    countDownText.text = ""
+                    takePhoto()
+                    BT_shoot.visibility = VISIBLE
+                }
 
-        }.start()
-        Log.d(TAG, "Secondi ristabiliti: "+countdown)
+            }.start()
+            Log.d(TAG, "Secondi ristabiliti: "+countdown)
+        }
+        else {
+            if(recordMode)
+                changeMode(recordMode)
+            timer = object : CountDownTimer(countdown*1000, 1000){
+                override fun onTick(remainingMillis: Long) {
+                    BT_shoot.visibility = INVISIBLE
+                    countDownText.text = (remainingMillis/1000 + 1).toString()
+                    Log.d(TAG, "Secondi rimanenti: "+remainingMillis/1000)
+                }
+
+                override fun onFinish() {
+                    countDownText.text = ""
+                    captureVideo()
+                    BT_shoot.visibility = VISIBLE
+                }
+
+            }.start()
+            Log.d(TAG, "Secondi ristabiliti: "+countdown)
+        }
     }
 
     private fun startRecording(status : Boolean)
