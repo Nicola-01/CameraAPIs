@@ -220,12 +220,10 @@ class MainActivity : AppCompatActivity() {
         })
 
         BT_shoot.setOnLongClickListener{
-            recordMode = true
-            timerShot(recordMode) //TODO: timer
+            timerShot(true) //TODO: timer
             it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         }
         BT_stop.setOnClickListener{
-            recordMode=true
             timerShot(recordMode)
         }
         BT_pause.setOnClickListener{ pauseVideo() }
