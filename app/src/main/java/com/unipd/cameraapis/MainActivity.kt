@@ -103,6 +103,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var countDownText : TextView
     private lateinit var timer: CountDownTimer
     private lateinit var FocusCircle : View
+    private var rotation = 0
 
     private lateinit var scaleDown: Animation
     private lateinit var scaleUp: Animation
@@ -133,6 +134,14 @@ class MainActivity : AppCompatActivity() {
         private const val TAG = "CameraXApp"
         private const val FILENAME_FORMAT = "yyyy-MM-dd_HH-mm-ss-SSS"
         private const val REQUEST_CODE_PERMISSIONS = 10
+
+        private const val KEY_CAMERA = "CurrentCamera"
+        private const val KEY_GRID = "GridMode"
+        private const val KEY_FLASH = "FlashMode"
+        private const val KEY_TIMER = "TimerMode"
+        private const val KEY_ZOOM = "ZoomProgress"
+        private const val KEY_REC = "RecordMode"
+
         private val REQUIRED_PERMISSIONS =
             mutableListOf (
                 Manifest.permission.CAMERA,
@@ -342,12 +351,14 @@ class MainActivity : AppCompatActivity() {
                     return
                 }
 
-                val rotation = when (orientation) {
-                    in 45 .. 135 -> 270
-                    in 135 .. 225 -> 180
-                    in 225 .. 315 -> 90
-                    else -> 0
+                rotation = when (orientation) {
+                    in 50 .. 130 -> 270
+                    in 140 .. 220 -> 180
+                    in 230 .. 310 -> 90
+                    in 0 .. 40,in 320 .. 360 -> 0
+                    else -> rotation
                 }
+                // non ho messo valori multipli di 45 in modo da avere un minimo di gioco prima di cambiare rotazione
                 Log.d(TAG,"[orientation] $rotation" )
 
                 if(!isRecording) // gira solo se non sta registrando, per salvare i video nel orientamento corretto
@@ -366,25 +377,35 @@ class MainActivity : AppCompatActivity() {
      */
     private fun loadFromBundle(savedInstanceState : Bundle?)
     {
-        if (savedInstanceState != null) {
-            currentCamera = savedInstanceState.getInt("CurrentCamera")
+        // Get persistent data stored as SharedPreferences
+        val preferences = getPreferences(MODE_PRIVATE)
 
-            var progress = savedInstanceState.getInt("zoomProgress")
+        currentCamera = preferences.getInt(KEY_CAMERA,0)
+
+        grid = preferences.getBoolean(KEY_GRID,true)
+        viewGrid(grid);
+
+        var flashMode = preferences.getString(KEY_FLASH, "OFF")
+        while(currFlashMode.toString() != flashMode)
+            switchFlashMode()
+
+        var timerMode = preferences.getString(KEY_TIMER, "OFF")
+        while(timerMode.toString() != timerMode)
+            switchTimerMode()
+        var progress = changeCameraSeekBar
+
+        if (savedInstanceState != null) {
+            currentCamera = savedInstanceState.getInt(KEY_CAMERA)
+
+            progress = savedInstanceState.getInt(KEY_ZOOM)
 
             SB_zoom.progress = progress
             changeZoom(progress, true)
 
-            grid = savedInstanceState.getBoolean("gridMode")
-            viewGrid(grid);
-
-            var flashMode = savedInstanceState.getString("flashMode")
-            while(currFlashMode.toString() != flashMode)
-                switchFlashMode()
-
-            var timerMode = savedInstanceState.getString("timerMode")
-            while(timerMode.toString() != timerMode)
-                switchTimerMode()
+            recordMode = savedInstanceState.getBoolean(KEY_REC)
+            changeMode(recordMode); recOptions()
         }
+        changeZoom(progress, true) // sfrutto per fare il rebuild delle camere
     }
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         Log.d(TAG, "[event type] $event")
@@ -1039,6 +1060,36 @@ class MainActivity : AppCompatActivity() {
     override fun onPause()
     {
         super.onPause()
+
+        // Store values between instances here
+        val preferences = getPreferences(MODE_PRIVATE)
+        val editor = preferences.edit()
+
+        // Store relevant status of the widgets that are part of the persistent state
+
+        if(currentCamera%2==0) // a differenza di onSaveInstanceState non salvo lo zoom e la camera corretta
+            // salvo solo se è frontale o posteriore
+            editor.putInt(KEY_CAMERA, 0)
+        else
+        {
+            if(availableCameraInfos.size == 4)
+                editor.putInt(KEY_CAMERA, 3)
+            else
+                editor.putInt(KEY_CAMERA, 1)
+        }
+        editor.putString(KEY_FLASH, currFlashMode.toString())
+        editor.putString(KEY_TIMER, currFlashMode.toString())
+        editor.putBoolean(KEY_GRID, grid)
+
+        // Commit to storage synchronously
+        editor.apply()
+    }
+
+    override fun onSaveInstanceState(savedInstanceState: Bundle) {
+        super.onSaveInstanceState(savedInstanceState)
+        savedInstanceState.putInt(KEY_CAMERA, currentCamera)
+        savedInstanceState.putInt(KEY_ZOOM, SB_zoom.progress)
+        savedInstanceState.putBoolean(KEY_REC, recordMode)
     }
 
     override fun onStart() {
@@ -1056,12 +1107,4 @@ class MainActivity : AppCompatActivity() {
         cameraExecutor.shutdown()
     }
 
-    override fun onSaveInstanceState(savedInstanceState: Bundle) {
-        super.onSaveInstanceState(savedInstanceState)
-        savedInstanceState.putInt("CurrentCamera",currentCamera)
-        savedInstanceState.putInt("zoomProgress",SB_zoom.progress)
-        savedInstanceState.putString("flashMode",currFlashMode.toString())
-        savedInstanceState.putString("timerMode",currFlashMode.toString())
-        savedInstanceState.putBoolean("gridMode",grid)
-    }
 }
