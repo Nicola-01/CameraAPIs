@@ -171,6 +171,32 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
+     * TODO: da commentare
+     */
+    private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
+        ContextCompat.checkSelfPermission(
+            baseContext, it) == PackageManager.PERMISSION_GRANTED
+    }
+
+    /**
+     * TODO: da commentare
+     */
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_CODE_PERMISSIONS) {
+            if (allPermissionsGranted()) {
+                startCamera()
+            } else {
+                Toast.makeText(this,
+                    "Permissions not granted by the user.",
+                    Toast.LENGTH_SHORT).show()
+                finish()
+            }
+        }
+    }
+
+
+    /**
      * Funzione per istanziare elementi del activity_main.xml;
      * assagnazione dei widget e altre variabili
      */
@@ -302,215 +328,28 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Funzione per mettere in pausa o ripristinare la registrazione
+     * Ricostruisce la camera
      */
-    private fun pauseVideo() {
-        // inPause = true se la registrazione è in pausa
-        if(inPause) {
-            recording?.resume() // ripristina registrazione
-            CM_recTimer.base = SystemClock.elapsedRealtime() - CM_pauseAt // calcolo per riesumare il timer correttamente
-            CM_recTimer.start()
-            BT_pause.setBackgroundResource(R.drawable.pause_button) // cambio grafica al pulsante
-        }
-        else {
-            recording?.pause() // mette in pausa la registrazione
-            CM_recTimer.stop()
-            CM_pauseAt = SystemClock.elapsedRealtime() - CM_recTimer.base
-            BT_pause.setBackgroundResource(R.drawable.play_button) // cambio grafica al pulsante
-        }
-        inPause = !inPause
-    }
-
-    /**
-     * Funzione per switchare tra modalità Foto e Video;
-     * quindi cambia i pulsanti visualizzati
-     *
-     * @param record True se devo passare in modalità Video;
-     *                False se devo passare in modalità Foto
-     */
-    private fun changeMode(record : Boolean) {
-        recordMode = record;
-        val bt1 = if(record) BT_recMode else BT_photoMode
-        val bt2 = if(record) BT_photoMode else BT_recMode
-
-        bt1.setBackgroundTintList(getColorStateList(R.color.white));
-        bt1.setTextColor(getColor(R.color.black))
-
-        //bt2.setBackgroundColor(getColor(R.color.gray_onyx))
-        bt2.setBackgroundTintList(getColorStateList(R.color.gray_onyx));
-        bt2.setTextColor(getColor(R.color.white))
-
-        if(!timerOn) // se non c'è il timer attivato
-        {
-            if(!isRecording) // se non sta registrando
-                BT_shoot.setBackgroundResource( // cambio la grafica del pulsante in base a se sto registrando o no
-                    if(record) R.drawable.in_recording_button else R.drawable.rounded_corner
-                )
-            recOptions()
-        }
-    }
-
-    /**
-     * Mi permette di ottenere l'inclinazione del dispositivo
-     */
-    private val orientationEventListener by lazy {
-        object : OrientationEventListener(this) {
-            override fun onOrientationChanged(orientation: Int) {
-                if (orientation == ORIENTATION_UNKNOWN) {
-                    return
-                }
-
-                val rotation = when (orientation) {
-                    in 50 .. 130 -> 270
-                    in 140 .. 220 -> 180
-                    in 230 .. 310 -> 90
-                    in 0 .. 40,in 320 .. 360 -> 0
-                    else -> -1 // Angolo morto
-                }
-                // non ho messo valori multipli di 45 in modo da avere un minimo di gioco prima di cambiare rotazione
-                Log.d(TAG,"[orientation] $rotation" )
-
-                if(!isRecording && rotation != -1 ) // gira solo se non sta registrando, per salvare i video nel orientamento iniziale
-                {
-                    rotateButton(rotation.toFloat())
-                    // Surface.ROTATION_0 è = 0, ROTATION_90 = 1, ... ROTATION_270 = 3, quindi = rotation/90
-                    videoCapture?.targetRotation = rotation/90
-                }
-                imageCapture?.targetRotation = rotation/90 // è fuori dal if, in questo modo l'immagine è sempre orientata correttamente
-            }
-        }
-    }
-
-    /**
-     * Metodo per ricaricare i valori nel bundle o nelle preferences.
-     * Non è nel onCreate perchè usa variabili che vengono dichiarate nel startCamera
-     */
-    private fun loadFromBundle(savedInstanceState : Bundle?)
+    private fun buildCamera()
     {
-        val preferences = getPreferences(MODE_PRIVATE)
-
-        // recupero le variabili dalle preferences
-        currentCamera = preferences.getInt(KEY_CAMERA,0)
-        grid = preferences.getBoolean(KEY_GRID,true)
-        var flashMode = preferences.getString(KEY_FLASH, "OFF")
-        var timerMode = preferences.getString(KEY_TIMER, "OFF")
-
-        viewGrid(grid);
-        while(currFlashMode.toString() != flashMode)
-            switchFlashMode()
-        setFlashMode()
-        while(currTimerMode.toString() != timerMode)
-            switchTimerMode()
-        setTimerMode()
-        var progress = changeCameraSeekBar
-
-        if (savedInstanceState != null) { // controlo che ci sia il bundle
-            //recupero variabili dal bundle
-            currentCamera = savedInstanceState.getInt(KEY_CAMERA)
-            // se già ricaricato da preferences lo sovrascrivo,
-            // in quanto con preference salvo solo se è posteriore o anteriore
-            // mentre nel bundle salvo effettivamente la camera corretta
-            SB_zoom.progress = progress
-            recordMode = savedInstanceState.getBoolean(KEY_REC)
-
-            progress = savedInstanceState.getInt(KEY_ZOOM)
-            changeZoom(progress, true) // cambio zoom e forzo il rebuild
-            changeMode(recordMode);
+        try { // dato che uso gli id della mia camera allora potrebbe non esistere qulla camera
+            cameraSelector = availableCameraInfos[currentCamera].cameraSelector
         }
-        // uso changeZoom per cambiare lo zoom e ricostruire la camera
-        changeZoom(progress, true) // cambio zoom e forzo il rebuild
-    }
-
-    override fun onTouchEvent(event: MotionEvent?): Boolean {
-        Log.d(TAG, "[event type] $event")
-        scaleGestureDetector.onTouchEvent(event!!)
-        return true
-    }
-
-    class OnSwipeTouchListener : OnTouchListener {
-        private lateinit var scrollGestureDetector: GestureDetector
-        override fun onTouch(v: View?, event: MotionEvent): Boolean {
-            return scrollGestureDetector.onTouchEvent(event)
-        }
-        private inner class GestureListener : SimpleOnGestureListener(){
-            private var SWIPE_THRESHOLD : Int = 100
-            private var SWIPE_VELOCITY_THRESHOLD : Int =100
-
-            override fun onFling(e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
-                var res : Boolean = false
-                try{
-                    var diffY : Float = e2.getY() - e1.getY()
-                    var diffX : Float= e2.getX() - e1.getX()
-                    if (Math.abs(diffX) > Math.abs(diffY)){
-                        if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD){
-                            if(diffX > 0){
-                                res = onSwipeRight()
-                            }
-                            else {
-                                res = onSwipeLeft()
-                            }
-                        }
-                    }
-                    else {
-                        if (Math.abs(diffY) > SWIPE_THRESHOLD && Math.abs(velocityY) > SWIPE_VELOCITY_THRESHOLD){
-                            if (diffY > 0){
-                                res = onSwipeDown()
-                            }
-                            else{
-                                res = onSwipeUp()
-                            }
-                        }
-                    }
-                }
-                catch(e : Exception){
-                    e.printStackTrace()
-                }
-                return res
-                //return super.onFling(e1, e2, velocityX, velocityY)
-            }
+        catch (e : Exception){
+            if(currentCamera%2 == 0) // se è camera 0 o 2 è back
+                cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+            else
+                cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
         }
 
-        fun onSwipeRight() : Boolean {
-            //todo changeMode(false)
-            return false
+        try {
+            cameraProvider.unbindAll()            // Unbind use cases before rebinding
+            camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture) // devo ricostruire la camera ogni volta
+            // in quato cambio la camera
+            cameraControl = camera.cameraControl
+        } catch(e: Exception) {
+            Log.e(TAG, "Build failed", e)
         }
-        fun onSwipeLeft() : Boolean {
-            //todo changeMode(true)
-            return false
-        }
-        fun onSwipeUp() : Boolean {
-            return false
-        }
-        fun onSwipeDown() : Boolean {
-            return false
-        }
-
-    }
-
-    /**
-     * Listener per il pinch in/out per cambiare lo zoom
-     */
-    private inner class ScaleGestureListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-        override fun onScale(detector: ScaleGestureDetector): Boolean {
-            val scaleFactor = detector.scaleFactor
-            // Aggiorna lo zoom della fotocamera
-            Log.d(TAG, "[zoom] $scaleFactor")
-
-            if(scaleFactor>1) // se pinch in allora zoommo
-                SB_zoom.incrementProgressBy(1) // cambio il valore della SeekBar che a sua volta cambia il valore dello zoom
-            else // altrimienti è pinch out e allora dezoommo
-                SB_zoom.incrementProgressBy(-1)
-            return true
-        }
-        //todo: eliminabile:
-        /*
-        override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
-            return super.onScaleBegin(detector)
-        }
-
-        override fun onScaleEnd(detector: ScaleGestureDetector) {
-            super.onScaleEnd(detector)
-        } */
     }
 
     /**
@@ -677,6 +516,377 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
+     * Metodo per impostare la visuale durante la regisrazione
+     *
+     * @param status True se è stata avviata la registrazione;
+     *               False se è stata interrotta
+     */
+    private fun startRecording(status : Boolean)
+    {
+        val viewPH : Int
+        val viewVI : Int
+        isRecording = status
+        if(status){
+            viewPH = View.INVISIBLE
+            viewVI = View.VISIBLE
+
+            CM_recTimer.base = SystemClock.elapsedRealtime() // resetto il timer
+            CM_recTimer.start()
+        }
+        else
+        {
+            viewPH = View.VISIBLE
+            viewVI = View.INVISIBLE
+            CM_recTimer.stop()
+        }
+        recOptions() // cambio la grafica del pulsante
+
+        // nascondo/visualizzo
+        BT_rotation.visibility = viewPH
+        BT_gallery.visibility = viewPH
+        BT_zoom1_0.visibility = viewPH
+        BT_zoom0_5.visibility = viewPH
+
+        // visualizzo/nascondo
+        BT_zoomRec.visibility = viewVI
+        CM_recTimer.visibility = viewVI
+
+        // se inizio a registrare non posso più cambiare camera,
+        // quindi devo sistemare il valore della seekbar
+        if(status) {
+            SB_zoom.progress = (zoomLv*SB_zoom.max).toInt()
+        }
+        else
+        {
+            if(currentCamera==0 || currentCamera==3) // camere normali
+                SB_zoom.progress = (zoomLv*(SB_zoom.max - changeCameraSeekBar)).toInt() + changeCameraSeekBar
+            else // camere ultra grand angolari
+                SB_zoom.progress = (zoomLv*SB_zoom.max*0.54).toInt()
+        }
+    }
+
+    /**
+     * Funzione per mettere in pausa o ripristinare la registrazione
+     */
+    private fun pauseVideo() {
+        // inPause = true se la registrazione è in pausa
+        if(inPause) {
+            recording?.resume() // ripristina registrazione
+            CM_recTimer.base = SystemClock.elapsedRealtime() - CM_pauseAt // calcolo per riesumare il timer correttamente
+            CM_recTimer.start()
+            BT_pause.setBackgroundResource(R.drawable.pause_button) // cambio grafica al pulsante
+        }
+        else {
+            recording?.pause() // mette in pausa la registrazione
+            CM_recTimer.stop()
+            CM_pauseAt = SystemClock.elapsedRealtime() - CM_recTimer.base
+            BT_pause.setBackgroundResource(R.drawable.play_button) // cambio grafica al pulsante
+        }
+        inPause = !inPause
+    }
+
+    /**
+     * Funzione per visualizzare i comandi corretti;
+     * Se sono in modalità foto il pulsante è bianco,
+     * se inizio a registrare (sempre in modalità foto) diventa rosso,
+     * se sono in modalità video e non sto registrando è bianco con pallino rosso;
+     * se sono in modalità video e sto registrando mostra i tasti per fermare e riprendere la registrazione
+     */
+    private fun recOptions()
+    {
+        BT_shoot.visibility = if(recordMode && isRecording) View.INVISIBLE else View.VISIBLE
+        findViewById<Group>(R.id.Group_rec).visibility = if(recordMode && isRecording) View.VISIBLE else View.INVISIBLE
+        // R.id.Group_rec è un gruppo contenente i pulsanti per fermare e riprendere la registrazione video
+
+        if(recordMode && !isRecording) // scelta del pulsante
+            BT_shoot.setBackgroundResource( R.drawable.in_recording_button)
+        else if(!recordMode)  {
+            if(isRecording)
+                BT_shoot.setBackgroundResource( R.drawable.rounded_corner_red)
+            else
+                BT_shoot.setBackgroundResource( R.drawable.rounded_corner)
+        }
+    }
+
+    /**
+     * Metodo per ricaricare i valori nel bundle o nelle preferences.
+     * Non è nel onCreate perchè usa variabili che vengono dichiarate nel startCamera
+     */
+    private fun loadFromBundle(savedInstanceState : Bundle?)
+    {
+        val preferences = getPreferences(MODE_PRIVATE)
+
+        // recupero le variabili dalle preferences
+        currentCamera = preferences.getInt(KEY_CAMERA,0)
+        grid = preferences.getBoolean(KEY_GRID,true)
+        var flashMode = preferences.getString(KEY_FLASH, "OFF")
+        var timerMode = preferences.getString(KEY_TIMER, "OFF")
+
+        viewGrid(grid);
+        while(currFlashMode.toString() != flashMode)
+            switchFlashMode()
+        setFlashMode()
+        while(currTimerMode.toString() != timerMode)
+            switchTimerMode()
+        setTimerMode()
+        var progress = changeCameraSeekBar
+
+        if (savedInstanceState != null) { // controlo che ci sia il bundle
+            //recupero variabili dal bundle
+            currentCamera = savedInstanceState.getInt(KEY_CAMERA)
+            // se già ricaricato da preferences lo sovrascrivo,
+            // in quanto con preference salvo solo se è posteriore o anteriore
+            // mentre nel bundle salvo effettivamente la camera corretta
+            SB_zoom.progress = progress
+            recordMode = savedInstanceState.getBoolean(KEY_REC)
+
+            progress = savedInstanceState.getInt(KEY_ZOOM)
+            changeZoom(progress, true) // cambio zoom e forzo il rebuild
+            changeMode(recordMode);
+        }
+        // uso changeZoom per cambiare lo zoom e ricostruire la camera
+        changeZoom(progress, true) // cambio zoom e forzo il rebuild
+    }
+
+    /**
+     * Metodo usato per cambiare lo zoom della camera
+     *
+     * @param progress  valore della SeekBar
+     * @param buildAnyway booleano per forzare il rebuild
+     */
+    private fun changeZoom(progress : Int, buildAnyway : Boolean = false)
+    {
+        var reBuild = false // evito di costruitr la camera ogni volta
+
+        // SB_zoom va da 0 a 150, quindi i primi 50 valori sono per lo zoom con la ultra grand angolare,
+        // gli altri per la camera grand angolare, non sono riuscito a recoperare la telephoto
+        // valori corrispondenti a quale camara (Samsung S21)
+        // 0 -> back default;   grand angolare
+        // 1 -> front default;  ultra grand angolare
+        // 2 -> back;           ultra grand angolare
+        // 3 -> front;          grand angolare
+
+
+        if(isRecording) // se sto registrando, non posso cambiare camera, quindi c'è un valore di zoom diverso
+            zoomLv = progress/SB_zoom.max.toFloat() // calcolo per ottenere un valore compreso ltra 0 e 1 per lo zoom
+        else
+        {
+            if(progress<changeCameraSeekBar) // sono sulle camere ultra grand angolari (changeCameraSeekBar = 50)
+            {
+                // sperimentalmente ho trovato che sul mio dispositivo (S21) al valore di zoomLv = 0.525 circa
+                // lo zoom della camera ultra grand angolare corrisponde al valore della camera principale a 1.0x
+                // quindi 2.14 = zoomLv*SB_zoom.max/maxProgress = 0.525*200/49
+                zoomLv = (progress.toFloat()/SB_zoom.max * 2.25f)
+                // calcolo per ottenere un valore tra 0 e 1 per lo zoom
+
+                if(currentCamera==0) // se sono in back default
+                {
+                    currentCamera = 2 // passo in back grand angolare
+                    reBuild=true
+                }
+                else if(currentCamera==3) // se sono in front normale
+                {
+                    currentCamera = 1 // passo in front grand angolare
+                    reBuild=true
+                }
+            }
+            else
+            {
+                zoomLv = (progress-changeCameraSeekBar)/(SB_zoom.max - changeCameraSeekBar).toFloat()
+                // calcolo per ottenere un valore tra 0 e 1 per lo zoom
+                // è presente - changeCameraSeekBar perchè devo escultere i valori sotto changeCameraSeekBar
+                // quindi quando progress è a 50 (=changeCameraSeekBar) allora zoomLv deve essere 0
+                // mentre quando progress è a 150 (=SB_zoom.max) allora zoomLv deve essere 1
+
+                if(currentCamera==2) // se sono in back grand angolare
+                {
+                    currentCamera = 0 // passo in back default
+                    reBuild=true
+                }
+                else if(currentCamera==1) // se sono in front grand angolare
+                {
+                    currentCamera = 3 // front in normale
+                    reBuild=true
+                }
+            }
+        }
+
+
+        var zoomState = camera.cameraInfo.zoomState
+        var maxzoom : Float = zoomState.value?.maxZoomRatio!!
+
+        BT_zoom0_5.text = "0.5x"
+        BT_zoom1_0.text = "1.0x"
+
+        if(currentCamera==0 || currentCamera == 3) // camera normale 1 -> 8
+        {
+            BT_zoomRec.text = (zoomLv*(maxzoom-1)+1).toString().substring(0,3) + "x" // (zoomLv*(maxzoom-1)+1) fa si che visualizzi maxzoom come massimo e 1x come minimo
+            BT_zoom1_0.text = (zoomLv*(maxzoom-1)+1).toString().substring(0,3) + "x"
+        }
+        else // camera grand angolare 0.5 -> 8
+        {
+            BT_zoomRec.text = (zoomLv*(maxzoom-0.5)+0.5).toString().substring(0,3) + "x" // (zoomLv*(maxzoom-0.5)+0.5) fa si che visualizzi maxzoom come massimo e 0.5x come minimo
+            BT_zoom0_5.text = (zoomLv+0.5).toString().substring(0,3) + "x"
+        }
+
+        if(buildAnyway || (reBuild && !isRecording)) // se sta registrando non cambia fotocamera
+            buildCamera()
+        cameraControl.setLinearZoom(zoomLv) // cambia il valore dello zoom
+        Log.d(TAG,"Zoom lv: $zoomLv, zoomState: ${zoomState.value}" )
+        Log.d(TAG,"[current camera] - zoom: " + currentCamera)
+    }
+
+
+    /**
+     * Funzione per switchare tra modalità Foto e Video;
+     * quindi cambia i pulsanti visualizzati
+     *
+     * @param record True se devo passare in modalità Video;
+     *                False se devo passare in modalità Foto
+     */
+    private fun changeMode(record : Boolean) {
+        recordMode = record;
+        val bt1 = if(record) BT_recMode else BT_photoMode
+        val bt2 = if(record) BT_photoMode else BT_recMode
+
+        bt1.setBackgroundTintList(getColorStateList(R.color.white));
+        bt1.setTextColor(getColor(R.color.black))
+
+        //bt2.setBackgroundColor(getColor(R.color.gray_onyx))
+        bt2.setBackgroundTintList(getColorStateList(R.color.gray_onyx));
+        bt2.setTextColor(getColor(R.color.white))
+
+        if(!timerOn) // se non c'è il timer attivato
+        {
+            if(!isRecording) // se non sta registrando
+                BT_shoot.setBackgroundResource( // cambio la grafica del pulsante in base a se sto registrando o no
+                    if(record) R.drawable.in_recording_button else R.drawable.rounded_corner
+                )
+            recOptions()
+        }
+    }
+
+    /**
+     * Controlla gli eventi al tocco
+     */
+    override fun onTouchEvent(event: MotionEvent?): Boolean {
+        Log.d(TAG, "[event type] $event")
+        scaleGestureDetector.onTouchEvent(event!!)
+        return true
+    }
+
+    /**
+     * Mi permette di ottenere l'inclinazione del dispositivo
+     */
+    private val orientationEventListener by lazy {
+        object : OrientationEventListener(this) {
+            override fun onOrientationChanged(orientation: Int) {
+                if (orientation == ORIENTATION_UNKNOWN) {
+                    return
+                }
+
+                val rotation = when (orientation) {
+                    in 50 .. 130 -> 270
+                    in 140 .. 220 -> 180
+                    in 230 .. 310 -> 90
+                    in 0 .. 40,in 320 .. 360 -> 0
+                    else -> -1 // Angolo morto
+                }
+                // non ho messo valori multipli di 45 in modo da avere un minimo di gioco prima di cambiare rotazione
+                Log.d(TAG,"[orientation] $rotation" )
+
+                if(!isRecording && rotation != -1 ) // gira solo se non sta registrando, per salvare i video nel orientamento iniziale
+                {
+                    rotateButton(rotation.toFloat())
+                    // Surface.ROTATION_0 è = 0, ROTATION_90 = 1, ... ROTATION_270 = 3, quindi = rotation/90
+                    videoCapture?.targetRotation = rotation/90
+                }
+                imageCapture?.targetRotation = rotation/90 // è fuori dal if, in questo modo l'immagine è sempre orientata correttamente
+            }
+        }
+    }
+
+    /**
+     * Listener per il pinch in/out per cambiare lo zoom
+     */
+    private inner class ScaleGestureListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+        override fun onScale(detector: ScaleGestureDetector): Boolean {
+            val scaleFactor = detector.scaleFactor
+            // Aggiorna lo zoom della fotocamera
+            Log.d(TAG, "[zoom] $scaleFactor")
+
+            if(scaleFactor>1) // se pinch in allora zoommo
+                SB_zoom.incrementProgressBy(1) // cambio il valore della SeekBar che a sua volta cambia il valore dello zoom
+            else // altrimienti è pinch out e allora dezoommo
+                SB_zoom.incrementProgressBy(-1)
+            return true
+        }
+    }
+
+    /**
+     *
+     */
+    class OnSwipeTouchListener : OnTouchListener {
+        private lateinit var scrollGestureDetector: GestureDetector
+        override fun onTouch(v: View?, event: MotionEvent): Boolean {
+            return scrollGestureDetector.onTouchEvent(event)
+        }
+        private inner class GestureListener : SimpleOnGestureListener(){
+            private var SWIPE_THRESHOLD : Int = 100
+            private var SWIPE_VELOCITY_THRESHOLD : Int =100
+
+            override fun onFling(e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+                var res : Boolean = false
+                try{
+                    var diffY : Float = e2.getY() - e1.getY()
+                    var diffX : Float= e2.getX() - e1.getX()
+                    if (Math.abs(diffX) > Math.abs(diffY)){
+                        if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD){
+                            if(diffX > 0){
+                                res = onSwipeRight()
+                            }
+                            else {
+                                res = onSwipeLeft()
+                            }
+                        }
+                    }
+                    else {
+                        if (Math.abs(diffY) > SWIPE_THRESHOLD && Math.abs(velocityY) > SWIPE_VELOCITY_THRESHOLD){
+                            if (diffY > 0){
+                                res = onSwipeDown()
+                            }
+                            else{
+                                res = onSwipeUp()
+                            }
+                        }
+                    }
+                }
+                catch(e : Exception){
+                    e.printStackTrace()
+                }
+                return res
+                //return super.onFling(e1, e2, velocityX, velocityY)
+            }
+        }
+
+        fun onSwipeRight() : Boolean {
+            //todo changeMode(false)
+            return false
+        }
+        fun onSwipeLeft() : Boolean {
+            //todo changeMode(true)
+            return false
+        }
+        fun onSwipeUp() : Boolean {
+            return false
+        }
+        fun onSwipeDown() : Boolean {
+            return false
+        }
+
+    }
+
+    /**
      * Metodo per rendere visibile o no la griglia
      *
      * @param status True se si vuole visibile
@@ -779,192 +989,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Metodo per impostare la visuale durante la regisrazione
-     *
-     * @param status True se è stata avviata la registrazione;
-     *               False se è stata interrotta
-     */
-    private fun startRecording(status : Boolean)
-    {
-        val viewPH : Int
-        val viewVI : Int
-        isRecording = status
-        if(status){
-            viewPH = View.INVISIBLE
-            viewVI = View.VISIBLE
-
-            CM_recTimer.base = SystemClock.elapsedRealtime() // resetto il timer
-            CM_recTimer.start()
-        }
-        else
-        {
-            viewPH = View.VISIBLE
-            viewVI = View.INVISIBLE
-            CM_recTimer.stop()
-        }
-        recOptions() // cambio la grafica del pulsante
-
-        // nascondo/visualizzo
-        BT_rotation.visibility = viewPH
-        BT_gallery.visibility = viewPH
-        BT_zoom1_0.visibility = viewPH
-        BT_zoom0_5.visibility = viewPH
-
-        // visualizzo/nascondo
-        BT_zoomRec.visibility = viewVI
-        CM_recTimer.visibility = viewVI
-
-        // se inizio a registrare non posso più cambiare camera,
-        // quindi devo sistemare il valore della seekbar
-        if(status) {
-            SB_zoom.progress = (zoomLv*SB_zoom.max).toInt()
-        }
-        else
-        {
-            if(currentCamera==0 || currentCamera==3) // camere normali
-                SB_zoom.progress = (zoomLv*(SB_zoom.max - changeCameraSeekBar)).toInt() + changeCameraSeekBar
-            else // camere ultra grand angolari
-                SB_zoom.progress = (zoomLv*SB_zoom.max*0.54).toInt()
-        }
-    }
-
-    /**
-     * Funzione per visualizzare i comandi corretti;
-     * Se sono in modalità foto il pulsante è bianco,
-     * se inizio a registrare (sempre in modalità foto) diventa rosso,
-     * se sono in modalità video e non sto registrando è bianco con pallino rosso;
-     * se sono in modalità video e sto registrando mostra i tasti per fermare e riprendere la registrazione
-     */
-    private fun recOptions()
-    {
-        BT_shoot.visibility = if(recordMode && isRecording) View.INVISIBLE else View.VISIBLE
-        findViewById<Group>(R.id.Group_rec).visibility = if(recordMode && isRecording) View.VISIBLE else View.INVISIBLE
-        // R.id.Group_rec è un gruppo contenente i pulsanti per fermare e riprendere la registrazione video
-
-        if(recordMode && !isRecording) // scelta del pulsante
-                BT_shoot.setBackgroundResource( R.drawable.in_recording_button)
-        else if(!recordMode)  {
-            if(isRecording)
-                BT_shoot.setBackgroundResource( R.drawable.rounded_corner_red)
-            else
-                BT_shoot.setBackgroundResource( R.drawable.rounded_corner)
-        }
-    }
-
-    /**
-     * Metodo usato per cambiare lo zoom della camera
-     *
-     * @param progress  valore della SeekBar
-     * @param buildAnyway booleano per forzare il rebuild
-     */
-    private fun changeZoom(progress : Int, buildAnyway : Boolean = false)
-    {
-        var reBuild = false // evito di costruitr la camera ogni volta
-
-        // SB_zoom va da 0 a 150, quindi i primi 50 valori sono per lo zoom con la ultra grand angolare,
-        // gli altri per la camera grand angolare, non sono riuscito a recoperare la telephoto
-        // valori corrispondenti a quale camara (Samsung S21)
-        // 0 -> back default;   grand angolare
-        // 1 -> front default;  ultra grand angolare
-        // 2 -> back;           ultra grand angolare
-        // 3 -> front;          grand angolare
-
-
-        if(isRecording) // se sto registrando, non posso cambiare camera, quindi c'è un valore di zoom diverso
-            zoomLv = progress/SB_zoom.max.toFloat() // calcolo per ottenere un valore compreso ltra 0 e 1 per lo zoom
-        else
-        {
-            if(progress<changeCameraSeekBar) // sono sulle camere ultra grand angolari (changeCameraSeekBar = 50)
-            {
-                // sperimentalmente ho trovato che sul mio dispositivo (S21) al valore di zoomLv = 0.525 circa
-                // lo zoom della camera ultra grand angolare corrisponde al valore della camera principale a 1.0x
-                // quindi 2.14 = zoomLv*SB_zoom.max/maxProgress = 0.525*200/49
-                zoomLv = (progress.toFloat()/SB_zoom.max * 2.25f)
-                // calcolo per ottenere un valore tra 0 e 1 per lo zoom
-
-                if(currentCamera==0) // se sono in back default
-                {
-                    currentCamera = 2 // passo in back grand angolare
-                    reBuild=true
-                }
-                else if(currentCamera==3) // se sono in front normale
-                {
-                    currentCamera = 1 // passo in front grand angolare
-                    reBuild=true
-                }
-            }
-            else
-            {
-                zoomLv = (progress-changeCameraSeekBar)/(SB_zoom.max - changeCameraSeekBar).toFloat()
-                // calcolo per ottenere un valore tra 0 e 1 per lo zoom
-                // è presente - changeCameraSeekBar perchè devo escultere i valori sotto changeCameraSeekBar
-                // quindi quando progress è a 50 (=changeCameraSeekBar) allora zoomLv deve essere 0
-                // mentre quando progress è a 150 (=SB_zoom.max) allora zoomLv deve essere 1
-
-                if(currentCamera==2) // se sono in back grand angolare
-                {
-                    currentCamera = 0 // passo in back default
-                    reBuild=true
-                }
-                else if(currentCamera==1) // se sono in front grand angolare
-                {
-                    currentCamera = 3 // front in normale
-                    reBuild=true
-                }
-            }
-        }
-
-
-        var zoomState = camera.cameraInfo.zoomState
-        var maxzoom : Float = zoomState.value?.maxZoomRatio!!
-
-        BT_zoom0_5.text = "0.5x"
-        BT_zoom1_0.text = "1.0x"
-
-        if(currentCamera==0 || currentCamera == 3) // camera normale 1 -> 8
-        {
-            BT_zoomRec.text = (zoomLv*(maxzoom-1)+1).toString().substring(0,3) + "x" // (zoomLv*(maxzoom-1)+1) fa si che visualizzi maxzoom come massimo e 1x come minimo
-            BT_zoom1_0.text = (zoomLv*(maxzoom-1)+1).toString().substring(0,3) + "x"
-        }
-        else // camera grand angolare 0.5 -> 8
-        {
-            BT_zoomRec.text = (zoomLv*(maxzoom-0.5)+0.5).toString().substring(0,3) + "x" // (zoomLv*(maxzoom-0.5)+0.5) fa si che visualizzi maxzoom come massimo e 0.5x come minimo
-            BT_zoom0_5.text = (zoomLv+0.5).toString().substring(0,3) + "x"
-        }
-
-       if(buildAnyway || (reBuild && !isRecording)) // se sta registrando non cambia fotocamera
-           buildCamera()
-        cameraControl.setLinearZoom(zoomLv) // cambia il valore dello zoom
-        Log.d(TAG,"Zoom lv: $zoomLv, zoomState: ${zoomState.value}" )
-        Log.d(TAG,"[current camera] - zoom: " + currentCamera)
-    }
-
-    /**
-     * Ricostruisce la camera
-     */
-    private fun buildCamera()
-    {
-        try { // dato che uso gli id della mia camera allora potrebbe non esistere qulla camera
-            cameraSelector = availableCameraInfos[currentCamera].cameraSelector
-        }
-        catch (e : Exception){
-            if(currentCamera%2 == 0) // se è camera 0 o 2 è back
-                cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-            else
-                cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
-        }
-
-        try {
-            cameraProvider.unbindAll()            // Unbind use cases before rebinding
-            camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture) // devo ricostruire la camera ogni volta
-            // in quato cambio la camera
-            cameraControl = camera.cameraControl
-        } catch(e: Exception) {
-            Log.e(TAG, "Build failed", e)
-        }
-    }
-
-    /**
      * Ruoto i pulsanti per far si che siano dritti
      *
      * @param angle è il numero di gradi per ruotare i tasti
@@ -982,31 +1006,6 @@ class MainActivity : AppCompatActivity() {
         BT_grid.rotation = angle
         BT_recMode.rotation = angle
         BT_photoMode.rotation = angle
-    }
-
-    /**
-     * TODO: da commentare
-     */
-    private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
-        ContextCompat.checkSelfPermission(
-            baseContext, it) == PackageManager.PERMISSION_GRANTED
-    }
-
-    /**
-     * TODO: da commentare
-     */
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_CODE_PERMISSIONS) {
-            if (allPermissionsGranted()) {
-                startCamera()
-            } else {
-                Toast.makeText(this,
-                    "Permissions not granted by the user.",
-                    Toast.LENGTH_SHORT).show()
-                finish()
-            }
-        }
     }
 
     /**
@@ -1056,6 +1055,7 @@ class MainActivity : AppCompatActivity() {
             }
         )
     }
+
 
     /**
      * TODO: da commentare
@@ -1124,6 +1124,55 @@ class MainActivity : AppCompatActivity() {
     } */
 
     /**
+     * abilita il "sensore" per l'angolo
+     */
+    override fun onStart() {
+        super.onStart()
+        orientationEventListener.enable()
+    }
+
+    /**
+     * disabilita il "sensore" per l'angolo
+     */
+    override fun onStop() {
+        super.onStop()
+        orientationEventListener.disable()
+    }
+
+    /**
+     * quando l'applicazione viene messa in background salvo le preference
+     * da ripristinare al avvio, anche se viene completamente chiusa
+     *
+     * Ho deciso di non salvare tutti i dati, quindi escludo lo zoom
+     * e anche la modalità in cui viene lasciata
+     */
+    override fun onPause()
+    {
+        super.onPause()
+
+        // Store values between instances here
+        val preferences = getPreferences(MODE_PRIVATE)
+        val editor = preferences.edit()
+
+        if(currentCamera%2==0) // a differenza di onSaveInstanceState non salvo lo zoom e la camera corretta
+        // salvo solo se è frontale o posteriore
+            editor.putInt(KEY_CAMERA, 0)
+        else
+        {
+            if(availableCameraInfos.size == 4)
+                editor.putInt(KEY_CAMERA, 3)
+            else
+                editor.putInt(KEY_CAMERA, 1)
+        }
+        editor.putString(KEY_FLASH, currFlashMode.toString())
+        editor.putString(KEY_TIMER, currTimerMode.toString())
+        editor.putBoolean(KEY_GRID, grid)
+
+        editor.apply()
+
+    }
+
+    /**
      * Ripristino lo zoom
      */
     override fun onResume()
@@ -1143,39 +1192,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * quando l'applicazione viene messa in background salvo le preference
-     * da ripristinare al avvio, anche se viene completamente chiusa
-     *
-     * Ho deciso di non salvare tutti i dati, quindi escludo lo zoom
-     * e anche la modalità in cui viene lasciata
-     */
-    override fun onPause()
-    {
-        super.onPause()
-
-        // Store values between instances here
-        val preferences = getPreferences(MODE_PRIVATE)
-        val editor = preferences.edit()
-
-        if(currentCamera%2==0) // a differenza di onSaveInstanceState non salvo lo zoom e la camera corretta
-            // salvo solo se è frontale o posteriore
-            editor.putInt(KEY_CAMERA, 0)
-        else
-        {
-            if(availableCameraInfos.size == 4)
-                editor.putInt(KEY_CAMERA, 3)
-            else
-                editor.putInt(KEY_CAMERA, 1)
-        }
-        editor.putString(KEY_FLASH, currFlashMode.toString())
-        editor.putString(KEY_TIMER, currTimerMode.toString())
-        editor.putBoolean(KEY_GRID, grid)
-
-        editor.apply()
-
-    }
-
-    /**
      * salvo la camera corrente (a differenza delle preference in cui salvo solo
      * se è anteriore o posteriore, lo zoom e la modalità
      */
@@ -1184,22 +1200,6 @@ class MainActivity : AppCompatActivity() {
         savedInstanceState.putInt(KEY_CAMERA, currentCamera)
         savedInstanceState.putInt(KEY_ZOOM, SB_zoom.progress)
         savedInstanceState.putBoolean(KEY_REC, recordMode)
-    }
-
-    /**
-     * abilita il "sensore" per l'angolo
-     */
-    override fun onStart() {
-        super.onStart()
-        orientationEventListener.enable()
-    }
-
-    /**
-     * disabilita il "sensore" per l'angolo
-     */
-    override fun onStop() {
-        super.onStop()
-        orientationEventListener.disable()
     }
 
     /**
