@@ -879,7 +879,7 @@ class MainActivity : AppCompatActivity() {
                 // sperimentalmente ho trovato che sul mio dispositivo (S21) al valore di zoomLv = 0.525 circa
                 // lo zoom della camera ultra grand angolare corrisponde al valore della camera principale a 1.0x
                 // quindi 2.14 = zoomLv*SB_zoom.max/maxProgress = 0.525*200/49
-                zoomLv = progress/SB_zoom.max * 2.14.toFloat()
+                zoomLv = (progress.toFloat()/SB_zoom.max * 2.25f)
                 // calcolo per ottenere un valore tra 0 e 1 per lo zoom
 
                 if(currentCamera==0) // se sono in back default
@@ -923,25 +923,28 @@ class MainActivity : AppCompatActivity() {
 
         if(currentCamera==0 || currentCamera == 3) // camera normale 1 -> 8
         {
-            BT_zoomRec.text = (zoomLv*(maxzoom-1)+1).toString().substring(0,3) + "x" // (zoomLv*(maxzoom-1)+1) fa si che visualizzi 8x come massimo e 1x come minimo
+            BT_zoomRec.text = (zoomLv*(maxzoom-1)+1).toString().substring(0,3) + "x" // (zoomLv*(maxzoom-1)+1) fa si che visualizzi maxzoom come massimo e 1x come minimo
             BT_zoom1_0.text = (zoomLv*(maxzoom-1)+1).toString().substring(0,3) + "x"
         }
         else // camera grand angolare 0.5 -> 8
         {
-            BT_zoomRec.text = (zoomLv*(maxzoom-0.5)+0.5).toString().substring(0,3) + "x" // (zoomLv*(maxzoom-0.5)+0.5) fa si che visualizzi 8x come massimo e 0.5x come minimo
+            BT_zoomRec.text = (zoomLv*(maxzoom-0.5)+0.5).toString().substring(0,3) + "x" // (zoomLv*(maxzoom-0.5)+0.5) fa si che visualizzi maxzoom come massimo e 0.5x come minimo
             BT_zoom0_5.text = (zoomLv+0.5).toString().substring(0,3) + "x"
         }
 
        if(buildAnyway || (reBuild && !isRecording)) // se sta registrando non cambia fotocamera
            buildCamera()
-        cameraControl.setLinearZoom(zoomLv)
+        cameraControl.setLinearZoom(zoomLv) // cambia il valore dello zoom
         Log.d(TAG,"Zoom lv: $zoomLv, zoomState: ${zoomState.value}" )
         Log.d(TAG,"[current camera] - zoom: " + currentCamera)
     }
 
+    /**
+     * Ricostruisce la camera
+     */
     private fun buildCamera()
     {
-        try {
+        try { // dato che uso gli id della mia camera allora potrebbe non esistere qulla camera
             cameraSelector = availableCameraInfos[currentCamera].cameraSelector
         }
         catch (e : Exception){
@@ -956,11 +959,16 @@ class MainActivity : AppCompatActivity() {
             camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture) // devo ricostruire la camera ogni volta
             // in quato cambio la camera
             cameraControl = camera.cameraControl
-        } catch(exc: Exception) {
-            Log.e(TAG, "Use case binding failed", exc)
+        } catch(e: Exception) {
+            Log.e(TAG, "Build failed", e)
         }
     }
 
+    /**
+     * Ruoto i pulsanti per far si che siano dritti
+     *
+     * @param angle è il numero di gradi per ruotare i tasti
+     */
     private fun rotateButton(angle : Float)
     {
         BT_gallery.rotation = angle
@@ -976,11 +984,17 @@ class MainActivity : AppCompatActivity() {
         BT_photoMode.rotation = angle
     }
 
+    /**
+     * TODO: da commentare
+     */
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
         ContextCompat.checkSelfPermission(
             baseContext, it) == PackageManager.PERMISSION_GRANTED
     }
 
+    /**
+     * TODO: da commentare
+     */
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
@@ -995,12 +1009,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * TODO: da commentare
+     */
     private fun switchTimerMode() {
         currTimerMode = TimerModes.next(currTimerMode)
         setTimerMode()
         setTimerIcon(currTimerMode.text)
     }
 
+    /**
+     * TODO: da commentare
+     */
     private fun selectTimerMode(ordinal: Int?): Boolean{
         if(ordinal == null) {
             throw IllegalArgumentException()
@@ -1010,6 +1030,10 @@ class MainActivity : AppCompatActivity() {
         setTimerIcon(currTimerMode.text)
         return true
     }
+
+    /**
+     * TODO: da commentare
+     */
     private fun setTimerMode(){
         countdown = when(currTimerMode){
             TimerModes.OFF -> 0
@@ -1018,6 +1042,10 @@ class MainActivity : AppCompatActivity() {
             TimerModes.ON_10 -> 10
         }
     }
+
+    /**
+     * TODO: da commentare
+     */
     private fun setTimerIcon(status : String){
         BT_timer.setBackgroundResource(
             when(status){
@@ -1029,12 +1057,17 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    //<editor-fold desc= "FLASH METHODS">
+    /**
+     * TODO: da commentare
+     */
     private fun switchFlashMode() {
         currFlashMode = FlashModes.next(currFlashMode)
         setFlashMode()
     }
 
+    /**
+     * TODO: da commentare
+     */
     private fun selectFlashMode(ordinal: Int?): Boolean {
         if(ordinal == null) {
             throw IllegalArgumentException()
@@ -1044,6 +1077,9 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
+    /**
+     * TODO: da commentare
+     */
     private fun setFlashMode() {
         when(currFlashMode) {
             FlashModes.OFF -> {
@@ -1064,7 +1100,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /*
+    /* TODO: guardare se serve
     private class LuminosityAnalyzer(private val listener: LumaListener) : ImageAnalysis.Analyzer {
 
         private fun ByteBuffer.toByteArray(): ByteArray {
@@ -1086,8 +1122,10 @@ class MainActivity : AppCompatActivity() {
             image.close()
         }
     } */
-    //</editor-fold>
 
+    /**
+     * Ripristino lo zoom
+     */
     override fun onResume()
     {
         super.onResume()
@@ -1103,6 +1141,14 @@ class MainActivity : AppCompatActivity() {
         }
         catch (e : java.lang.Exception) {}
     }
+
+    /**
+     * quando l'applicazione viene messa in background salvo le preference
+     * da ripristinare al avvio, anche se viene completamente chiusa
+     *
+     * Ho deciso di non salvare tutti i dati, quindi escludo lo zoom
+     * e anche la modalità in cui viene lasciata
+     */
     override fun onPause()
     {
         super.onPause()
@@ -1110,8 +1156,6 @@ class MainActivity : AppCompatActivity() {
         // Store values between instances here
         val preferences = getPreferences(MODE_PRIVATE)
         val editor = preferences.edit()
-
-        // Store relevant status of the widgets that are part of the persistent state
 
         if(currentCamera%2==0) // a differenza di onSaveInstanceState non salvo lo zoom e la camera corretta
             // salvo solo se è frontale o posteriore
@@ -1127,11 +1171,14 @@ class MainActivity : AppCompatActivity() {
         editor.putString(KEY_TIMER, currTimerMode.toString())
         editor.putBoolean(KEY_GRID, grid)
 
-        // Commit to storage synchronously
         editor.apply()
 
     }
 
+    /**
+     * salvo la camera corrente (a differenza delle preference in cui salvo solo
+     * se è anteriore o posteriore, lo zoom e la modalità
+     */
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
         savedInstanceState.putInt(KEY_CAMERA, currentCamera)
@@ -1139,16 +1186,25 @@ class MainActivity : AppCompatActivity() {
         savedInstanceState.putBoolean(KEY_REC, recordMode)
     }
 
+    /**
+     * abilita il "sensore" per l'angolo
+     */
     override fun onStart() {
         super.onStart()
         orientationEventListener.enable()
     }
 
+    /**
+     * disabilita il "sensore" per l'angolo
+     */
     override fun onStop() {
         super.onStop()
         orientationEventListener.disable()
     }
 
+    /**
+     * TODO: boohhh
+     */
     override fun onDestroy() {
         super.onDestroy()
         cameraExecutor.shutdown()
