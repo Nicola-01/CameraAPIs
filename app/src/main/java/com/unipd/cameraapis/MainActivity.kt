@@ -241,8 +241,8 @@ class MainActivity : AppCompatActivity() {
         BT_zoom1_0.setOnClickListener { SB_zoom.setProgress(changeCameraSeekBar) }
         BT_zoom0_5.setOnClickListener{ SB_zoom.setProgress(0) }
         BT_grid.setOnClickListener { grid =! grid; viewGrid(grid) }
-        BT_photoMode.setOnClickListener { changeMode(false); recOptions() }
-        BT_recMode.setOnClickListener { changeMode(true); recOptions() }
+        BT_photoMode.setOnClickListener { changeMode(false) }
+        BT_recMode.setOnClickListener { changeMode(true) }
 
         BT_gallery.setOnClickListener{//TODO: aprire galleria
             val intent = Intent(Intent.ACTION_PICK)
@@ -340,7 +340,7 @@ class MainActivity : AppCompatActivity() {
             BT_shoot.setBackgroundResource(
                 if(record) R.drawable.in_recording_button else R.drawable.rounded_corner
             )
-
+        recOptions()
     }
 
 
@@ -405,7 +405,7 @@ class MainActivity : AppCompatActivity() {
             changeZoom(progress, true)
 
             recordMode = savedInstanceState.getBoolean(KEY_REC)
-            changeMode(recordMode); recOptions()
+            changeMode(recordMode);
         }
         changeZoom(progress, true) // sfrutto per fare il rebuild delle camere
     }
@@ -459,9 +459,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         fun onSwipeRight() : Boolean {
+            //todo changeMode(false)
             return false
         }
         fun onSwipeLeft() : Boolean {
+            //todo changeMode(true)
             return false
         }
         fun onSwipeUp() : Boolean {
