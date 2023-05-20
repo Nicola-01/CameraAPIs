@@ -336,11 +336,14 @@ class MainActivity : AppCompatActivity() {
         bt2.setBackgroundTintList(getColorStateList(R.color.gray_onyx));
         bt2.setTextColor(getColor(R.color.white))
 
-        if(!isRecording)
-            BT_shoot.setBackgroundResource(
-                if(record) R.drawable.in_recording_button else R.drawable.rounded_corner
-            )
-        recOptions()
+        if(!timerOn)
+        {
+            if(!isRecording)
+                BT_shoot.setBackgroundResource(
+                    if(record) R.drawable.in_recording_button else R.drawable.rounded_corner
+                )
+            recOptions()
+        }
     }
 
 
