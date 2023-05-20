@@ -29,6 +29,20 @@
         app:layout_constraintGuide_percent="0.5" />
 
     <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/vertical_centerline2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.25" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/vertical_centerline3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.75" />
+
+    <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -168,36 +182,40 @@
         android:id="@+id/BT_timer"
         android:layout_width="35dp"
         android:layout_height="35dp"
-        android:layout_marginEnd="24dp"
         android:background="@drawable/timer_0"
         android:backgroundTint="@color/white"
         app:layout_constraintBottom_toTopOf="@+id/guideline"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.75" />
+        app:layout_constraintStart_toStartOf="@+id/vertical_centerline3" />
 
     <Button
         android:id="@+id/BT_grid"
         android:layout_width="35dp"
         android:layout_height="35dp"
-        android:layout_marginEnd="24dp"
         android:background="@drawable/grid_off"
         app:layout_constraintBottom_toTopOf="@+id/guideline"
-        app:layout_constraintEnd_toStartOf="@+id/BT_timer"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.75" />
+        app:layout_constraintEnd_toStartOf="@+id/vertical_centerline3"
+        app:layout_constraintStart_toStartOf="@+id/vertical_centerline" />
+
+    <Button
+        android:id="@+id/BT_qrcode"
+        android:layout_width="35dp"
+        android:layout_height="35dp"
+        android:background="@drawable/qrcode"
+        android:backgroundTint="@color/white"
+        app:layout_constraintBottom_toTopOf="@+id/guideline"
+        app:layout_constraintEnd_toStartOf="@+id/vertical_centerline"
+        app:layout_constraintStart_toStartOf="@+id/vertical_centerline2" />
 
     <Button
         android:id="@+id/BT_flash"
         android:layout_width="35dp"
         android:layout_height="35dp"
-        android:layout_marginStart="24dp"
         android:background="@drawable/flash_off"
         android:backgroundTint="@color/white"
         app:layout_constraintBottom_toTopOf="@+id/guideline"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.75" />
+        app:layout_constraintEnd_toStartOf="@+id/vertical_centerline2"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <View
         android:id="@+id/FocusCircle"
