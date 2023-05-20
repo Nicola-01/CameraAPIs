@@ -218,6 +218,7 @@ class MainActivity : AppCompatActivity() {
         BT_shoot.setOnClickListener {
             timerShot(recordMode)
             it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+            BT_timer.visibility = VISIBLE   //rendo di nuovo visibile il pulsante del timer dopo aver scattato la foto
         }
 
         SB_zoom.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -231,7 +232,7 @@ class MainActivity : AppCompatActivity() {
         })
 
         BT_shoot.setOnLongClickListener{
-            timerShot(true) //TODO: timer
+            timerShot(true)
             it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         }
         BT_stop.setOnClickListener{
@@ -649,7 +650,7 @@ class MainActivity : AppCompatActivity() {
                             if(currFlashMode == FlashModes.ON) { cameraControl.enableTorch(false) }
                         }
                         startRecording(false)
-                        BT_timer.visibility = VISIBLE   //rendo di nuovo visibile il pulsante del timer dopo aver registrato
+                        BT_timer.visibility = VISIBLE   //rendo di nuovo visibile il pulsante del timer dopo la registrazione
                     }
                 }
             }
@@ -732,7 +733,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
         if (isRecording && !record){ // se sto registrando e premo il pulsante rosso
-            // fa una foto senza usare il time
+            // fa una foto senza usare il timer
             takePhoto()
             return
         }
@@ -743,9 +744,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         timerOn = true
-        if(countdown.toInt()==0)
-            BT_timer.visibility = INVISIBLE
-
         timer = object : CountDownTimer(countdown*1000, 1000){
             override fun onTick(remainingMillis: Long) {
                 BT_timer.visibility = INVISIBLE //rendo invisibile il pulsante del timer durante il countdown
