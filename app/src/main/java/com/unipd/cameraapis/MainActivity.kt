@@ -5,7 +5,6 @@ import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.drawable.Drawable
 import android.hardware.camera2.CameraManager
 import android.os.Build
 import android.os.Bundle
@@ -52,6 +51,7 @@ import androidx.constraintlayout.widget.Group
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
+import androidx.core.os.HandlerCompat.postDelayed
 import com.unipd.cameraapis.databinding.ActivityMainBinding
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -287,7 +287,9 @@ class MainActivity : AppCompatActivity() {
                     return@setOnTouchListener true
                 }
                 MotionEvent.ACTION_UP -> {
-                    focusView.visibility = View.INVISIBLE
+                    focusView.postDelayed(Runnable {
+                        focusView.visibility = View.INVISIBLE
+                    }, 1000)
                     // Get the MeteringPointFactory from PreviewView
                     val factory = viewBinding.viewFinder.getMeteringPointFactory()
 
@@ -1005,7 +1007,6 @@ class MainActivity : AppCompatActivity() {
     private fun switchFlashMode() {
         currFlashMode = FlashModes.next(currFlashMode)
         setFlashMode()
-        setFlashIcon(currFlashMode.text)
     }
 
     private fun selectFlashMode(ordinal: Int?): Boolean {
@@ -1014,31 +1015,27 @@ class MainActivity : AppCompatActivity() {
         }
         currFlashMode = FlashModes.values()[ordinal]
         setFlashMode()
-        setFlashIcon(currFlashMode.text)
         return true
     }
+
     private fun setFlashMode() {
         when(currFlashMode) {
             FlashModes.OFF -> {
+                BT_flash.setBackgroundResource(R.drawable.flash_off)
                 imageCapture?.flashMode = ImageCapture.FLASH_MODE_OFF
+                if(recording != null) { cameraControl.enableTorch(false) }
             }
             FlashModes.ON -> {
+                BT_flash.setBackgroundResource(R.drawable.flash_on)
                 imageCapture?.flashMode = ImageCapture.FLASH_MODE_ON
+                if(recording != null) { cameraControl.enableTorch(true) }
             }
             FlashModes.AUTO -> {
+                BT_flash.setBackgroundResource(R.drawable.flash_auto)
                 imageCapture?.flashMode = ImageCapture.FLASH_MODE_AUTO
+                if(recording != null) { cameraControl.enableTorch(false) }
             }
         }
-    }
-
-    private fun setFlashIcon(status : String){
-        BT_flash.setBackgroundResource(
-        when(status){
-            "OFF" -> R.drawable.flash_off
-            "ON" -> R.drawable.flash_on
-            else -> R.drawable.flash_auto
-        }
-        )
     }
 
     /*
