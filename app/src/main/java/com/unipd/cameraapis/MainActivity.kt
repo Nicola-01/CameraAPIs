@@ -388,10 +388,12 @@ class MainActivity : AppCompatActivity() {
         var flashMode = preferences.getString(KEY_FLASH, "OFF")
         while(currFlashMode.toString() != flashMode)
             switchFlashMode()
+        setFlashMode()
 
         var timerMode = preferences.getString(KEY_TIMER, "OFF")
-        while(timerMode.toString() != timerMode)
+        while(currTimerMode.toString() != timerMode)
             switchTimerMode()
+        setTimerMode()
         var progress = changeCameraSeekBar
 
         if (savedInstanceState != null) {
@@ -531,6 +533,7 @@ class MainActivity : AppCompatActivity() {
                 cameraControl = camera.cameraControl
                 createListener()
                 loadFromBundle(savedInstanceState)
+                setFlashMode() // non so perchè ma se lo lascio al interno di loadFromBundle, viene modificato ma successivamente perde lo stato
             } catch(exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
             }
@@ -1078,7 +1081,7 @@ class MainActivity : AppCompatActivity() {
                 editor.putInt(KEY_CAMERA, 1)
         }
         editor.putString(KEY_FLASH, currFlashMode.toString())
-        editor.putString(KEY_TIMER, currFlashMode.toString())
+        editor.putString(KEY_TIMER, currTimerMode.toString())
         editor.putBoolean(KEY_GRID, grid)
 
         // Commit to storage synchronously
