@@ -49,12 +49,12 @@ import androidx.constraintlayout.widget.Group
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
-import androidx.core.os.HandlerCompat.postDelayed
 import com.unipd.cameraapis.databinding.ActivityMainBinding
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+
 
 typealias LumaListener = (luma: Double) -> Unit
 class MainActivity : AppCompatActivity() {
@@ -123,6 +123,7 @@ class MainActivity : AppCompatActivity() {
     private var inPause = false
     private var timerOn = false
     private var grid = true
+    private var isScaling = false
 
     companion object {
 
@@ -249,8 +250,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
         BT_gallery.setOnClickListener{//TODO: aprire galleria
-            val intent = Intent(Intent.ACTION_PICK)
+            val intent = Intent()
+            intent.action = Intent.ACTION_VIEW
             intent.type = "image/*"
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            startActivity(intent)
         }
         BT_grid.setOnClickListener { grid =! grid; viewGrid(grid) }
         BT_pause.setOnClickListener{ pauseVideo() }
@@ -299,28 +303,33 @@ class MainActivity : AppCompatActivity() {
         viewFinder.setOnTouchListener(View.OnTouchListener setOnTouchListener@{ view: View, motionEvent: MotionEvent ->
             when (motionEvent.action) {
                 MotionEvent.ACTION_DOWN -> {
-                    focusView.x = viewFinder.x - focusView.width / 2 + motionEvent.x
-                    focusView.y = viewFinder.y - focusView.height / 2 + motionEvent.y
-                    focusView.visibility = View.VISIBLE
+                    focusView.postDelayed(Runnable {
+                        if(!isScaling) {
+                            focusView.x = viewFinder.x - focusView.width / 2 + motionEvent.x
+                            focusView.y = viewFinder.y - focusView.height / 2 + motionEvent.y
+                            focusView.visibility = View.VISIBLE
+                        }
+                    }, 500)
                     return@setOnTouchListener true
                 }
                 MotionEvent.ACTION_UP -> {
-                    focusView.postDelayed(Runnable {
-                        focusView.visibility = View.INVISIBLE
-                    }, 1000)
-                    // Get the MeteringPointFactory from PreviewView
-                    val factory = viewBinding.viewFinder.getMeteringPointFactory()
+                    if(!isScaling) {
+                        focusView.postDelayed(Runnable {
+                            focusView.visibility = View.INVISIBLE
+                        }, 1000)
+                        // Get the MeteringPointFactory from PreviewView
+                        val factory = viewBinding.viewFinder.getMeteringPointFactory()
 
-                    // Create a MeteringPoint from the tap coordinates
-                    val point = factory.createPoint(motionEvent.x, motionEvent.y)
+                        // Create a MeteringPoint from the tap coordinates
+                        val point = factory.createPoint(motionEvent.x, motionEvent.y)
 
-                    // Create a MeteringAction from the MeteringPoint, you can configure it to specify the metering mode
-                    val action = FocusMeteringAction.Builder(point).build()
+                        // Create a MeteringAction from the MeteringPoint, you can configure it to specify the metering mode
+                        val action = FocusMeteringAction.Builder(point).build()
 
-                    // Trigger the focus and metering. The method returns a ListenableFuture since the operation
-                    // is asynchronous. You can use it get notified when the focus is successful or if it fails.
-                    cameraControl.startFocusAndMetering(action)
-
+                        // Trigger the focus and metering. The method returns a ListenableFuture since the operation
+                        // is asynchronous. You can use it get notified when the focus is successful or if it fails.
+                        cameraControl.startFocusAndMetering(action)
+                    }
                     return@setOnTouchListener true
                 }
 
@@ -815,6 +824,7 @@ class MainActivity : AppCompatActivity() {
      */
     private inner class ScaleGestureListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
         override fun onScale(detector: ScaleGestureDetector): Boolean {
+            isScaling = true
             val scaleFactor = detector.scaleFactor
             // Aggiorna lo zoom della fotocamera
             Log.d(TAG, "[zoom] $scaleFactor")
@@ -823,6 +833,7 @@ class MainActivity : AppCompatActivity() {
                 SB_zoom.incrementProgressBy(1) // cambio il valore della SeekBar che a sua volta cambia il valore dello zoom
             else // altrimienti è pinch out e allora dezoommo
                 SB_zoom.incrementProgressBy(-1)
+            isScaling = false
             return true
         }
     }
