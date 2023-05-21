@@ -102,6 +102,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var recorder: Recorder
     private lateinit var scaleDown: Animation
     private lateinit var scaleGestureDetector: ScaleGestureDetector
+    private lateinit var swipeGestureDetector: GestureDetector
     private lateinit var scaleUp: Animation
     private lateinit var timer: CountDownTimer
 
@@ -227,6 +228,7 @@ class MainActivity : AppCompatActivity() {
         scaleUp = AnimationUtils.loadAnimation(this,R.anim.scale_up)
 
         scaleGestureDetector = ScaleGestureDetector(this, ScaleGestureListener()) //pinch in/out
+        swipeGestureDetector = GestureDetector(this, SwipeGestureListener())
     }
 
     /**
@@ -772,8 +774,10 @@ class MainActivity : AppCompatActivity() {
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         Log.d(TAG, "[event type] $event")
         scaleGestureDetector.onTouchEvent(event!!)
+        //swipeGestureDetector.onTouchEvent(event!!)
         return true
     }
+
 
     /**
      * Mi permette di ottenere l'inclinazione del dispositivo
@@ -824,67 +828,53 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     *
+     * Classe per gestire gli swipe
      */
-    class OnSwipeTouchListener : OnTouchListener {
-        private lateinit var scrollGestureDetector: GestureDetector
-        override fun onTouch(v: View?, event: MotionEvent): Boolean {
-            return scrollGestureDetector.onTouchEvent(event)
-        }
-        private inner class GestureListener : SimpleOnGestureListener(){
-            private var SWIPE_THRESHOLD : Int = 100
-            private var SWIPE_VELOCITY_THRESHOLD : Int =100
+    private inner class SwipeGestureListener : GestureDetector.SimpleOnGestureListener(){
+        override fun onFling(
+            e1: MotionEvent,
+            e2: MotionEvent,
+            velocityX: Float,
+            velocityY: Float
+        ): Boolean {
+            Log.d(TAG, "CHIAMATA a onFling")
+            val deltaY = e2.y - e1.y
+            val deltaX = e2.x - e1.x
 
-            override fun onFling(e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
-                var res : Boolean = false
-                try{
-                    var diffY : Float = e2.getY() - e1.getY()
-                    var diffX : Float= e2.getX() - e1.getX()
-                    if (Math.abs(diffX) > Math.abs(diffY)){
-                        if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD){
-                            if(diffX > 0){
-                                res = onSwipeRight()
-                            }
-                            else {
-                                res = onSwipeLeft()
-                            }
-                        }
-                    }
-                    else {
-                        if (Math.abs(diffY) > SWIPE_THRESHOLD && Math.abs(velocityY) > SWIPE_VELOCITY_THRESHOLD){
-                            if (diffY > 0){
-                                res = onSwipeDown()
-                            }
-                            else{
-                                res = onSwipeUp()
-                            }
-                        }
-                    }
-                }
-                catch(e : Exception){
-                    e.printStackTrace()
-                }
-                return res
-                //return super.onFling(e1, e2, velocityX, velocityY)
+            // swipe up
+            if(deltaY<0){
+                rotateCamera()
+                Log.d(TAG, "SWIPE UP DETECTED")
             }
-        }
+            // swipe down
+            else if (deltaY>0)
+            {
+                rotateCamera()
+                Log.d(TAG, "SWIPE DOWN DETECTED")
+            }
 
-        fun onSwipeRight() : Boolean {
+            return super.onFling(e1, e2, velocityX, velocityY)
+        }
+    }
+
+    //servono?
+        /*
+        private fun onSwipeRight() : Boolean {
             //todo changeMode(false)
             return false
         }
-        fun onSwipeLeft() : Boolean {
+        private fun onSwipeLeft() : Boolean {
             //todo changeMode(true)
             return false
         }
-        fun onSwipeUp() : Boolean {
-            return false
+        private fun onSwipeUp() {
+            rotateCamera()
         }
-        fun onSwipeDown() : Boolean {
-            return false
+        private fun onSwipeDown() {
+            rotateCamera()
         }
+        */
 
-    }
 
     /**
      * Metodo per rendere visibile o no la griglia
