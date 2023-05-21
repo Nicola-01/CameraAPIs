@@ -142,9 +142,6 @@ class MainActivity : AppCompatActivity() {
                 Manifest.permission.CAMERA,
                 Manifest.permission.RECORD_AUDIO
             ).apply {
-                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-                    add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                }
             }.toTypedArray()
     }
 
@@ -292,8 +289,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        BT_zoom1_0.setOnClickListener { SB_zoom.setProgress(changeCameraSeekBar) }
-        BT_zoom0_5.setOnClickListener{ SB_zoom.setProgress(0) }
+        BT_zoom1_0.setOnClickListener { SB_zoom.progress = changeCameraSeekBar }
+        BT_zoom0_5.setOnClickListener{ SB_zoom.progress = 0 }
         SB_zoom.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 changeZoom(progress)
@@ -319,7 +316,7 @@ class MainActivity : AppCompatActivity() {
                         focusView.visibility = View.INVISIBLE
                     }, 1000)
                     // Get the MeteringPointFactory from PreviewView
-                    val factory = viewBinding.viewFinder.getMeteringPointFactory()
+                    val factory = viewBinding.viewFinder.meteringPointFactory
 
                     // Create a MeteringPoint from the tap coordinates
                     val point = factory.createPoint(motionEvent.x, motionEvent.y)
@@ -343,15 +340,15 @@ class MainActivity : AppCompatActivity() {
      */
     private fun buildCamera()
     {
-        try { // dato che uso gli id della mia camera allora potrebbe non esistere qulla camera
-            cameraSelector = availableCameraInfos[currentCamera].cameraSelector
-        }
-        catch (e : Exception){
-            if(currentCamera%2 == 0) // se è camera 0 o 2 è back
-                cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-            else
-                cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
-        }
+        cameraSelector =
+            try { // dato che uso gli id della mia camera allora potrebbe non esistere qulla camera
+                availableCameraInfos[currentCamera].cameraSelector
+            } catch (e : Exception){
+                if(currentCamera%2 == 0) // se è camera 0 o 2 è back
+                    CameraSelector.DEFAULT_BACK_CAMERA
+                else
+                    CameraSelector.DEFAULT_FRONT_CAMERA
+            }
 
         try {
             cameraProvider.unbindAll()            // Unbind use cases before rebinding
@@ -394,8 +391,8 @@ class MainActivity : AppCompatActivity() {
             availableCameraInfos = cameraProvider.availableCameraInfos
             Log.i(TAG, "[startCamera] available cameras Info:$availableCameraInfos")
             cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
-            var availableCamera : Array<String> = cameraManager.getCameraIdList()
-            Log.i(TAG, "[startCamera] available cameras:${availableCamera.toString()}")
+            val availableCamera : Array<String> = cameraManager.cameraIdList
+            Log.i(TAG, "[startCamera] available cameras:${availableCamera}")
 
             try {
                 createListener() // creo i Listener
@@ -422,9 +419,9 @@ class MainActivity : AppCompatActivity() {
         val contentValues = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, name)
             put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-            if(Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/CameraX-Image")
-            }
+
+            //put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/CameraX-Image")
+            put(MediaStore.Images.Media.RELATIVE_PATH, "DCIM/CameraAPIs")
         }
 
         // Create output options object which contains file + metadata
@@ -478,9 +475,9 @@ class MainActivity : AppCompatActivity() {
         val contentValues = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, name)
             put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
-            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-                put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/CameraX-Video")
-            }
+
+            //put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/CameraX-Video")
+            put(MediaStore.Video.Media.RELATIVE_PATH, "DCIM/CameraAPIs")
         }
 
         if(currFlashMode == FlashModes.ON) cameraControl.enableTorch(true)
@@ -629,10 +626,10 @@ class MainActivity : AppCompatActivity() {
         // recupero le variabili dalle preferences
         currentCamera = preferences.getInt(KEY_CAMERA,0)
         grid = preferences.getBoolean(KEY_GRID,true)
-        var flashMode = preferences.getString(KEY_FLASH, "OFF")
-        var timerMode = preferences.getString(KEY_TIMER, "OFF")
+        val flashMode = preferences.getString(KEY_FLASH, "OFF")
+        val timerMode = preferences.getString(KEY_TIMER, "OFF")
 
-        viewGrid(grid);
+        viewGrid(grid)
         while(currFlashMode.toString() != flashMode)
             switchFlashMode()
         setFlashMode()
@@ -652,7 +649,7 @@ class MainActivity : AppCompatActivity() {
 
             progress = savedInstanceState.getInt(KEY_ZOOM)
             changeZoom(progress, true) // cambio zoom e forzo il rebuild
-            changeMode(recordMode);
+            changeMode(recordMode)
         }
         // uso changeZoom per cambiare lo zoom e ricostruire la camera
         changeZoom(progress, true) // cambio zoom e forzo il rebuild
@@ -722,28 +719,28 @@ class MainActivity : AppCompatActivity() {
         }
 
 
-        var zoomState = camera.cameraInfo.zoomState
-        var maxzoom : Float = zoomState.value?.maxZoomRatio!!
+        val zoomState = camera.cameraInfo.zoomState
+        val maxzoom : Float = zoomState.value?.maxZoomRatio!!
 
-        BT_zoom0_5.text = "0.5x"
-        BT_zoom1_0.text = "1.0x"
+        BT_zoom0_5.text = getString(R.string.zoom_0_5x)
+        BT_zoom1_0.text = getString(R.string.zoom_1_0x)
 
         if(currentCamera==0 || currentCamera == 3) // camera normale 1 -> 8
         {
-            BT_zoomRec.text = (zoomLv*(maxzoom-1)+1).toString().substring(0,3) + "x" // (zoomLv*(maxzoom-1)+1) fa si che visualizzi maxzoom come massimo e 1x come minimo
-            BT_zoom1_0.text = (zoomLv*(maxzoom-1)+1).toString().substring(0,3) + "x"
+            BT_zoomRec.text = "${(zoomLv*(maxzoom-1)+1).toString().substring(0,3)}x" // (zoomLv*(maxzoom-1)+1) fa si che visualizzi maxzoom come massimo e 1x come minimo
+            BT_zoom1_0.text = "${(zoomLv*(maxzoom-1)+1).toString().substring(0,3)}x"
         }
         else // camera grand angolare 0.5 -> 8
         {
-            BT_zoomRec.text = (zoomLv*(maxzoom-0.5)+0.5).toString().substring(0,3) + "x" // (zoomLv*(maxzoom-0.5)+0.5) fa si che visualizzi maxzoom come massimo e 0.5x come minimo
-            BT_zoom0_5.text = (zoomLv+0.5).toString().substring(0,3) + "x"
+            BT_zoomRec.text = "${(zoomLv*(maxzoom-0.5)+0.5).toString().substring(0,3)}x" // (zoomLv*(maxzoom-0.5)+0.5) fa si che visualizzi maxzoom come massimo e 0.5x come minimo
+            BT_zoom0_5.text = "${(zoomLv+0.5).toString().substring(0,3)}x"
         }
 
         if(buildAnyway || (reBuild && !isRecording)) // se sta registrando non cambia fotocamera
             buildCamera()
         cameraControl.setLinearZoom(zoomLv) // cambia il valore dello zoom
         Log.d(TAG,"Zoom lv: $zoomLv, zoomState: ${zoomState.value}" )
-        Log.d(TAG,"[current camera] - zoom: " + currentCamera)
+        Log.d(TAG, "[current camera] - zoom: $currentCamera")
     }
 
 
@@ -755,15 +752,15 @@ class MainActivity : AppCompatActivity() {
      *                False se devo passare in modalità Foto
      */
     private fun changeMode(record : Boolean) {
-        recordMode = record;
+        recordMode = record
         val bt1 = if(record) BT_recMode else BT_photoMode
         val bt2 = if(record) BT_photoMode else BT_recMode
 
-        bt1.setBackgroundTintList(getColorStateList(R.color.white));
+        bt1.backgroundTintList = getColorStateList(R.color.white)
         bt1.setTextColor(getColor(R.color.black))
 
         //bt2.setBackgroundColor(getColor(R.color.gray_onyx))
-        bt2.setBackgroundTintList(getColorStateList(R.color.gray_onyx));
+        bt2.backgroundTintList = getColorStateList(R.color.gray_onyx)
         bt2.setTextColor(getColor(R.color.white))
 
         if(!timerOn) // se non c'è il timer attivato
@@ -892,18 +889,15 @@ class MainActivity : AppCompatActivity() {
      */
     private fun viewGrid(status : Boolean)
     {
-        val view : Int
-        if(status){
-            BT_grid.setBackgroundResource(R.drawable.grid_off) // cambio grafica al pulsante
-            view = View.VISIBLE
-        }
-        else{
-            BT_grid.setBackgroundResource(R.drawable.grid_on) // cambio grafica al pulsante
-            view = View.INVISIBLE
-        }
-        var grid = findViewById<Group>(R.id.Group_grid) // le righe sono al interno di un gruppo, quindi prendo direttamente quello
-        grid.visibility = view
-
+        val view =
+            if(status){
+                BT_grid.setBackgroundResource(R.drawable.grid_off) // cambio grafica al pulsante
+                View.VISIBLE
+            } else{
+                BT_grid.setBackgroundResource(R.drawable.grid_on) // cambio grafica al pulsante
+                View.INVISIBLE
+            }
+        findViewById<Group>(R.id.Group_grid).visibility = view // le righe sono al interno di un gruppo, quindi prendo direttamente quello
     }
 
     /**
@@ -932,7 +926,7 @@ class MainActivity : AppCompatActivity() {
         */
         if(!isRecording) // se sta registrando non cambia fotocamera
             buildCamera()
-        Log.d(TAG,"[current camera]  - rotate: " + currentCamera)
+        Log.d(TAG, "[current camera]  - rotate: $currentCamera")
     }
 
     /**
@@ -964,13 +958,13 @@ class MainActivity : AppCompatActivity() {
         }*/
 
         timerOn = true
-        timer = object : CountDownTimer(countdown*1000, 1000){
-            override fun onTick(remainingMillis: Long) {
+        timer = object : CountDownTimer(countdown, 1){
+            override fun onTick(remainingSec: Long) {
                 BT_timer.visibility = View.INVISIBLE //rendo invisibile il pulsante del timer durante il countdown
                 BT_shoot.setBackgroundResource(R.drawable.rounded_stop_button)
-                countDownText.text = (remainingMillis/1000 + 1).toString()
+                countDownText.text = (remainingSec + 1).toString()
                 countDownText.visibility = View.VISIBLE
-                Log.d(TAG, "Secondi rimanenti: "+remainingMillis/1000)
+                Log.d(TAG, "Secondi rimanenti: "+remainingSec)
             }
             override fun onFinish() {
                 timerOn = false
@@ -983,7 +977,7 @@ class MainActivity : AppCompatActivity() {
             }
 
         }.start()
-        Log.d(TAG, "Secondi ristabiliti: "+countdown)
+        Log.d(TAG, "Secondi ristabiliti: $countdown")
     }
 
     /**
@@ -1192,7 +1186,9 @@ class MainActivity : AppCompatActivity() {
             // allora non viene ripristinato lo stato
             changeZoom(SB_zoom.progress)
         }
-        catch (e : java.lang.Exception) {}
+        catch (e : Exception) {
+            Log.e(TAG, "Exception $e")
+        }
     }
 
     /**
