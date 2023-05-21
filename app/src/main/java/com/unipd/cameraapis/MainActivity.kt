@@ -123,7 +123,6 @@ class MainActivity : AppCompatActivity() {
     private var inPause = false
     private var timerOn = false
     private var grid = true
-    private var isScaling = false
 
     companion object {
 
@@ -238,7 +237,10 @@ class MainActivity : AppCompatActivity() {
      */
     private fun createListener()
     {
+        //Con un click sul pulsante si passa alla modalità successiva del flash
         BT_flash.setOnClickListener { switchFlashMode() }
+        /*Con un click prolungato si apre un menù contestuale che permette di selezionare una
+          specifica modalità del flash*/
         BT_flash.setOnCreateContextMenuListener { menu, v, menuInfo ->
             menu.setHeaderTitle("Flash")
             for(mode in FlashModes.values()) {
@@ -249,13 +251,15 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-        BT_gallery.setOnClickListener{//TODO: aprire galleria
+        //Con un click sul pulsante di apre la galleria
+        BT_gallery.setOnClickListener{
             val intent = Intent()
             intent.action = Intent.ACTION_VIEW
             intent.type = "image/*"
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
             startActivity(intent)
         }
+
         BT_grid.setOnClickListener { grid =! grid; viewGrid(grid) }
         BT_pause.setOnClickListener{ pauseVideo() }
         BT_photoMode.setOnClickListener { changeMode(false) }
@@ -300,36 +304,32 @@ class MainActivity : AppCompatActivity() {
             override fun onStopTrackingTouch(seek: SeekBar) = Unit
         })
 
+        /*Con un click sulla view che contiene la preview della camera si può spostare il focus su
+          una specifica zona*/
         viewFinder.setOnTouchListener(View.OnTouchListener setOnTouchListener@{ view: View, motionEvent: MotionEvent ->
             when (motionEvent.action) {
                 MotionEvent.ACTION_DOWN -> {
-                    focusView.postDelayed(Runnable {
-                        if(!isScaling) {
-                            focusView.x = viewFinder.x - focusView.width / 2 + motionEvent.x
-                            focusView.y = viewFinder.y - focusView.height / 2 + motionEvent.y
-                            focusView.visibility = View.VISIBLE
-                        }
-                    }, 500)
+                    focusView.x = viewFinder.x - focusView.width / 2 + motionEvent.x
+                    focusView.y = viewFinder.y - focusView.height / 2 + motionEvent.y
+                    focusView.visibility = View.VISIBLE
                     return@setOnTouchListener true
                 }
                 MotionEvent.ACTION_UP -> {
-                    if(!isScaling) {
-                        focusView.postDelayed(Runnable {
-                            focusView.visibility = View.INVISIBLE
-                        }, 1000)
-                        // Get the MeteringPointFactory from PreviewView
-                        val factory = viewBinding.viewFinder.getMeteringPointFactory()
+                    focusView.postDelayed(Runnable {
+                        focusView.visibility = View.INVISIBLE
+                    }, 1000)
+                    // Get the MeteringPointFactory from PreviewView
+                    val factory = viewBinding.viewFinder.getMeteringPointFactory()
 
-                        // Create a MeteringPoint from the tap coordinates
-                        val point = factory.createPoint(motionEvent.x, motionEvent.y)
+                    // Create a MeteringPoint from the tap coordinates
+                    val point = factory.createPoint(motionEvent.x, motionEvent.y)
 
-                        // Create a MeteringAction from the MeteringPoint, you can configure it to specify the metering mode
-                        val action = FocusMeteringAction.Builder(point).build()
+                    // Create a MeteringAction from the MeteringPoint, you can configure it to specify the metering mode
+                    val action = FocusMeteringAction.Builder(point).build()
 
-                        // Trigger the focus and metering. The method returns a ListenableFuture since the operation
-                        // is asynchronous. You can use it get notified when the focus is successful or if it fails.
-                        cameraControl.startFocusAndMetering(action)
-                    }
+                    // Trigger the focus and metering. The method returns a ListenableFuture since the operation
+                    // is asynchronous. You can use it get notified when the focus is successful or if it fails.
+                    cameraControl.startFocusAndMetering(action)
                     return@setOnTouchListener true
                 }
 
@@ -410,13 +410,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * TODO: commentare e sistemare
+     * Metodo per scattare una foto usando le impostazioni di [imageCapture]
      */
     private fun takePhoto() {
-        Log.d(TAG,"ClickListener")
+        //Log.d(TAG,"ClickListener")
         // Get a stable reference of the modifiable image capture use case
         val imageCapture = imageCapture ?: return
-
         // Create time stamped name and MediaStore entry.
         val name = SimpleDateFormat(FILENAME_FORMAT, Locale.US)
             .format(System.currentTimeMillis())
@@ -449,9 +448,9 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 override fun onImageSaved(output: ImageCapture.OutputFileResults){
-                    val msg = "Photo capture succeeded: ${output.savedUri}"
+                    /*val msg = "Photo capture succeeded: ${output.savedUri}"
                     Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
-                    Log.d(TAG, msg)
+                    Log.d(TAG, msg)*/
                 }
             }
         )
@@ -824,7 +823,6 @@ class MainActivity : AppCompatActivity() {
      */
     private inner class ScaleGestureListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
         override fun onScale(detector: ScaleGestureDetector): Boolean {
-            isScaling = true
             val scaleFactor = detector.scaleFactor
             // Aggiorna lo zoom della fotocamera
             Log.d(TAG, "[zoom] $scaleFactor")
@@ -833,7 +831,6 @@ class MainActivity : AppCompatActivity() {
                 SB_zoom.incrementProgressBy(1) // cambio il valore della SeekBar che a sua volta cambia il valore dello zoom
             else // altrimienti è pinch out e allora dezoommo
                 SB_zoom.incrementProgressBy(-1)
-            isScaling = false
             return true
         }
     }
@@ -1059,7 +1056,10 @@ class MainActivity : AppCompatActivity() {
 
 
     /**
-     * TODO: da commentare
+     * Metodo per passare alla prossima modalità del flash, nell'ordine:
+     *  - OFF
+     *  - ON
+     *  - AUTO
      */
     private fun switchFlashMode() {
         currFlashMode = FlashModes.next(currFlashMode)
@@ -1067,7 +1067,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * TODO: da commentare
+     * Metodo per cambiare [currFlashMode]
      */
     private fun selectFlashMode(ordinal: Int?): Boolean {
         if(ordinal == null) {
@@ -1079,23 +1079,26 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * TODO: da commentare
+     * Metodo che permette di imposta la modalità del flash specificata da [currFlashMode]
      */
     private fun setFlashMode() {
         when(currFlashMode) {
             FlashModes.OFF -> {
                 BT_flash.setBackgroundResource(R.drawable.flash_off)
                 imageCapture?.flashMode = ImageCapture.FLASH_MODE_OFF
+                //Nel caso in cui si stia registrando disattiva il flash in modalità OFF
                 if(recording != null) { cameraControl.enableTorch(false) }
             }
             FlashModes.ON -> {
                 BT_flash.setBackgroundResource(R.drawable.flash_on)
                 imageCapture?.flashMode = ImageCapture.FLASH_MODE_ON
+                //Nel caso in cui si stia registrando attiva il flash in modalità ON
                 if(recording != null) { cameraControl.enableTorch(true) }
             }
             FlashModes.AUTO -> {
                 BT_flash.setBackgroundResource(R.drawable.flash_auto)
                 imageCapture?.flashMode = ImageCapture.FLASH_MODE_AUTO
+                //Nel caso in cui si stia registrando disattiva il flash in modalità AUTO
                 if(recording != null) { cameraControl.enableTorch(false) }
             }
         }
