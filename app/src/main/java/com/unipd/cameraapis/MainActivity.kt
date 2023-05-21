@@ -256,7 +256,7 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent()
             intent.action = Intent.ACTION_VIEW
             intent.type = "image/*"
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            //intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
             startActivity(intent)
         }
 
