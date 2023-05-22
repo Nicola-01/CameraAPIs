@@ -644,10 +644,10 @@ class MainActivity : AppCompatActivity() {
             // se già ricaricato da preferences lo sovrascrivo,
             // in quanto con preference salvo solo se è posteriore o anteriore
             // mentre nel bundle salvo effettivamente la camera corretta
-            SB_zoom.progress = progress
+            progress = savedInstanceState.getInt(KEY_ZOOM)
             recordMode = savedInstanceState.getBoolean(KEY_REC)
 
-            progress = savedInstanceState.getInt(KEY_ZOOM)
+            SB_zoom.progress = progress
             changeZoom(progress, true) // cambio zoom e forzo il rebuild
             changeMode(recordMode)
         }
@@ -958,13 +958,13 @@ class MainActivity : AppCompatActivity() {
         }*/
 
         timerOn = true
-        timer = object : CountDownTimer(countdown, 1){
-            override fun onTick(remainingSec: Long) {
+        timer = object : CountDownTimer(countdown*1000, 1000){
+            override fun onTick(remainingMillis: Long) {
                 BT_timer.visibility = View.INVISIBLE //rendo invisibile il pulsante del timer durante il countdown
                 BT_shoot.setBackgroundResource(R.drawable.rounded_stop_button)
-                countDownText.text = (remainingSec + 1).toString()
+                countDownText.text = (remainingMillis/1000 + 1).toString()
                 countDownText.visibility = View.VISIBLE
-                Log.d(TAG, "Secondi rimanenti: "+remainingSec)
+                Log.d(TAG, "Secondi rimanenti: "+remainingMillis)
             }
             override fun onFinish() {
                 timerOn = false
