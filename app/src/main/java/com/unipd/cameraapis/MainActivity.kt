@@ -644,10 +644,10 @@ class MainActivity : AppCompatActivity() {
             // se già ricaricato da preferences lo sovrascrivo,
             // in quanto con preference salvo solo se è posteriore o anteriore
             // mentre nel bundle salvo effettivamente la camera corretta
-            SB_zoom.progress = progress
+            progress = savedInstanceState.getInt(KEY_ZOOM)
             recordMode = savedInstanceState.getBoolean(KEY_REC)
 
-            progress = savedInstanceState.getInt(KEY_ZOOM)
+            SB_zoom.progress = progress
             changeZoom(progress, true) // cambio zoom e forzo il rebuild
             changeMode(recordMode)
         }
