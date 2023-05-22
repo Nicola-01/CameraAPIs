@@ -343,16 +343,16 @@ class MainActivity : AppCompatActivity() {
         cameraSelector =
             try { // dato che uso gli id della mia camera allora potrebbe non esistere qulla camera
                 availableCameraInfos[currentCamera].cameraSelector
-            } catch (e : Exception){
-                if(currentCamera%2 == 0) // se è camera 0 o 2 è back
+            } catch (e : Exception) {
+                if (currentCamera % 2 == 0) // se è camera 0 o 2 è back
                     CameraSelector.DEFAULT_BACK_CAMERA
                 else
                     CameraSelector.DEFAULT_FRONT_CAMERA
-            }
+            };
 
         try {
             cameraProvider.unbindAll()            // Unbind use cases before rebinding
-            camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture) // devo ricostruire la camera ogni volta
+            camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture) // devo ricostruire la camera ogni volta, dato che cambio al camera
             // in quato cambio la camera
             cameraControl = camera.cameraControl
         } catch(e: Exception) {
@@ -435,7 +435,7 @@ class MainActivity : AppCompatActivity() {
         // been taken
         BT_shoot.startAnimation(scaleDown)
         viewBinding.viewFinder.startAnimation(scaleUp)
-        imageCapture.takePicture(
+        imageCapture.takePicture( // caso d'uso
             outputOptions,
             ContextCompat.getMainExecutor(this),
             object : ImageCapture.OnImageSavedCallback {
