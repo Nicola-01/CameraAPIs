@@ -348,8 +348,7 @@ class MainActivity : AppCompatActivity() {
                     CameraSelector.DEFAULT_BACK_CAMERA
                 else
                     CameraSelector.DEFAULT_FRONT_CAMERA
-            };
-
+            }
         try {
             cameraProvider.unbindAll()            // Unbind use cases before rebinding
             camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture) // devo ricostruire la camera ogni volta, dato che cambio al camera
