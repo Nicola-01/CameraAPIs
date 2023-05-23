@@ -5,15 +5,15 @@ import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.database.Cursor
 import android.hardware.camera2.CameraManager
-import android.os.Build
+import android.net.Uri
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.Log
 import android.view.GestureDetector
-import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.HapticFeedbackConstants
 import android.view.Menu
 import android.view.MenuItem
@@ -21,7 +21,6 @@ import android.view.MotionEvent
 import android.view.OrientationEventListener
 import android.view.ScaleGestureDetector
 import android.view.View
-import android.view.View.OnTouchListener
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.Button
@@ -56,7 +55,6 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 
-typealias LumaListener = (luma: Double) -> Unit
 class MainActivity : AppCompatActivity() {
 
     private lateinit var viewBinding: ActivityMainBinding
@@ -250,11 +248,36 @@ class MainActivity : AppCompatActivity() {
         }
         //Con un click sul pulsante di apre la galleria
         BT_gallery.setOnClickListener{
-            val intent = Intent()
-            intent.action = Intent.ACTION_VIEW
-            intent.type = "image/*"
+            val uriExternal: Uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+
+            val projection = arrayOf(
+                MediaStore.Images.ImageColumns._ID,
+                MediaStore.Images.Media._ID,
+                MediaStore.Images.ImageColumns.DATE_ADDED,
+                MediaStore.Images.ImageColumns.MIME_TYPE
+            )
+            val cursor: Cursor = applicationContext.contentResolver.query(uriExternal, projection, null,
+                null, MediaStore.Images.ImageColumns.DATE_ADDED + " DESC"
+            )!!
+
+            Log.i("Cursor Last", cursor.moveToLast().toString())
+            if (cursor.moveToFirst()) {
+                val columnIndexID = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+                val imageId: Long = cursor.getLong(columnIndexID)
+                val imageURI = Uri.withAppendedPath(uriExternal, "" + imageId)
+                val intent = Intent()
+                intent.action = Intent.ACTION_VIEW
+                intent.setDataAndType(imageURI, "image/*")
+                startActivity(intent)
+            }
+
+            cursor.close()
+
+            //val intent = Intent()
+            //intent.action = Intent.ACTION_VIEW
+            //intent.type = "image/*"
             //intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            startActivity(intent)
+            //startActivity(intent)
         }
 
         BT_grid.setOnClickListener { grid =! grid; viewGrid(grid) }
