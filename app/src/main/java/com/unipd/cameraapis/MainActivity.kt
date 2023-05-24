@@ -960,7 +960,7 @@ class MainActivity : AppCompatActivity() {
             timerOn = false
             timer.cancel()
             countDownText.visibility = View.INVISIBLE
-            BT_shoot.setBackgroundResource(R.drawable.rounded_corner)
+            changeMode(recordMode)
             return
         }
         if(isRecording && record){ // se sto già registrando e tengo premuto il pulsante rosso in modalità foto
