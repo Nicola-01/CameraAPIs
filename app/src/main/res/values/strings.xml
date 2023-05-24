@@ -5,6 +5,6 @@
     <string name="stop_capture">Stop Capture</string>
     <string name="zoom_1.0x">1.0x</string>
     <string name="zoom_0.5x">0.5x</string>
-    <string name="Video_function">FOTO</string>
-    <string name="Photo_function">VIDEO</string>
+    <string name="Video_function">VIDEO</string>
+    <string name="Photo_function">FOTO</string>
 </resources>
