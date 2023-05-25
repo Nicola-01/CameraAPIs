@@ -53,6 +53,7 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import kotlin.math.abs
 
 
 class MainActivity : AppCompatActivity() {
@@ -223,7 +224,7 @@ class MainActivity : AppCompatActivity() {
         scaleUp = AnimationUtils.loadAnimation(this,R.anim.scale_up)
 
         scaleGestureDetector = ScaleGestureDetector(this, ScaleGestureListener()) //pinch in/out
-        swipeGestureDetector = GestureDetector(this, SwipeGestureListener())
+        swipeGestureDetector = GestureDetector(this, SwipeGestureListener())    // swipe
     }
 
     /**
@@ -326,6 +327,7 @@ class MainActivity : AppCompatActivity() {
 
         /*Con un click sulla view che contiene la preview della camera si può spostare il focus su
           una specifica zona*/
+        /*
         viewFinder.setOnTouchListener(View.OnTouchListener setOnTouchListener@{ view: View, motionEvent: MotionEvent ->
             when (motionEvent.action) {
                 MotionEvent.ACTION_DOWN -> {
@@ -355,7 +357,7 @@ class MainActivity : AppCompatActivity() {
 
                 else -> return@setOnTouchListener false
             }
-        })
+        })*/
     }
 
     /**
@@ -801,7 +803,7 @@ class MainActivity : AppCompatActivity() {
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         Log.d(TAG, "[event type] $event")
         scaleGestureDetector.onTouchEvent(event!!)
-        //swipeGestureDetector.onTouchEvent(event!!)
+        swipeGestureDetector.onTouchEvent(event!!)
         return true
     }
 
@@ -858,6 +860,8 @@ class MainActivity : AppCompatActivity() {
      * Classe per gestire gli swipe
      */
     private inner class SwipeGestureListener : GestureDetector.SimpleOnGestureListener(){
+        private val TRESHOLD_VELOCITY : Float = 100.0f  // velocità minima per rilevare lo swipe
+        private val TRESHOLD : Float = 100.0f           // lunghezza minima del trascinamento per rilevare lo swipe
         override fun onFling(
             e1: MotionEvent,
             e2: MotionEvent,
@@ -868,39 +872,26 @@ class MainActivity : AppCompatActivity() {
             val deltaY = e2.y - e1.y
             val deltaX = e2.x - e1.x
 
-            // swipe up
-            if(deltaY<0){
-                rotateCamera()
-                Log.d(TAG, "SWIPE UP DETECTED")
-            }
-            // swipe down
-            else if (deltaY>0)
+            if(abs(deltaX) < abs(deltaY))   // se trascino verso l'alto/basso
             {
-                rotateCamera()
-                Log.d(TAG, "SWIPE DOWN DETECTED")
+                // swipe up-down
+                if(abs(deltaY) > TRESHOLD && abs(velocityY)>TRESHOLD_VELOCITY){
+                    rotateCamera()
+                    Log.d(TAG, "SWIPE UP DETECTED")
+                }
             }
-
+            else if(abs(deltaX) > TRESHOLD && abs(velocityX)>TRESHOLD_VELOCITY){
+                if(deltaX>0 && recordMode)    // right swipe: video -> foto
+                {
+                    changeMode(false)
+                }
+                else if(deltaX<0 && !recordMode)    // left swipe: foto -> video
+                    changeMode(true)
+            }
             return super.onFling(e1, e2, velocityX, velocityY)
         }
     }
 
-    //servono?
-        /*
-        private fun onSwipeRight() : Boolean {
-            //todo changeMode(false)
-            return false
-        }
-        private fun onSwipeLeft() : Boolean {
-            //todo changeMode(true)
-            return false
-        }
-        private fun onSwipeUp() {
-            rotateCamera()
-        }
-        private fun onSwipeDown() {
-            rotateCamera()
-        }
-        */
 
 
     /**
