@@ -178,6 +178,12 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/BT_shoots" />
 
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/Group_extraFunc"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:constraint_referenced_ids="BT_timer,BT_grid,BT_qrcode" />
+
     <Button
         android:id="@+id/BT_timer"
         android:layout_width="35dp"
@@ -193,6 +199,7 @@
         android:layout_width="35dp"
         android:layout_height="35dp"
         android:background="@drawable/grid_off"
+        android:backgroundTint="@color/aureolin_yellow"
         app:layout_constraintBottom_toTopOf="@+id/guideline"
         app:layout_constraintEnd_toStartOf="@+id/vertical_centerline3"
         app:layout_constraintStart_toStartOf="@+id/vertical_centerline" />
@@ -202,7 +209,7 @@
         android:layout_width="35dp"
         android:layout_height="35dp"
         android:background="@drawable/qrcode"
-        android:backgroundTint="@color/white"
+        android:backgroundTint="@color/aureolin_yellow"
         app:layout_constraintBottom_toTopOf="@+id/guideline"
         app:layout_constraintEnd_toStartOf="@+id/vertical_centerline"
         app:layout_constraintStart_toStartOf="@+id/vertical_centerline2" />

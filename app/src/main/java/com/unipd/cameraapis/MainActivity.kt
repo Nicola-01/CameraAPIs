@@ -126,6 +126,7 @@ class MainActivity : AppCompatActivity() {
     private var inPause = false
     private var timerOn = false
     private var grid = true
+    private var QRscanner = true
 
     companion object {
 
@@ -139,6 +140,7 @@ class MainActivity : AppCompatActivity() {
         private const val KEY_TIMER = "TimerMode"
         private const val KEY_ZOOM = "ZoomProgress"
         private const val KEY_REC = "RecordMode"
+        private const val KEY_QRCODE = "QRscanner"
 
         private val REQUIRED_PERMISSIONS =
             mutableListOf (
@@ -286,7 +288,7 @@ class MainActivity : AppCompatActivity() {
             //startActivity(intent)
         }
 
-        BT_grid.setOnClickListener { grid =! grid; viewGrid(grid) }
+        BT_grid.setOnClickListener { grid = !grid; viewGrid(grid) }
         BT_pause.setOnClickListener{ pauseVideo() }
         BT_photoMode.setOnClickListener { changeMode(false) }
         BT_recMode.setOnClickListener { changeMode(true) }
@@ -366,13 +368,32 @@ class MainActivity : AppCompatActivity() {
 
         // listener per il pulsante QR
         BT_QR.setOnClickListener {
+            QRscanner = !QRscanner
+            QrCode(QRscanner)
+
+            //Todo: butta dentro QrCode plz, che lo richiamo dal loadBundle
+            //Todo: inoltre prima di mostrare risultati contollare che il timer sia disattivato, -> "timerOn"
+
             val intentIntegrator = IntentIntegrator(this)
             intentIntegrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
             intentIntegrator.setOrientationLocked(true)
             intentIntegrator.setPrompt("Scanning")
             intentIntegrator.initiateScan()
+
+
         }
     }
+
+    fun QrCode(status: Boolean)
+    {
+        if(status)
+            BT_QR.backgroundTintList = getColorStateList(R.color.aureolin_yellow)
+        else
+            BT_QR.backgroundTintList = getColorStateList(R.color.white)
+
+
+    }
+
     // risultato dello scan
     var scanResult = registerForActivityResult(ActivityResultContracts.StartActivityForResult()){
         result ->
@@ -684,6 +705,9 @@ class MainActivity : AppCompatActivity() {
         setTimerMode()
         var progress = changeCameraSeekBar
 
+        QRscanner = preferences.getBoolean(KEY_QRCODE, true)
+        QrCode(QRscanner)
+
         if (savedInstanceState != null) { // controlo che ci sia il bundle
             //recupero variabili dal bundle
             currentCamera = savedInstanceState.getInt(KEY_CAMERA)
@@ -926,10 +950,12 @@ class MainActivity : AppCompatActivity() {
     {
         val view =
             if(status){
-                BT_grid.setBackgroundResource(R.drawable.grid_off) // cambio grafica al pulsante
+                BT_grid.setBackgroundResource(R.drawable.grid_on) // cambio grafica al pulsante
+                BT_grid.backgroundTintList = getColorStateList(R.color.aureolin_yellow)
                 View.VISIBLE
             } else{
-                BT_grid.setBackgroundResource(R.drawable.grid_on) // cambio grafica al pulsante
+                BT_grid.setBackgroundResource(R.drawable.grid_off) // cambio grafica al pulsante
+                BT_grid.backgroundTintList = getColorStateList(R.color.white)
                 View.INVISIBLE
             }
         findViewById<Group>(R.id.Group_grid).visibility = view // le righe sono al interno di un gruppo, quindi prendo direttamente quello
@@ -973,6 +999,7 @@ class MainActivity : AppCompatActivity() {
             timerOn = false
             timer.cancel()
             countDownText.visibility = View.INVISIBLE
+            findViewById<Group>(R.id.Group_extraFunc).visibility = View.VISIBLE
             changeMode(recordMode)
             return
         }
@@ -995,7 +1022,8 @@ class MainActivity : AppCompatActivity() {
         timerOn = true
         timer = object : CountDownTimer(countdown*1000, 1000){
             override fun onTick(remainingMillis: Long) {
-                BT_timer.visibility = View.INVISIBLE //rendo invisibile il pulsante del timer durante il countdown
+                //BT_timer.visibility = View.INVISIBLE //rendo invisibile il pulsante del timer durante il countdown
+                findViewById<Group>(R.id.Group_extraFunc).visibility = View.INVISIBLE
                 BT_shoot.setBackgroundResource(R.drawable.rounded_stop_button)
                 countDownText.text = (remainingMillis/1000 + 1).toString()
                 countDownText.visibility = View.VISIBLE
@@ -1004,6 +1032,7 @@ class MainActivity : AppCompatActivity() {
             override fun onFinish() {
                 timerOn = false
                 countDownText.visibility = View.INVISIBLE
+                findViewById<Group>(R.id.Group_extraFunc).visibility = View.VISIBLE
                 if(record)
                     captureVideo()
                 else
@@ -1073,9 +1102,13 @@ class MainActivity : AppCompatActivity() {
      * TODO: da commentare
      */
     private fun setTimerIcon(status : String){
+        BT_timer.backgroundTintList = getColorStateList(R.color.aureolin_yellow)
         BT_timer.setBackgroundResource(
             when(status){
-                "OFF" -> R.drawable.timer_0
+                "OFF" -> {
+                    BT_timer.backgroundTintList = getColorStateList(R.color.white)
+                    R.drawable.timer_0
+                }
                 "3" -> R.drawable.timer_3
                 "5" -> R.drawable.timer_5
                 else -> R.drawable.timer_10
@@ -1114,18 +1147,21 @@ class MainActivity : AppCompatActivity() {
         when(currFlashMode) {
             FlashModes.OFF -> {
                 BT_flash.setBackgroundResource(R.drawable.flash_off)
+                BT_flash.backgroundTintList = getColorStateList(R.color.white)
                 imageCapture?.flashMode = ImageCapture.FLASH_MODE_OFF
                 //Nel caso in cui si stia registrando disattiva il flash in modalità OFF
                 if(recording != null) { cameraControl.enableTorch(false) }
             }
             FlashModes.ON -> {
                 BT_flash.setBackgroundResource(R.drawable.flash_on)
+                BT_flash.backgroundTintList = getColorStateList(R.color.aureolin_yellow)
                 imageCapture?.flashMode = ImageCapture.FLASH_MODE_ON
                 //Nel caso in cui si stia registrando attiva il flash in modalità ON
                 if(recording != null) { cameraControl.enableTorch(true) }
             }
             FlashModes.AUTO -> {
                 BT_flash.setBackgroundResource(R.drawable.flash_auto)
+                BT_flash.backgroundTintList = getColorStateList(R.color.aureolin_yellow)
                 imageCapture?.flashMode = ImageCapture.FLASH_MODE_AUTO
                 //Nel caso in cui si stia registrando disattiva il flash in modalità AUTO
                 if(recording != null) { cameraControl.enableTorch(false) }
@@ -1200,6 +1236,7 @@ class MainActivity : AppCompatActivity() {
         editor.putString(KEY_FLASH, currFlashMode.toString())
         editor.putString(KEY_TIMER, currTimerMode.toString())
         editor.putBoolean(KEY_GRID, grid)
+        editor.putBoolean(KEY_QRCODE, QRscanner)
 
         editor.apply()
 
