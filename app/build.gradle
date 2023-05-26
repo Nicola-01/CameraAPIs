@@ -63,4 +63,9 @@ dependencies {
     implementation 'androidx.core:core-animation:1.0.0-beta01'
     // To test the Animator APIs
     androidTestImplementation "androidx.core:core-animation-testing:1.0.0-alpha02"
+
+    // QR code
+    implementation 'com.journeyapps:zxing-android-embedded:4.2.0'
+    implementation 'androidx.appcompat:appcompat:1.3.1'
+
 }

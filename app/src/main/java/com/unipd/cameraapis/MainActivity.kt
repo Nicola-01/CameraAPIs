@@ -1,6 +1,7 @@
 package com.unipd.cameraapis
 
 import android.Manifest
+import android.app.Activity
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
@@ -28,6 +29,7 @@ import android.widget.Chronometer
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraInfo
@@ -48,6 +50,7 @@ import androidx.constraintlayout.widget.Group
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
+import com.google.zxing.integration.android.IntentIntegrator
 import com.unipd.cameraapis.databinding.ActivityMainBinding
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -84,6 +87,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var BT_zoom0_5 : Button
     private lateinit var BT_zoom1_0 : Button
     private lateinit var BT_zoomRec : Button
+    private lateinit var BT_QR : Button
     private lateinit var FocusCircle : View
     private lateinit var focusView : View
     private lateinit var viewFinder : View
@@ -212,6 +216,7 @@ class MainActivity : AppCompatActivity() {
         BT_zoom0_5 = viewBinding.BT05
         BT_zoom1_0 = viewBinding.BT10
         BT_zoomRec = viewBinding.BTZoomRec
+        BT_QR = viewBinding.BTQrcode
         CM_recTimer = viewBinding.CMRecTimer
         CM_recTimer.format = "%02d:%02d:%02d"
         FocusCircle = viewBinding.FocusCircle
@@ -358,6 +363,23 @@ class MainActivity : AppCompatActivity() {
                 else -> return@setOnTouchListener false
             }
         })*/
+
+        // listener per il pulsante QR
+        BT_QR.setOnClickListener {
+            val intentIntegrator = IntentIntegrator(this)
+            intentIntegrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
+            intentIntegrator.setOrientationLocked(true)
+            intentIntegrator.setPrompt("Scanning")
+            intentIntegrator.initiateScan()
+        }
+    }
+    // risultato dello scan
+    var scanResult = registerForActivityResult(ActivityResultContracts.StartActivityForResult()){
+        result ->
+        if(result.resultCode==Activity.RESULT_OK){
+            val scanIntent : Intent? = result.data
+            // ....
+        }
     }
 
     /**
