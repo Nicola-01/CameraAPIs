@@ -88,7 +88,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var BT_zoom1_0 : Button
     private lateinit var BT_zoomRec : Button
     private lateinit var BT_QR : Button
-    private lateinit var FocusCircle : View
+    private lateinit var focusCircle : View
     private lateinit var focusView : View
     private lateinit var viewFinder : View
     private lateinit var SB_zoom : SeekBar
@@ -126,7 +126,7 @@ class MainActivity : AppCompatActivity() {
     private var inPause = false
     private var timerOn = false
     private var grid = true
-    private var QRscanner = true
+    private var qrscanner = true
 
     companion object {
 
@@ -140,7 +140,7 @@ class MainActivity : AppCompatActivity() {
         private const val KEY_TIMER = "TimerMode"
         private const val KEY_ZOOM = "ZoomProgress"
         private const val KEY_REC = "RecordMode"
-        private const val KEY_QRCODE = "QRscanner"
+        private const val KEY_QRCODE = "qrscanner"
 
         private val REQUIRED_PERMISSIONS =
             mutableListOf (
@@ -221,7 +221,7 @@ class MainActivity : AppCompatActivity() {
         BT_QR = viewBinding.BTQrcode
         CM_recTimer = viewBinding.CMRecTimer
         CM_recTimer.format = "%02d:%02d:%02d"
-        FocusCircle = viewBinding.FocusCircle
+        focusCircle = viewBinding.FocusCircle
         SB_zoom = viewBinding.SBZoom
         countDownText = viewBinding.TextTimer
         focusView = viewBinding.FocusCircle
@@ -368,8 +368,8 @@ class MainActivity : AppCompatActivity() {
 
         // listener per il pulsante QR
         BT_QR.setOnClickListener {
-            QRscanner = !QRscanner
-            QrCode(QRscanner)
+            qrscanner = !qrscanner
+            QrCode(qrscanner)
 
             //Todo: butta dentro QrCode plz, che lo richiamo dal loadBundle
             //Todo: inoltre prima di mostrare risultati contollare che il timer sia disattivato, -> "timerOn"
@@ -705,8 +705,8 @@ class MainActivity : AppCompatActivity() {
         setTimerMode()
         var progress = changeCameraSeekBar
 
-        QRscanner = preferences.getBoolean(KEY_QRCODE, true)
-        QrCode(QRscanner)
+        qrscanner = preferences.getBoolean(KEY_QRCODE, true)
+        QrCode(qrscanner)
 
         if (savedInstanceState != null) { // controlo che ci sia il bundle
             //recupero variabili dal bundle
@@ -1025,7 +1025,7 @@ class MainActivity : AppCompatActivity() {
                 //BT_timer.visibility = View.INVISIBLE //rendo invisibile il pulsante del timer durante il countdown
                 findViewById<Group>(R.id.Group_extraFunc).visibility = View.INVISIBLE
                 BT_shoot.setBackgroundResource(R.drawable.rounded_stop_button)
-                countDownText.text = (remainingMillis/1000 + 1).toString()
+                countDownText.text = "${remainingMillis/1000 + 1}"
                 countDownText.visibility = View.VISIBLE
                 Log.d(TAG, "Secondi rimanenti: "+remainingMillis)
             }
@@ -1236,7 +1236,7 @@ class MainActivity : AppCompatActivity() {
         editor.putString(KEY_FLASH, currFlashMode.toString())
         editor.putString(KEY_TIMER, currTimerMode.toString())
         editor.putBoolean(KEY_GRID, grid)
-        editor.putBoolean(KEY_QRCODE, QRscanner)
+        editor.putBoolean(KEY_QRCODE, qrscanner)
 
         editor.apply()
 
