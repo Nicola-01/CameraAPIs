@@ -22,6 +22,7 @@ import android.view.MotionEvent
 import android.view.OrientationEventListener
 import android.view.ScaleGestureDetector
 import android.view.View
+import android.view.WindowManager
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.Button
@@ -127,6 +128,7 @@ class MainActivity : AppCompatActivity() {
     private var timerOn = false
     private var grid = true
     private var qrscanner = true
+    private var isGestureInProgress = false
 
     companion object {
 
@@ -141,6 +143,8 @@ class MainActivity : AppCompatActivity() {
         private const val KEY_ZOOM = "ZoomProgress"
         private const val KEY_REC = "RecordMode"
         private const val KEY_QRCODE = "qrscanner"
+
+        private const val TOUCH_THRESHOLD = 0.1
 
         private val REQUIRED_PERMISSIONS =
             mutableListOf (
@@ -280,12 +284,6 @@ class MainActivity : AppCompatActivity() {
             }
 
             cursor.close()
-
-            //val intent = Intent()
-            //intent.action = Intent.ACTION_VIEW
-            //intent.type = "image/*"
-            //intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            //startActivity(intent)
         }
 
         BT_grid.setOnClickListener { grid = !grid; viewGrid(grid) }
@@ -300,8 +298,11 @@ class MainActivity : AppCompatActivity() {
             it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
             BT_timer.visibility = View.VISIBLE   //rendo di nuovo visibile il pulsante del timer dopo aver scattato la foto
         }
+
         BT_shoot.setOnLongClickListener{
-            timerShot(true)
+            if(recordMode) {
+                timerShot(true)
+            }
             it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         }
 
@@ -334,37 +335,36 @@ class MainActivity : AppCompatActivity() {
 
         /*Con un click sulla view che contiene la preview della camera si può spostare il focus su
           una specifica zona*/
-        /*
         viewFinder.setOnTouchListener(View.OnTouchListener setOnTouchListener@{ view: View, motionEvent: MotionEvent ->
-            when (motionEvent.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    focusView.x = viewFinder.x - focusView.width / 2 + motionEvent.x
-                    focusView.y = viewFinder.y - focusView.height / 2 + motionEvent.y
-                    focusView.visibility = View.VISIBLE
-                    return@setOnTouchListener true
+            val isFlingGesture = swipeGestureDetector.onTouchEvent(motionEvent)
+            val isScaleGesture = scaleGestureDetector.onTouchEvent(motionEvent)
+            if(!isFlingGesture) {
+                when (motionEvent.action) {
+                    MotionEvent.ACTION_UP -> {
+                        focusView.x = viewFinder.x - focusView.width / 2 + motionEvent.x
+                        focusView.y = viewFinder.y - focusView.height / 2 + motionEvent.y
+                        focusView.visibility = View.VISIBLE
+                        focusView.postDelayed(Runnable {
+                            focusView.visibility = View.INVISIBLE
+                        }, 1000)
+                        // Get the MeteringPointFactory from PreviewView
+                        val factory = viewBinding.viewFinder.meteringPointFactory
+
+                        // Create a MeteringPoint from the tap coordinates
+                        val point = factory.createPoint(motionEvent.x, motionEvent.y)
+
+                        // Create a MeteringAction from the MeteringPoint, you can configure it to specify the metering mode
+                        val action = FocusMeteringAction.Builder(point).build()
+
+                        // Trigger the focus and metering. The method returns a ListenableFuture since the operation
+                        // is asynchronous. You can use it get notified when the focus is successful or if it fails.
+                        cameraControl.startFocusAndMetering(action)
+                        return@setOnTouchListener true
+                    }
                 }
-                MotionEvent.ACTION_UP -> {
-                    focusView.postDelayed(Runnable {
-                        focusView.visibility = View.INVISIBLE
-                    }, 1000)
-                    // Get the MeteringPointFactory from PreviewView
-                    val factory = viewBinding.viewFinder.meteringPointFactory
-
-                    // Create a MeteringPoint from the tap coordinates
-                    val point = factory.createPoint(motionEvent.x, motionEvent.y)
-
-                    // Create a MeteringAction from the MeteringPoint, you can configure it to specify the metering mode
-                    val action = FocusMeteringAction.Builder(point).build()
-
-                    // Trigger the focus and metering. The method returns a ListenableFuture since the operation
-                    // is asynchronous. You can use it get notified when the focus is successful or if it fails.
-                    cameraControl.startFocusAndMetering(action)
-                    return@setOnTouchListener true
-                }
-
-                else -> return@setOnTouchListener false
             }
-        })*/
+            return@setOnTouchListener false
+        })
 
         // listener per il pulsante QR
         BT_QR.setOnClickListener {
