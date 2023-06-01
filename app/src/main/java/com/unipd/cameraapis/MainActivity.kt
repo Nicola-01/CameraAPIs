@@ -55,6 +55,12 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
 import com.google.zxing.integration.android.IntentIntegrator
 import com.unipd.cameraapis.databinding.ActivityMainBinding
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.ExecutorService
@@ -131,6 +137,8 @@ class MainActivity : AppCompatActivity() {
     private var timerOn = false
     private var grid = true
     private var qrscanner = true
+    private var captureJob: Job? = null
+    private var isBT_shootLongClicke = false
 
     companion object {
 
@@ -296,6 +304,15 @@ class MainActivity : AppCompatActivity() {
         BT_rotation.setOnClickListener { rotateCamera()
             SB_zoom.performHapticFeedback(HapticFeedbackConstants.CONFIRM) }
 
+        BT_shoot.setOnTouchListener { _, event ->
+            if (event.action == MotionEvent.ACTION_UP) {
+                captureJob?.cancel()
+                captureJob = null
+                true
+            }
+            false
+        }
+
         BT_shoot.setOnClickListener {
             timerShot(recordMode)
             it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
@@ -305,6 +322,14 @@ class MainActivity : AppCompatActivity() {
         BT_shoot.setOnLongClickListener{
             if(recordMode) {
                 timerShot(true)
+            }
+            else {
+                var captureJob = CoroutineScope(Dispatchers.Main).launch {
+                    while (isActive) {
+                        takePhoto()
+                        delay(500) // Intervallo tra i singoli scatti
+                    }
+                }
             }
             it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         }
