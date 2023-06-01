@@ -1,10 +1,13 @@
 package com.unipd.cameraapis
 
 import android.os.Bundle
+import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceFragmentCompat
 
 class SettingsActivity : AppCompatActivity() {
+
+    private lateinit var btBack : Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -16,6 +19,9 @@ class SettingsActivity : AppCompatActivity() {
                 .commit()
         }
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
+        btBack = findViewById(R.id.BT_back)
+        btBack.setOnClickListener{ finish() }
     }
 
     class SettingsFragment : PreferenceFragmentCompat() {

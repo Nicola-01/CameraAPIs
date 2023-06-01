@@ -804,16 +804,24 @@ class MainActivity : AppCompatActivity() {
 
         BT_zoom0_5.text = getString(R.string.zoom_0_5x)
         BT_zoom1_0.text = getString(R.string.zoom_1_0x)
+        BT_zoom0_5.backgroundTintList = getColorStateList(R.color.charcoal)
+        BT_zoom1_0.backgroundTintList = getColorStateList(R.color.charcoal)
+        BT_zoom0_5.setTextColor(getColor(R.color.white))
+        BT_zoom1_0.setTextColor(getColor(R.color.white))
 
         if(currentCamera==0 || currentCamera == 3) // camera normale 1 -> 8
         {
             BT_zoomRec.text = "${(zoomLv*(maxzoom-1)+1).toString().substring(0,3)}x" // (zoomLv*(maxzoom-1)+1) fa si che visualizzi maxzoom come massimo e 1x come minimo
             BT_zoom1_0.text = "${(zoomLv*(maxzoom-1)+1).toString().substring(0,3)}x"
+            BT_zoom1_0.backgroundTintList = getColorStateList(R.color.white)
+            BT_zoom1_0.setTextColor(getColor(R.color.black))
         }
         else // camera grand angolare 0.5 -> 8
         {
             BT_zoomRec.text = "${(zoomLv*(maxzoom-0.5)+0.5).toString().substring(0,3)}x" // (zoomLv*(maxzoom-0.5)+0.5) fa si che visualizzi maxzoom come massimo e 0.5x come minimo
             BT_zoom0_5.text = "${(zoomLv+0.5).toString().substring(0,3)}x"
+            BT_zoom0_5.backgroundTintList = getColorStateList(R.color.white)
+            BT_zoom0_5.setTextColor(getColor(R.color.black))
         }
 
         if(buildAnyway || (reBuild && !isRecording)) // se sta registrando non cambia fotocamera

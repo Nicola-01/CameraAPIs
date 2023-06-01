@@ -1,35 +1,62 @@
-<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <PreferenceCategory app:title="@string/messages_header">
-
-        <EditTextPreference
-            app:key="signature"
-            app:title="@string/signature_title"
-            app:useSimpleSummaryProvider="true" />
+    <PreferenceCategory
+        android:title="Impostazioni Scatto"
+        app:iconSpaceReserved="false">
 
         <ListPreference
-            app:defaultValue="reply"
-            app:entries="@array/reply_entries"
-            app:entryValues="@array/reply_values"
-            app:key="reply"
-            app:title="@string/reply_title"
+            android:defaultValue="zoom"
+            android:entries="@array/volumeKey_entries"
+            android:entryValues="@array/volumeKey_values"
+            android:key="LS_volumeKey"
+            android:title="Tasti Volume"
             app:useSimpleSummaryProvider="true" />
-
     </PreferenceCategory>
+    <PreferenceCategory
+        android:title="Foto"
+        app:iconSpaceReserved="false">
 
-    <PreferenceCategory app:title="@string/sync_header">
+        <ListPreference
+            android:defaultValue="3_4"
+            android:entries="@array/ratio_entries"
+            android:entryValues="@array/ratio_values"
+            android:key="LS_ratioPhoto"
+            android:title="Rapporto Foto"
+            app:useSimpleSummaryProvider="true" />
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:title="Video"
+        app:iconSpaceReserved="false">
 
-        <SwitchPreferenceCompat
-            app:key="sync"
-            app:title="@string/sync_title" />
+        <ListPreference
+            android:defaultValue="3_4"
+            android:entries="@array/ratio_entries"
+            android:entryValues="@array/ratio_values"
+            android:key="LS_ratioVideo"
+            android:title="Rapporto VIdeo"
+            app:useSimpleSummaryProvider="true" />
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:title="Generali"
+        app:iconSpaceReserved="false">
 
-        <SwitchPreferenceCompat
-            app:dependency="sync"
-            app:key="attachment"
-            app:summaryOff="@string/attachment_summary_off"
-            app:summaryOn="@string/attachment_summary_on"
-            app:title="@string/attachment_title" />
-
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="SW_grid"
+            android:title="Griglia" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="SW_HDR"
+            android:title="HDR" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="SW_GPS"
+            android:title="GPS" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="SW_feedback"
+            android:title="Feedback vibrazione" />
     </PreferenceCategory>
 
 </PreferenceScreen>
