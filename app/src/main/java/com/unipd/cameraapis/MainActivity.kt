@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.Cursor
 import android.hardware.camera2.CameraManager
+import android.icu.number.Scale
 import android.net.Uri
 import android.os.Bundle
 import android.os.CountDownTimer
@@ -15,6 +16,7 @@ import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.Log
 import android.view.GestureDetector
+import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.HapticFeedbackConstants
 import android.view.Menu
 import android.view.MenuItem
@@ -106,8 +108,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var preview: Preview
     private lateinit var recorder: Recorder
     private lateinit var scaleDown: Animation
+    private lateinit var gestureDetector: GestureDetector
     private lateinit var scaleGestureDetector: ScaleGestureDetector
-    private lateinit var swipeGestureDetector: GestureDetector
     private lateinit var scaleUp: Animation
     private lateinit var timer: CountDownTimer
 
@@ -129,7 +131,6 @@ class MainActivity : AppCompatActivity() {
     private var timerOn = false
     private var grid = true
     private var qrscanner = true
-    private var isGestureInProgress = false
 
     companion object {
 
@@ -236,8 +237,8 @@ class MainActivity : AppCompatActivity() {
         scaleDown = AnimationUtils.loadAnimation(this,R.anim.scale_down)
         scaleUp = AnimationUtils.loadAnimation(this,R.anim.scale_up)
 
-        scaleGestureDetector = ScaleGestureDetector(this, ScaleGestureListener()) //pinch in/out
-        swipeGestureDetector = GestureDetector(this, SwipeGestureListener())    // swipe
+        gestureDetector = GestureDetector(this, MyGestureListener())
+        scaleGestureDetector = ScaleGestureDetector(this, ScaleGestureListener())
     }
 
     /**
@@ -337,35 +338,11 @@ class MainActivity : AppCompatActivity() {
 
         /*Con un click sulla view che contiene la preview della camera si può spostare il focus su
           una specifica zona*/
-        viewFinder.setOnTouchListener(View.OnTouchListener setOnTouchListener@{ view: View, motionEvent: MotionEvent ->
-            val isFlingGesture = swipeGestureDetector.onTouchEvent(motionEvent)
-            val isScaleGesture = scaleGestureDetector.onTouchEvent(motionEvent)
-            if(!isFlingGesture) {
-                when (motionEvent.action) {
-                    MotionEvent.ACTION_UP -> {
-                        focusView.x = viewFinder.x - focusView.width / 2 + motionEvent.x
-                        focusView.y = viewFinder.y - focusView.height / 2 + motionEvent.y
-                        focusView.visibility = View.VISIBLE
-                        focusView.postDelayed(Runnable {
-                            focusView.visibility = View.INVISIBLE
-                        }, 1000)
-                        // Get the MeteringPointFactory from PreviewView
-                        val factory = viewBinding.viewFinder.meteringPointFactory
 
-                        // Create a MeteringPoint from the tap coordinates
-                        val point = factory.createPoint(motionEvent.x, motionEvent.y)
-
-                        // Create a MeteringAction from the MeteringPoint, you can configure it to specify the metering mode
-                        val action = FocusMeteringAction.Builder(point).build()
-
-                        // Trigger the focus and metering. The method returns a ListenableFuture since the operation
-                        // is asynchronous. You can use it get notified when the focus is successful or if it fails.
-                        cameraControl.startFocusAndMetering(action)
-                        return@setOnTouchListener true
-                    }
-                }
-            }
-            return@setOnTouchListener false
+        viewFinder.setOnTouchListener(View.OnTouchListener setOnTouchListener@{ _, event ->
+            gestureDetector.onTouchEvent(event)
+            scaleGestureDetector.onTouchEvent(event)
+            true
         })
 
         // listener per il pulsante QR
@@ -862,17 +839,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Controlla gli eventi al tocco
-     */
-    override fun onTouchEvent(event: MotionEvent?): Boolean {
-        Log.d(TAG, "[event type] $event")
-        scaleGestureDetector.onTouchEvent(event!!)
-        swipeGestureDetector.onTouchEvent(event!!)
-        return true
-    }
-
-
-    /**
      * Mi permette di ottenere l'inclinazione del dispositivo
      */
     private val orientationEventListener by lazy {
@@ -903,29 +869,35 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Listener per il pinch in/out per cambiare lo zoom
-     */
-    private inner class ScaleGestureListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-        override fun onScale(detector: ScaleGestureDetector): Boolean {
-            val scaleFactor = detector.scaleFactor
-            // Aggiorna lo zoom della fotocamera
-            Log.d(TAG, "[zoom] $scaleFactor")
-
-            if(scaleFactor>1) // se pinch in allora zoommo
-                SB_zoom.incrementProgressBy(1) // cambio il valore della SeekBar che a sua volta cambia il valore dello zoom
-            else // altrimienti è pinch out e allora dezoommo
-                SB_zoom.incrementProgressBy(-1)
-            return true
-        }
-    }
-
-    /**
-     * Classe per gestire gli swipe
-     */
-    private inner class SwipeGestureListener : GestureDetector.SimpleOnGestureListener(){
+    private inner class MyGestureListener : GestureDetector.SimpleOnGestureListener() {
         private val TRESHOLD_VELOCITY : Float = 100.0f  // velocità minima per rilevare lo swipe
         private val TRESHOLD : Float = 100.0f           // lunghezza minima del trascinamento per rilevare lo swipe
+        override fun onSingleTapUp(motionEvent: MotionEvent): Boolean {
+            when (motionEvent.action) {
+                MotionEvent.ACTION_UP -> {
+                    focusView.x = viewFinder.x - focusView.width / 2 + motionEvent.x
+                    focusView.y = viewFinder.y - focusView.height / 2 + motionEvent.y
+                    focusView.visibility = View.VISIBLE
+                    focusView.postDelayed(Runnable {
+                        focusView.visibility = View.INVISIBLE
+                    }, 1000)
+                    // Get the MeteringPointFactory from PreviewView
+                    val factory = viewBinding.viewFinder.meteringPointFactory
+
+                    // Create a MeteringPoint from the tap coordinates
+                    val point = factory.createPoint(motionEvent.x, motionEvent.y)
+
+                    // Create a MeteringAction from the MeteringPoint, you can configure it to specify the metering mode
+                    val action = FocusMeteringAction.Builder(point).build()
+
+                    // Trigger the focus and metering. The method returns a ListenableFuture since the operation
+                    // is asynchronous. You can use it get notified when the focus is successful or if it fails.
+                    cameraControl.startFocusAndMetering(action)
+                }
+            }
+            return true
+        }
+
         override fun onFling(
             e1: MotionEvent,
             e2: MotionEvent,
@@ -953,6 +925,20 @@ class MainActivity : AppCompatActivity() {
                     changeMode(true)
             }
             return super.onFling(e1, e2, velocityX, velocityY)
+        }
+    }
+
+    private inner class ScaleGestureListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+        override fun onScale(detector: ScaleGestureDetector): Boolean {
+            val scaleFactor = detector.scaleFactor
+            // Aggiorna lo zoom della fotocamera
+            Log.d(TAG, "[zoom] $scaleFactor")
+
+            if(scaleFactor>1) // se pinch in allora zoommo
+                SB_zoom.incrementProgressBy(1) // cambio il valore della SeekBar che a sua volta cambia il valore dello zoom
+            else // altrimienti è pinch out e allora dezoommo
+                SB_zoom.incrementProgressBy(-1)
+            return true
         }
     }
 
