@@ -89,6 +89,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var BT_zoom1_0 : Button
     private lateinit var BT_zoomRec : Button
     private lateinit var BT_QR : Button
+    private lateinit var BT_settings : Button
     private lateinit var focusCircle : View
     private lateinit var focusView : View
     private lateinit var viewFinder : View
@@ -223,6 +224,7 @@ class MainActivity : AppCompatActivity() {
         BT_zoom1_0 = viewBinding.BT10
         BT_zoomRec = viewBinding.BTZoomRec
         BT_QR = viewBinding.BTQrcode
+        BT_settings = viewBinding.BTSettings
         CM_recTimer = viewBinding.CMRecTimer
         CM_recTimer.format = "%02d:%02d:%02d"
         focusCircle = viewBinding.FocusCircle
@@ -382,6 +384,14 @@ class MainActivity : AppCompatActivity() {
 
 
         }
+
+        BT_settings.setOnClickListener {view ->
+            val myIntent = Intent(view.context, SettingsActivity::class.java)
+
+            // Start Activity2. No information will be received when Activity2 exits
+            startActivity(myIntent)
+        }
+
     }
 
     fun QrCode(status: Boolean)
