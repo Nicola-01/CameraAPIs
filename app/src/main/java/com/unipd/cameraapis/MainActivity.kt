@@ -326,7 +326,6 @@ class MainActivity : AppCompatActivity() {
         BT_shoot.setOnClickListener {
             timerShot(recordMode)
             if(feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
-            BT_timer.visibility = View.VISIBLE   //rendo di nuovo visibile il pulsante del timer dopo aver scattato la foto
         }
 
         BT_shoot.setOnLongClickListener{
@@ -909,42 +908,22 @@ class MainActivity : AppCompatActivity() {
 
     override fun dispatchKeyEvent(event: KeyEvent?): Boolean
     {
-        var currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_SYSTEM)
-        if (event!!.keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
-            if(volumeKey=="volume") {
-                currentVolume+=10
-                audioManager.setStreamVolume(AudioManager.STREAM_SYSTEM, currentVolume, 0)
-                return true
+        if (event?.keyCode == KeyEvent.KEYCODE_VOLUME_UP || event?.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            when (volumeKey) {
+                "volume" ->  super.dispatchKeyEvent(event)
+                "zoom" -> {
+                    // Volume_UP -> zoom in, Volume_DOWN -> zoom out
+                    SB_zoom.incrementProgressBy( if (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP) 1 else -1)
+                    return true
+                }
+                "shot" -> {
+                    changeMode(event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)
+                    timerShot(event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) // scatto una foto o inizio la registrazione di un video
+                    return true
+                }
             }
-            else if(volumeKey=="zoom") {
-                // Volume_UP -> zoom in
-                SB_zoom.progress++
-                return true
-            }
-            else if(volumeKey=="shot") {
-                timerShot(false)    // scatto una foto
-                BT_timer.visibility = View.VISIBLE
-                return true
-            }
+        }
 
-        }
-        else if (event!!.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
-            if(volumeKey=="volume") {
-                currentVolume-=10
-                audioManager.setStreamVolume(AudioManager.STREAM_SYSTEM, currentVolume, 0)
-                return true
-            }
-            else if(volumeKey=="zoom") {
-                // zoom out
-                SB_zoom.progress--
-                return true
-            }
-            else if(volumeKey=="shot") {
-                timerShot(true)     // inizio la registrazione di un video
-                BT_timer.visibility = View.VISIBLE
-                return true
-            }
-        }
         return super.dispatchKeyEvent(event)
     }
 
