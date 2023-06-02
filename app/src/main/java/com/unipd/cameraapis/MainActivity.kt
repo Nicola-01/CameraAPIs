@@ -15,16 +15,8 @@ import android.os.CountDownTimer
 import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.Log
-import android.view.GestureDetector
+import android.view.*
 import android.view.GestureDetector.SimpleOnGestureListener
-import android.view.HapticFeedbackConstants
-import android.view.Menu
-import android.view.MenuItem
-import android.view.MotionEvent
-import android.view.OrientationEventListener
-import android.view.ScaleGestureDetector
-import android.view.View
-import android.view.WindowManager
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.Button
@@ -53,7 +45,7 @@ import androidx.constraintlayout.widget.Group
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
-import com.google.zxing.integration.android.IntentIntegrator
+//import com.google.zxing.integration.android.IntentIntegrator
 import com.unipd.cameraapis.databinding.ActivityMainBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -370,6 +362,7 @@ class MainActivity : AppCompatActivity() {
             true
         })
 
+        /*
         // listener per il pulsante QR
         BT_QR.setOnClickListener {
             qrscanner = !qrscanner
@@ -385,7 +378,7 @@ class MainActivity : AppCompatActivity() {
             intentIntegrator.initiateScan()
 
 
-        }
+        } */
 
         BT_settings.setOnClickListener {view ->
             val myIntent = Intent(view.context, SettingsActivity::class.java)
@@ -831,6 +824,22 @@ class MainActivity : AppCompatActivity() {
         cameraControl.setLinearZoom(zoomLv) // cambia il valore dello zoom
         Log.d(TAG,"Zoom lv: $zoomLv, zoomState: ${zoomState.value}" )
         Log.d(TAG, "[current camera] - zoom: $currentCamera")
+    }
+
+
+    override fun dispatchKeyEvent(event: KeyEvent?): Boolean
+    {
+        if (event!!.keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+            // Volume_UP -> zoom in
+            SB_zoom.progress++
+            return true
+        }
+        else if (event!!.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            // Volume_DOWN -> zoom out
+            SB_zoom.progress--
+            return true
+        }
+        return super.dispatchKeyEvent(event)
     }
 
 
