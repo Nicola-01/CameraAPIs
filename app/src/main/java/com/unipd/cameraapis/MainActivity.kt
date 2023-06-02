@@ -771,6 +771,20 @@ class MainActivity : AppCompatActivity() {
             else -> Rational(4, 3) // Rapporto d'aspetto predefinito se nessun caso corrisponde
         }
 
+        // -- Video
+        aspectRatioVideo = when (pm.getString("LS_ratioVideo", "3_4")!!) {
+            "3_4" -> Rational(3, 4)
+            "9_16" -> Rational(9, 16)
+            "1_1" -> Rational(1, 1)
+            "full" -> {
+                val metrics = DisplayMetrics()
+                val display = windowManager.defaultDisplay
+                display.getRealMetrics(metrics)
+                Rational(metrics.widthPixels, metrics.heightPixels)
+            }
+            else -> Rational(4, 3) // Rapporto d'aspetto predefinito se nessun caso corrisponde
+        }
+
         try {
             //imageCapture = ImageCapture.Builder().aspect(AspectRatio.RATIO_16_9).build()
 
@@ -794,8 +808,6 @@ class MainActivity : AppCompatActivity() {
         //preview.setTargetAspectRatio(aspectRatio)
 
 
-        // -- Video
-        ratioPhoto = pm.getString("LS_ratioVideo", "3_4")!!
 
         // -- Generali
         grid = pm.getBoolean("SW_grid", true)
