@@ -14,7 +14,10 @@ import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.SystemClock
 import android.provider.MediaStore
+import android.util.DisplayMetrics
 import android.util.Log
+import android.util.Rational
+import android.util.Size
 import android.view.*
 import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.animation.Animation
@@ -26,6 +29,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
@@ -301,8 +305,10 @@ class MainActivity : AppCompatActivity() {
         BT_pause.setOnClickListener{ pauseVideo() }
         BT_photoMode.setOnClickListener { changeMode(false) }
         BT_recMode.setOnClickListener { changeMode(true) }
-        BT_rotation.setOnClickListener { rotateCamera()
-            SB_zoom.performHapticFeedback(HapticFeedbackConstants.CONFIRM) }
+        BT_rotation.setOnClickListener {
+            rotateCamera()
+            if(feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+        }
 
         BT_shoot.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_UP) {
@@ -315,15 +321,15 @@ class MainActivity : AppCompatActivity() {
 
         BT_shoot.setOnClickListener {
             timerShot(recordMode)
-            it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+            if(feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
             BT_timer.visibility = View.VISIBLE   //rendo di nuovo visibile il pulsante del timer dopo aver scattato la foto
         }
 
         BT_shoot.setOnLongClickListener{
-            if(recordMode) {
+            if (recordMode) {
                 timerShot(true)
-            }
-            else {
+                if(feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+            } else {
                 var captureJob = CoroutineScope(Dispatchers.Main).launch {
                     while (isActive) {
                         takePhoto()
@@ -331,7 +337,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
-            it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+            true // Restituisce true per indicare che l'evento di click lungo è stato gestito correttamente
         }
 
         BT_stop.setOnClickListener{
@@ -354,7 +360,7 @@ class MainActivity : AppCompatActivity() {
         SB_zoom.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 changeZoom(progress)
-                if(progress%5 == 0 && fromUser) // ogni 5 do un feedback, e solo se muovo manualmente la SB
+                if(feedback && progress%5 == 0 && fromUser) // ogni 5 do un feedback, e solo se muovo manualmente la SB
                     SB_zoom.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
             }
             override fun onStartTrackingTouch(seek: SeekBar) = Unit
@@ -748,6 +754,46 @@ class MainActivity : AppCompatActivity() {
         // -- Foto
         ratioPhoto = pm.getString("LS_ratioPhoto", "3_4")!!
 
+        val aspectRatio = when (ratioPhoto) {
+            "3_4" -> Rational(4, 3)
+            "9_16" -> Rational(16, 9)
+            "1_1" -> Rational(1, 1)
+            "full" -> {
+                val metrics = DisplayMetrics()
+                val display = windowManager.defaultDisplay
+                display.getRealMetrics(metrics)
+                Rational(metrics.widthPixels, metrics.heightPixels)
+            }
+            else -> Rational(4, 3) // Rapporto d'aspetto predefinito se nessun caso corrisponde
+        }
+
+        /*val metrics = DisplayMetrics().also { viewFinder.display.getRealMetrics(it) }
+        val screenSize = Size(metrics.widthPixels, metrics.heightPixels)
+        val screenAspectRatio = Rational(metrics.widthPixels, metrics.heightPixels)
+        //preview.onUnbind()
+
+        try {
+            imageCapture = ImageCapture.Builder().setTargetAspectRatio(AspectRatio.RATIO_16_9).build()
+
+            preview = Preview.Builder().setTargetAspectRatio(AspectRatio.RATIO_16_9)
+                .build()
+                .also {
+                    it.setSurfaceProvider(viewBinding.viewFinder.surfaceProvider)
+                }
+        }
+        catch (e : Exception)
+        {
+            Log.e(TAG, "[LoadFromSetting] $e")
+        }
+
+         */
+
+
+        //imageCapture = ImageCapture.Builder().setTargetResolution(Size(1280,720)).build()
+        //imageCapture!!.setCropAspectRatio(aspectRatio)
+        //preview.setTargetAspectRatio(aspectRatio)
+
+
         // -- Video
         ratioPhoto = pm.getString("LS_ratioVideo", "3_4")!!
 
@@ -756,7 +802,6 @@ class MainActivity : AppCompatActivity() {
         hdr = pm.getBoolean("SW_HDR", true)
         gps = pm.getBoolean("SW_GPS", true)
         feedback = pm.getBoolean("SW_feedback", true)
-
         viewGrid(grid)
 
     }
