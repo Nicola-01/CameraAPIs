@@ -134,6 +134,7 @@ class MainActivity : AppCompatActivity() {
     private var isBT_shootLongClicke = false
 
     private lateinit var volumeKey : String
+    private lateinit var powerKey : String
     private lateinit var ratioPhoto : String
     private var hdr = true
     private var gps = false
@@ -740,8 +741,9 @@ class MainActivity : AppCompatActivity() {
     private fun loadFromSetting() {
         val pm = PreferenceManager.getDefaultSharedPreferences(this)
 
-        // -- Impostazioni Scatto
+        // -- Impostazioni Tasti
         volumeKey = pm.getString("LS_volumeKey","zoom")!!
+        powerKey = pm.getString("LS_volumeKey","zoom")!!
 
         // -- Foto
         ratioPhoto = pm.getString("LS_ratioPhoto", "3_4")!!
@@ -750,10 +752,10 @@ class MainActivity : AppCompatActivity() {
         ratioPhoto = pm.getString("LS_ratioVideo", "3_4")!!
 
         // -- Generali
-        grid = pm.getBoolean("SW_grid", true);
-        hdr = pm.getBoolean("SW_HDR", true);
-        gps = pm.getBoolean("SW_GPS", true);
-        feedback = pm.getBoolean("SW_feedback", true);
+        grid = pm.getBoolean("SW_grid", true)
+        hdr = pm.getBoolean("SW_HDR", true)
+        gps = pm.getBoolean("SW_GPS", true)
+        feedback = pm.getBoolean("SW_feedback", true)
 
         viewGrid(grid)
 

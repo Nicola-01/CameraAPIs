@@ -1,14 +1,4 @@
 <resources>
-    <!-- Reply Preference -->
-    <string-array name="reply_entries">
-        <item>Reply</item>
-        <item>Reply to all</item>
-    </string-array>
-
-    <string-array name="reply_values">
-        <item>reply</item>
-        <item>reply_all</item>
-    </string-array>
 
     <!-- List volume key -->
     <string-array name="volumeKey_entries">
@@ -22,6 +12,22 @@
         <item>zoom</item>
         <item>volume</item>
     </string-array>
+
+    <!-- List power -->
+    <string-array name="power_entries">
+        <item>Cambio camera</item>
+        <item>Scatta foto o Registra video</item>
+        <item>Cambia modalità</item>
+        <item>Non fare nulla</item>
+    </string-array>
+
+    <string-array name="power_values">
+        <item>changeCamera</item>
+        <item>shot</item>
+        <item>changeMode</item>
+        <item>nothing</item>
+    </string-array>
+
 
     <!-- List ratio -->
     <string-array name="ratio_entries">

@@ -2,7 +2,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory
-        android:title="Impostazioni Scatto"
+        android:title="Impostazioni Tasti"
         app:iconSpaceReserved="false">
 
         <ListPreference
@@ -11,6 +11,13 @@
             android:entryValues="@array/volumeKey_values"
             android:key="LS_volumeKey"
             android:title="Tasti Volume"
+            app:useSimpleSummaryProvider="true" />
+        <ListPreference
+            android:defaultValue="changeCamera"
+            android:entries="@array/power_entries"
+            android:entryValues="@array/power_values"
+            android:key="LS_pwerKey"
+            android:title="Doppio click tasto Power"
             app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
     <PreferenceCategory
