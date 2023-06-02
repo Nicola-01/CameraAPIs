@@ -63,6 +63,7 @@ import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.math.abs
+import android.media.AudioManager
 
 
 class MainActivity : AppCompatActivity() {
@@ -137,6 +138,7 @@ class MainActivity : AppCompatActivity() {
     private var captureJob: Job? = null
     private var isBT_shootLongClicke = false
 
+    private lateinit var audioManager: AudioManager
     private lateinit var volumeKey : String
     private lateinit var powerKey : String
     private lateinit var ratioPhoto : String
@@ -251,6 +253,8 @@ class MainActivity : AppCompatActivity() {
 
         gestureDetector = GestureDetector(this, MyGestureListener())
         scaleGestureDetector = ScaleGestureDetector(this, ScaleGestureListener())
+
+        audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
     }
 
     /**
@@ -905,15 +909,41 @@ class MainActivity : AppCompatActivity() {
 
     override fun dispatchKeyEvent(event: KeyEvent?): Boolean
     {
+        var currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_SYSTEM)
         if (event!!.keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
-            // Volume_UP -> zoom in
-            SB_zoom.progress++
-            return true
+            if(volumeKey=="volume") {
+                currentVolume+=10
+                audioManager.setStreamVolume(AudioManager.STREAM_SYSTEM, currentVolume, 0)
+                return true
+            }
+            else if(volumeKey=="zoom") {
+                // Volume_UP -> zoom in
+                SB_zoom.progress++
+                return true
+            }
+            else if(volumeKey=="shot") {
+                timerShot(false)    // scatto una foto
+                BT_timer.visibility = View.VISIBLE
+                return true
+            }
+
         }
         else if (event!!.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
-            // Volume_DOWN -> zoom out
-            SB_zoom.progress--
-            return true
+            if(volumeKey=="volume") {
+                currentVolume-=10
+                audioManager.setStreamVolume(AudioManager.STREAM_SYSTEM, currentVolume, 0)
+                return true
+            }
+            else if(volumeKey=="zoom") {
+                // zoom out
+                SB_zoom.progress--
+                return true
+            }
+            else if(volumeKey=="shot") {
+                timerShot(true)     // inizio la registrazione di un video
+                BT_timer.visibility = View.VISIBLE
+                return true
+            }
         }
         return super.dispatchKeyEvent(event)
     }
@@ -1105,8 +1135,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
+     * Metodo che permette di scattare una foto o di registrare un video a seconda del valore di record
      *
-     * @param record
+     * @param record True se in modalità video
+     *               False se in modalità foto
      */
     private fun timerShot(record : Boolean){
         if(timerOn) { // se c'è il timer in funzione allora lo blocco
@@ -1155,7 +1187,7 @@ class MainActivity : AppCompatActivity() {
             }
 
         }.start()
-        Log.d(TAG, "Secondi ristabiliti: $countdown")
+        Log.d(TAG, "Secondi ristabiliti: ${countdown*1000}")
     }
 
     /**
