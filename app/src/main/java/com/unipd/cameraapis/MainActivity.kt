@@ -45,6 +45,7 @@ import androidx.constraintlayout.widget.Group
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
+import androidx.preference.PreferenceManager
 //import com.google.zxing.integration.android.IntentIntegrator
 import com.unipd.cameraapis.databinding.ActivityMainBinding
 import kotlinx.coroutines.CoroutineScope
@@ -131,6 +132,12 @@ class MainActivity : AppCompatActivity() {
     private var qrscanner = true
     private var captureJob: Job? = null
     private var isBT_shootLongClicke = false
+
+    private lateinit var volumeKey : String
+    private lateinit var ratioPhoto : String
+    private var hdr = true
+    private var gps = false
+    private var feedback = true
 
     companion object {
 
@@ -730,6 +737,28 @@ class MainActivity : AppCompatActivity() {
         changeZoom(progress, true) // cambio zoom e forzo il rebuild
     }
 
+    private fun loadFromSetting() {
+        val pm = PreferenceManager.getDefaultSharedPreferences(this)
+
+        // -- Impostazioni Scatto
+        volumeKey = pm.getString("LS_volumeKey","zoom")!!
+
+        // -- Foto
+        ratioPhoto = pm.getString("LS_ratioPhoto", "3_4")!!
+
+        // -- Video
+        ratioPhoto = pm.getString("LS_ratioVideo", "3_4")!!
+
+        // -- Generali
+        grid = pm.getBoolean("SW_grid", true);
+        hdr = pm.getBoolean("SW_HDR", true);
+        gps = pm.getBoolean("SW_GPS", true);
+        feedback = pm.getBoolean("SW_feedback", true);
+
+        viewGrid(grid)
+
+    }
+
     /**
      * Metodo usato per cambiare lo zoom della camera
      *
@@ -799,8 +828,8 @@ class MainActivity : AppCompatActivity() {
 
         BT_zoom0_5.text = getString(R.string.zoom_0_5x)
         BT_zoom1_0.text = getString(R.string.zoom_1_0x)
-        BT_zoom0_5.backgroundTintList = getColorStateList(R.color.charcoal)
-        BT_zoom1_0.backgroundTintList = getColorStateList(R.color.charcoal)
+        BT_zoom0_5.backgroundTintList = getColorStateList(R.color.gray_onyx)
+        BT_zoom1_0.backgroundTintList = getColorStateList(R.color.gray_onyx)
         BT_zoom0_5.setTextColor(getColor(R.color.white))
         BT_zoom1_0.setTextColor(getColor(R.color.white))
 
@@ -890,7 +919,7 @@ class MainActivity : AppCompatActivity() {
                     else -> -1 // Angolo morto
                 }
                 // non ho messo valori multipli di 45 in modo da avere un minimo di gioco prima di cambiare rotazione
-                Log.d(TAG,"[orientation] $rotation" )
+                //Log.d(TAG,"[orientation] $rotation" )
 
                 if(!isRecording && rotation != -1 ) // gira solo se non sta registrando, per salvare i video nel orientamento iniziale
                 {
@@ -1299,6 +1328,8 @@ class MainActivity : AppCompatActivity() {
         catch (e : Exception) {
             Log.e(TAG, "Exception $e")
         }
+
+        loadFromSetting()
     }
 
     /**

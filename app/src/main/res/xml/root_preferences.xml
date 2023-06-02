@@ -42,11 +42,11 @@
         app:iconSpaceReserved="false">
 
         <SwitchPreference
-            android:defaultValue="false"
+            android:defaultValue="true"
             android:key="SW_grid"
             android:title="Griglia" />
         <SwitchPreference
-            android:defaultValue="false"
+            android:defaultValue="true"
             android:key="SW_HDR"
             android:title="HDR" />
         <SwitchPreference
@@ -54,7 +54,7 @@
             android:key="SW_GPS"
             android:title="GPS" />
         <SwitchPreference
-            android:defaultValue="false"
+            android:defaultValue="true"
             android:key="SW_feedback"
             android:title="Feedback vibrazione" />
     </PreferenceCategory>
