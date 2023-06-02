@@ -64,6 +64,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.math.abs
 import android.media.AudioManager
+import androidx.constraintlayout.widget.ConstraintLayout
 
 
 class MainActivity : AppCompatActivity() {
@@ -141,7 +142,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var audioManager: AudioManager
     private lateinit var volumeKey : String
     private lateinit var powerKey : String
-    private lateinit var ratioPhoto : String
+    private lateinit var aspectRatioPhoto : Rational
+    private lateinit var aspectRatioVideo : Rational
     private var hdr = true
     private var gps = false
     private var feedback = true
@@ -755,11 +757,10 @@ class MainActivity : AppCompatActivity() {
         powerKey = pm.getString("LS_volumeKey","zoom")!!
 
         // -- Foto
-        ratioPhoto = pm.getString("LS_ratioPhoto", "3_4")!!
 
-        val aspectRatio = when (ratioPhoto) {
-            "3_4" -> Rational(4, 3)
-            "9_16" -> Rational(16, 9)
+        aspectRatioPhoto = when (pm.getString("LS_ratioPhoto", "3_4")!!) {
+            "3_4" -> Rational(3, 4)
+            "9_16" -> Rational(9, 16)
             "1_1" -> Rational(1, 1)
             "full" -> {
                 val metrics = DisplayMetrics()
@@ -770,26 +771,22 @@ class MainActivity : AppCompatActivity() {
             else -> Rational(4, 3) // Rapporto d'aspetto predefinito se nessun caso corrisponde
         }
 
-        /*val metrics = DisplayMetrics().also { viewFinder.display.getRealMetrics(it) }
-        val screenSize = Size(metrics.widthPixels, metrics.heightPixels)
-        val screenAspectRatio = Rational(metrics.widthPixels, metrics.heightPixels)
-        //preview.onUnbind()
-
         try {
-            imageCapture = ImageCapture.Builder().setTargetAspectRatio(AspectRatio.RATIO_16_9).build()
+            //imageCapture = ImageCapture.Builder().aspect(AspectRatio.RATIO_16_9).build()
 
-            preview = Preview.Builder().setTargetAspectRatio(AspectRatio.RATIO_16_9)
-                .build()
-                .also {
-                    it.setSurfaceProvider(viewBinding.viewFinder.surfaceProvider)
-                }
+            imageCapture!!.setCropAspectRatio(aspectRatioPhoto)
+
+            val layoutParams = viewFinder.layoutParams as ConstraintLayout.LayoutParams
+            layoutParams.dimensionRatio = "H,${aspectRatioPhoto.numerator}:${aspectRatioPhoto.denominator}" // Cambia l'aspect ratio desiderato qui
+            viewFinder.layoutParams = layoutParams
+
+            //preview.setCropAspectRatio(Rational(9,16))
         }
         catch (e : Exception)
         {
             Log.e(TAG, "[LoadFromSetting] $e")
         }
 
-         */
 
 
         //imageCapture = ImageCapture.Builder().setTargetResolution(Size(1280,720)).build()
