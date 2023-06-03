@@ -121,6 +121,7 @@ class MainActivity : AppCompatActivity() {
     private val changeCameraSeekBar = 50
     private var CM_pauseAt : Long = 0
     private var countdown : Long = 0
+    private var lastPowerButtonClicked : Long = 0   // tempo in cui è stato rilevato l'ultimo tocco del pulsante di accensione
     private var currFlashMode : FlashModes = FlashModes.OFF
     private var currTimerMode : TimerModes = TimerModes.OFF
     private var currentCamera = 0
@@ -147,6 +148,7 @@ class MainActivity : AppCompatActivity() {
     private var hdr = true
     private var gps = false
     private var feedback = true
+    private var volumeClicked = false   // true se un pulsante del volume viene premuto
 
     companion object {
 
@@ -163,6 +165,8 @@ class MainActivity : AppCompatActivity() {
         private const val KEY_QRCODE = "qrscanner"
 
         private const val TOUCH_THRESHOLD = 0.1
+
+        private const val DOUBLE_CLICK_DELTA_TIME : Long = 300      // Tempo entro il quale viene rilevato il doppio tocco
 
         private val REQUIRED_PERMISSIONS =
             mutableListOf (
@@ -914,24 +918,37 @@ class MainActivity : AppCompatActivity() {
         Log.d(TAG, "[current camera] - zoom: $currentCamera")
     }
 
+    var clickCount : Int = 0    // test, da rimuovere se non serve
 
+    /**
+     * Metodo per gestire il tocco dei pulsanti del volume
+     */
     override fun dispatchKeyEvent(event: KeyEvent?): Boolean
     {
         if (event?.keyCode == KeyEvent.KEYCODE_VOLUME_UP || event?.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            clickCount++
+            if(volumeClicked) {
+                volumeClicked = false
+                return super.dispatchKeyEvent(event)
+            }
+            volumeClicked = true
             when (volumeKey) {
                 "volume" ->  super.dispatchKeyEvent(event)
                 "zoom" -> {
+                    Log.d(TAG, "clickCount: $clickCount")
                     // Volume_UP -> zoom in, Volume_DOWN -> zoom out
                     SB_zoom.incrementProgressBy( if (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP) 1 else -1)
                     return true
                 }
                 "shot" -> {
+                    Log.d(TAG, "clickCount: $clickCount")
                     changeMode(event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)
                     timerShot(event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) // scatto una foto o inizio la registrazione di un video
                     return true
                 }
             }
         }
+
 
         return super.dispatchKeyEvent(event)
     }
@@ -1130,6 +1147,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun timerShot(record : Boolean){
         if(timerOn) { // se c'è il timer in funzione allora lo blocco
+            Log.d(TAG,"Timer bloccato")
             timerOn = false
             timer.cancel()
             countDownText.visibility = View.INVISIBLE
@@ -1161,7 +1179,7 @@ class MainActivity : AppCompatActivity() {
                 BT_shoot.setBackgroundResource(R.drawable.rounded_stop_button)
                 countDownText.text = "${remainingMillis/1000 + 1}"
                 countDownText.visibility = View.VISIBLE
-                Log.d(TAG, "Secondi rimanenti: "+remainingMillis)
+                Log.d(TAG, "Secondi rimanenti: "+remainingMillis/1000)
             }
             override fun onFinish() {
                 timerOn = false
@@ -1175,7 +1193,7 @@ class MainActivity : AppCompatActivity() {
             }
 
         }.start()
-        Log.d(TAG, "Secondi ristabiliti: ${countdown*1000}")
+        Log.d(TAG, "Secondi ristabiliti: $countdown")
     }
 
     /**
