@@ -10,7 +10,7 @@
 
 
     <androidx.camera.view.PreviewView
-        android:id="@+id/viewFinder"
+        android:id="@+id/view_Preview"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -20,6 +20,21 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.35000002" />
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/Group_grid"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:constraint_referenced_ids="GR_vert1,GR_vert2,GR_horiz1,GR_horiz2" />
+
+    <View
+        android:id="@+id/VW_bottomBand"
+        android:layout_width="wrap_content"
+        android:layout_height="200dp"
+        android:background="#99171717"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/vertical_centerline"
@@ -129,9 +144,9 @@
         android:progressTint="@android:color/transparent"
         android:thumbTint="@color/white"
         android:tickMark="@drawable/rounded_corner"
-        app:layout_constraintBottom_toBottomOf="@+id/viewFinder"
-        app:layout_constraintEnd_toEndOf="@+id/viewFinder"
-        app:layout_constraintStart_toStartOf="@+id/viewFinder"
+        app:layout_constraintBottom_toTopOf="@+id/VW_bottomBand"
+        app:layout_constraintEnd_toEndOf="@+id/view_Preview"
+        app:layout_constraintStart_toStartOf="@+id/view_Preview"
         app:tickVisible="true" />
 
     <Space
@@ -254,7 +269,7 @@
         android:visibility="invisible"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/viewFinder" />
+        app:layout_constraintTop_toTopOf="@+id/view_Preview" />
 
     <TextView
         android:id="@+id/TextTimer"
@@ -265,13 +280,7 @@
         app:layout_constraintBottom_toTopOf="@+id/GR_horiz1"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/viewFinder" />
-
-    <androidx.constraintlayout.widget.Group
-        android:id="@+id/Group_grid"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:constraint_referenced_ids="GR_vert1,GR_vert2,GR_horiz1,GR_horiz2" />
+        app:layout_constraintTop_toTopOf="@+id/view_Preview" />
 
     <View
         android:id="@+id/GR_vert1"
@@ -280,11 +289,11 @@
         android:alpha="0.5"
         android:background="@android:color/white"
         android:elevation="2dp"
-        app:layout_constraintBottom_toBottomOf="@+id/viewFinder"
+        app:layout_constraintBottom_toBottomOf="@+id/view_Preview"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.33"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/viewFinder" />
+        app:layout_constraintTop_toTopOf="@+id/view_Preview" />
 
     <View
         android:id="@+id/GR_vert2"
@@ -293,11 +302,11 @@
         android:alpha="0.5"
         android:background="@android:color/white"
         android:elevation="2dp"
-        app:layout_constraintBottom_toBottomOf="@+id/viewFinder"
+        app:layout_constraintBottom_toBottomOf="@+id/view_Preview"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.67"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/viewFinder" />
+        app:layout_constraintTop_toTopOf="@+id/view_Preview" />
 
     <View
         android:id="@+id/GR_horiz1"
@@ -306,10 +315,10 @@
         android:alpha="0.5"
         android:background="@android:color/white"
         android:elevation="2dp"
-        app:layout_constraintBottom_toBottomOf="@+id/viewFinder"
+        app:layout_constraintBottom_toBottomOf="@+id/view_Preview"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/viewFinder"
+        app:layout_constraintTop_toTopOf="@+id/view_Preview"
         app:layout_constraintVertical_bias="0.33" />
 
     <View
@@ -319,10 +328,10 @@
         android:alpha="0.5"
         android:background="@android:color/white"
         android:elevation="2dp"
-        app:layout_constraintBottom_toBottomOf="@+id/viewFinder"
+        app:layout_constraintBottom_toBottomOf="@+id/view_Preview"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/viewFinder"
+        app:layout_constraintTop_toTopOf="@+id/view_Preview"
         app:layout_constraintVertical_bias="0.67" />
 
     <Button
@@ -356,15 +365,6 @@
         app:layout_constraintBottom_toTopOf="@+id/BT_shoots"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/viewFinder" />
-
-    <View
-        android:id="@+id/VW_bottomBand"
-        android:layout_width="wrap_content"
-        android:layout_height="100dp"
-        android:background="@color/gray_onyx"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintTop_toTopOf="@+id/VW_bottomBand" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

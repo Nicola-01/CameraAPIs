@@ -8,7 +8,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.Cursor
 import android.hardware.camera2.CameraManager
-import android.icu.number.Scale
 import android.net.Uri
 import android.os.Bundle
 import android.os.CountDownTimer
@@ -17,9 +16,16 @@ import android.provider.MediaStore
 import android.util.DisplayMetrics
 import android.util.Log
 import android.util.Rational
-import android.util.Size
-import android.view.*
-import android.view.GestureDetector.SimpleOnGestureListener
+import android.view.GestureDetector
+import android.view.HapticFeedbackConstants
+import android.view.KeyEvent
+import android.view.Menu
+import android.view.MenuItem
+import android.view.MotionEvent
+import android.view.OrientationEventListener
+import android.view.ScaleGestureDetector
+import android.view.View
+import android.view.WindowManager
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.Button
@@ -46,6 +52,7 @@ import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.Group
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
 import androidx.preference.PreferenceManager
@@ -95,7 +102,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var BT_settings : Button
     private lateinit var focusCircle : View
     private lateinit var focusView : View
-    private lateinit var viewFinder : View
+    private lateinit var viewPreview : View
     private lateinit var SB_zoom : SeekBar
     private lateinit var CM_recTimer : Chronometer
     private lateinit var countDownText : TextView
@@ -185,16 +192,39 @@ class MainActivity : AppCompatActivity() {
         if (allPermissionsGranted()) {
             startCamera(savedInstanceState)
         } else {
-            val showPopUp = PopUpFragment()
-            showPopUp.show(supportFragmentManager, "showPopUp")
-            showPopUp.onDismissListener = {
-                if (allPermissionsGranted()) startCamera(savedInstanceState)
-            }
-
+            ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         }
 
         //Todo ???? che fa?
         cameraExecutor = Executors.newSingleThreadExecutor()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            val preferences = getPreferences(MODE_PRIVATE)
+
+            // recupero le variabili dalle preferences
+            var h = preferences.getInt("bottomBandHeight", -1)
+
+            if (h == -1) // primo avvio del app
+            {
+                val displayMetrics = DisplayMetrics()
+                windowManager.defaultDisplay.getMetrics(displayMetrics)
+                val height = displayMetrics.heightPixels
+                val width = displayMetrics.widthPixels
+
+                var bottomBand = findViewById<View>(R.id.VW_bottomBand)
+                val layoutParams = bottomBand.layoutParams
+                h = height - viewPreview.bottom // Imposta l'altezza desiderata in pixel
+                layoutParams.height = h
+                bottomBand.layoutParams = layoutParams
+
+                val editor = preferences.edit()
+                editor.putInt("bottomBandHeight", h)
+                editor.apply()
+            }
+        }
     }
 
     /**
@@ -209,9 +239,25 @@ class MainActivity : AppCompatActivity() {
      */
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_CODE_PERMISSIONS && allPermissionsGranted())
-            startCamera()
+        if (requestCode == REQUEST_CODE_PERMISSIONS) {
+            if (allPermissionsGranted()) {
+                startCamera()
+            }
+            else
+            {
+                val showPopUp = PopUpFragment()
+                showPopUp.show(supportFragmentManager, "showPopUp")
+                showPopUp.onDismissListener = {
+                    if (allPermissionsGranted())
+                        startCamera() // Todo: manca bundle
+                }
+            }
+        }
+
+
     }
+
+
 
 
     /**
@@ -241,7 +287,7 @@ class MainActivity : AppCompatActivity() {
         SB_zoom = viewBinding.SBZoom
         countDownText = viewBinding.TextTimer
         focusView = viewBinding.FocusCircle
-        viewFinder = viewBinding.viewFinder
+        viewPreview = viewBinding.viewPreview
 
         scaleDown = AnimationUtils.loadAnimation(this,R.anim.scale_down)
         scaleUp = AnimationUtils.loadAnimation(this,R.anim.scale_up)
@@ -367,7 +413,7 @@ class MainActivity : AppCompatActivity() {
         /*Con un click sulla view che contiene la preview della camera si può spostare il focus su
           una specifica zona*/
 
-        viewFinder.setOnTouchListener(View.OnTouchListener setOnTouchListener@{ _, event ->
+        viewPreview.setOnTouchListener(View.OnTouchListener setOnTouchListener@{ _, event ->
             gestureDetector.onTouchEvent(event)
             scaleGestureDetector.onTouchEvent(event)
             true
@@ -457,7 +503,7 @@ class MainActivity : AppCompatActivity() {
             preview = Preview.Builder()
                 .build()
                 .also {
-                    it.setSurfaceProvider(viewBinding.viewFinder.surfaceProvider)
+                    it.setSurfaceProvider(viewBinding.viewPreview.surfaceProvider)
                 }
 
             recorder = Recorder.Builder()
@@ -517,7 +563,7 @@ class MainActivity : AppCompatActivity() {
         // Set up image capture listener, which is triggered after photo has
         // been taken
         BT_shoot.startAnimation(scaleDown)
-        viewBinding.viewFinder.startAnimation(scaleUp)
+        viewPreview.startAnimation(scaleUp)
         imageCapture.takePicture( // caso d'uso
             outputOptions,
             ContextCompat.getMainExecutor(this),
@@ -952,9 +998,9 @@ class MainActivity : AppCompatActivity() {
         bt2.setTextColor(getColor(R.color.white))
 
         // cambia rapporto preview
-        val layoutParams = viewFinder.layoutParams as ConstraintLayout.LayoutParams
+        val layoutParams = viewPreview.layoutParams as ConstraintLayout.LayoutParams
         layoutParams.dimensionRatio = "H,${aspect.numerator}:${aspect.denominator}" // Cambia l'aspect ratio desiderato qui
-        viewFinder.layoutParams = layoutParams
+        viewPreview.layoutParams = layoutParams
 
 
         if(!timerOn) // se non c'è il timer attivato
@@ -1002,14 +1048,14 @@ class MainActivity : AppCompatActivity() {
         override fun onSingleTapUp(motionEvent: MotionEvent): Boolean {
             when (motionEvent.action) {
                 MotionEvent.ACTION_UP -> {
-                    focusView.x = viewFinder.x - focusView.width / 2 + motionEvent.x
-                    focusView.y = viewFinder.y - focusView.height / 2 + motionEvent.y
+                    focusView.x = viewPreview.x - focusView.width / 2 + motionEvent.x
+                    focusView.y = viewPreview.y - focusView.height / 2 + motionEvent.y
                     focusView.visibility = View.VISIBLE
                     focusView.postDelayed(Runnable {
                         focusView.visibility = View.INVISIBLE
                     }, 1000)
                     // Get the MeteringPointFactory from PreviewView
-                    val factory = viewBinding.viewFinder.meteringPointFactory
+                    val factory = viewBinding.viewPreview.meteringPointFactory
 
                     // Create a MeteringPoint from the tap coordinates
                     val point = factory.createPoint(motionEvent.x, motionEvent.y)
