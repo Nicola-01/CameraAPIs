@@ -148,7 +148,6 @@ class MainActivity : AppCompatActivity() {
     private var hdr = true
     private var gps = false
     private var feedback = true
-    private var volumeClicked = false   // true se un pulsante del volume viene premuto
 
     companion object {
 
@@ -918,38 +917,30 @@ class MainActivity : AppCompatActivity() {
         Log.d(TAG, "[current camera] - zoom: $currentCamera")
     }
 
-    var clickCount : Int = 0    // test, da rimuovere se non serve
 
     /**
      * Metodo per gestire il tocco dei pulsanti del volume
      */
     override fun dispatchKeyEvent(event: KeyEvent?): Boolean
     {
-        if (event?.keyCode == KeyEvent.KEYCODE_VOLUME_UP || event?.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
-            clickCount++
-            if(volumeClicked) {
-                volumeClicked = false
-                return super.dispatchKeyEvent(event)
-            }
-            volumeClicked = true
+        if (event?.action == KeyEvent.ACTION_DOWN &&
+            (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP || event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
             when (volumeKey) {
                 "volume" ->  super.dispatchKeyEvent(event)
                 "zoom" -> {
-                    Log.d(TAG, "clickCount: $clickCount")
                     // Volume_UP -> zoom in, Volume_DOWN -> zoom out
                     SB_zoom.incrementProgressBy( if (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP) 1 else -1)
                     return true
                 }
                 "shot" -> {
-                    Log.d(TAG, "clickCount: $clickCount")
                     changeMode(event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)
                     timerShot(event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) // scatto una foto o inizio la registrazione di un video
                     return true
                 }
             }
         }
-
-
+        //else if (event?.action == KeyEvent.ACTION_UP && (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP || event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN))
+        //TODO se tengo premuto più di un secondo (o meno, da testare) allora registra finchè non si molla il tasto, o scatto continuo se è per la foto
         return super.dispatchKeyEvent(event)
     }
 
