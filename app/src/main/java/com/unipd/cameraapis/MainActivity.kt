@@ -151,6 +151,10 @@ class MainActivity : AppCompatActivity() {
     private var gps = false
     private var feedback = true
 
+    private var savedInstanceState_: Bundle? = null
+    val showPopUp = PopUpFragment()
+    var popUpVisible = false
+
     companion object {
 
         private const val TAG = "CameraXApp"
@@ -177,6 +181,7 @@ class MainActivity : AppCompatActivity() {
             }.toTypedArray()
     }
 
+    var test = 0;
 
     /**
      * Todo commento
@@ -186,17 +191,53 @@ class MainActivity : AppCompatActivity() {
         viewBinding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(viewBinding.root)
 
+        savedInstanceState_ = savedInstanceState
+
         createElement() // inizializza le variabili
 
         // Controlla se sono stati forniti i permessi
-        if (allPermissionsGranted()) {
-            startCamera(savedInstanceState)
-        } else {
-            ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
-        }
+        if (allPermissionsGranted())
+            startCamera()
+        else
+            askPermission()
 
         //Todo ???? che fa?
         cameraExecutor = Executors.newSingleThreadExecutor()
+    }
+
+    fun askPermission() {
+        ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
+    }
+
+    /**
+     * TODO: da commentare
+     */
+    fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
+        ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED
+    }
+
+    /**
+     * TODO: da commentare
+     */
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_CODE_PERMISSIONS) {
+            if (allPermissionsGranted()) {
+                startCamera()
+            }
+            else if(!popUpVisible) // limita le apperture delle schede
+            {
+                showPopUp.show(supportFragmentManager, "showPopUp")
+                showPopUp.onDismissListener = {
+                    popUpVisible = false
+                    if (allPermissionsGranted())
+                        startCamera() // Todo: manca bundle
+                }
+                popUpVisible = true
+            }
+            test ++
+            Log.d(TAG, "[test]  time: $test")
+        }
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -226,39 +267,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
-    /**
-     * TODO: da commentare
-     */
-    fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
-        ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED
-    }
-
-    /**
-     * TODO: da commentare
-     */
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_CODE_PERMISSIONS) {
-            if (allPermissionsGranted()) {
-                startCamera()
-            }
-            else
-            {
-                val showPopUp = PopUpFragment()
-                showPopUp.show(supportFragmentManager, "showPopUp")
-                showPopUp.onDismissListener = {
-                    if (allPermissionsGranted())
-                        startCamera() // Todo: manca bundle
-                }
-            }
-        }
-
-
-    }
-
-
-
 
     /**
      * Funzione per istanziare elementi del activity_main.xml;
@@ -492,7 +500,7 @@ class MainActivity : AppCompatActivity() {
     /**
      * TODO: commentare e sistemare
      */
-    private fun startCamera(savedInstanceState : Bundle? = null) {
+    private fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
 
         cameraProviderFuture.addListener({
@@ -526,7 +534,7 @@ class MainActivity : AppCompatActivity() {
             try {
                 createListener() // creo i Listener
                 buildCamera()
-                loadFromBundle(savedInstanceState) // carico gli elementi dal Bundle/Preferences
+                loadFromBundle(savedInstanceState_) // carico gli elementi dal Bundle/Preferences
                 setFlashMode() // non so perchè ma se lo lascio al interno di loadFromBundle, viene modificato ma successivamente perde lo stato
             } catch(exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)

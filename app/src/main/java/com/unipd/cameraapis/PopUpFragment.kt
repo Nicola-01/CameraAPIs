@@ -12,13 +12,15 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
+import kotlin.concurrent.thread
 
 
 class PopUpFragment : DialogFragment() {
 
-
+    var ask = false
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -38,6 +40,7 @@ class PopUpFragment : DialogFragment() {
             val uri = Uri.fromParts("package", context?.packageName, null)
             intent.data = uri
             startActivity(intent)
+            ask = true
         }
 
         bt_close.setOnClickListener{
@@ -57,8 +60,12 @@ class PopUpFragment : DialogFragment() {
     override fun onResume() {
         super.onResume()
         val mainActivity = requireActivity() as MainActivity
+        if(ask) // senza questo controllo continuerebbe a fare richieste
+            mainActivity.askPermission()
+        ask = false
         if(mainActivity.allPermissionsGranted())
             dismiss()
+
     }
 
 
