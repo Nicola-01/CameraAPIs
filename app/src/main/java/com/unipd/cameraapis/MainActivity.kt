@@ -29,7 +29,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
@@ -45,12 +44,11 @@ import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.Group
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
 import androidx.preference.PreferenceManager
-//import com.google.zxing.integration.android.IntentIntegrator
 import com.unipd.cameraapis.databinding.ActivityMainBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -63,8 +61,6 @@ import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.math.abs
-import android.media.AudioManager
-import androidx.constraintlayout.widget.ConstraintLayout
 
 
 class MainActivity : AppCompatActivity() {
@@ -140,7 +136,6 @@ class MainActivity : AppCompatActivity() {
     private var captureJob: Job? = null
     private var isBT_shootLongClicke = false
 
-    private lateinit var audioManager: AudioManager
     private lateinit var volumeKey : String
     private lateinit var powerKey : String
     private lateinit var aspectRatioPhoto : Rational
@@ -192,7 +187,10 @@ class MainActivity : AppCompatActivity() {
         } else {
             val showPopUp = PopUpFragment()
             showPopUp.show(supportFragmentManager, "showPopUp")
-            //ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
+            showPopUp.onDismissListener = {
+                if (allPermissionsGranted()) startCamera(savedInstanceState)
+            }
+
         }
 
         //Todo ???? che fa?
@@ -202,7 +200,7 @@ class MainActivity : AppCompatActivity() {
     /**
      * TODO: da commentare
      */
-    private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
+    fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
         ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED
     }
 
@@ -211,16 +209,8 @@ class MainActivity : AppCompatActivity() {
      */
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_CODE_PERMISSIONS) {
-            if (allPermissionsGranted()) {
-                startCamera()
-            } else {
-                Toast.makeText(this,
-                    "Permissions not granted by the user.",
-                    Toast.LENGTH_SHORT).show()
-                finish()
-            }
-        }
+        if (requestCode == REQUEST_CODE_PERMISSIONS && allPermissionsGranted())
+            startCamera()
     }
 
 
@@ -259,7 +249,6 @@ class MainActivity : AppCompatActivity() {
         gestureDetector = GestureDetector(this, MyGestureListener())
         scaleGestureDetector = ScaleGestureDetector(this, ScaleGestureListener())
 
-        audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
     }
 
     /**
@@ -778,6 +767,14 @@ class MainActivity : AppCompatActivity() {
             else -> Rational(4, 3) // Rapporto d'aspetto predefinito se nessun caso corrisponde
         }
 
+        try {
+            imageCapture!!.setCropAspectRatio(aspectRatioPhoto)
+        }
+        catch (e : Exception)
+        {
+            Log.e(TAG, "[LoadFromSetting] $e")
+        }
+
         // -- Video
         aspectRatioVideo = when (pm.getString("LS_ratioVideo", "3_4")!!) {
             "3_4" -> Rational(3, 4)
@@ -793,28 +790,14 @@ class MainActivity : AppCompatActivity() {
         }
 
         try {
-            //imageCapture = ImageCapture.Builder().aspect(AspectRatio.RATIO_16_9).build()
-
-            imageCapture!!.setCropAspectRatio(aspectRatioPhoto)
-
-            val layoutParams = viewFinder.layoutParams as ConstraintLayout.LayoutParams
-            layoutParams.dimensionRatio = "H,${aspectRatioPhoto.numerator}:${aspectRatioPhoto.denominator}" // Cambia l'aspect ratio desiderato qui
-            viewFinder.layoutParams = layoutParams
-
-            //preview.setCropAspectRatio(Rational(9,16))
+            //videoCapture!!.setCropAspectRatio(aspectRatioPhoto)
         }
         catch (e : Exception)
         {
             Log.e(TAG, "[LoadFromSetting] $e")
         }
 
-
-
-        //imageCapture = ImageCapture.Builder().setTargetResolution(Size(1280,720)).build()
-        //imageCapture!!.setCropAspectRatio(aspectRatio)
-        //preview.setTargetAspectRatio(aspectRatio)
-
-
+        changeMode(recordMode) // richiamo per cambiare la grandezza della preview
 
         // -- Generali
         grid = pm.getBoolean("SW_grid", true)
@@ -959,6 +942,7 @@ class MainActivity : AppCompatActivity() {
         recordMode = record
         val bt1 = if(record) BT_recMode else BT_photoMode
         val bt2 = if(record) BT_photoMode else BT_recMode
+        val aspect = if(record) aspectRatioVideo else aspectRatioPhoto
 
         bt1.backgroundTintList = getColorStateList(R.color.white)
         bt1.setTextColor(getColor(R.color.black))
@@ -966,6 +950,12 @@ class MainActivity : AppCompatActivity() {
         //bt2.setBackgroundColor(getColor(R.color.gray_onyx))
         bt2.backgroundTintList = getColorStateList(R.color.gray_onyx)
         bt2.setTextColor(getColor(R.color.white))
+
+        // cambia rapporto preview
+        val layoutParams = viewFinder.layoutParams as ConstraintLayout.LayoutParams
+        layoutParams.dimensionRatio = "H,${aspect.numerator}:${aspect.denominator}" // Cambia l'aspect ratio desiderato qui
+        viewFinder.layoutParams = layoutParams
+
 
         if(!timerOn) // se non c'è il timer attivato
         {
@@ -1377,6 +1367,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume()
     {
         super.onResume()
+        Log.d(TAG, "onResume")
         try { // il lifecycle dello zoom viene chiso con la chiusura dell'app,
             // e non viene ripristinato manualmente, quindi chiamo changeZoom
             // con il valore SB_zoom.progress che è ancora salvato
