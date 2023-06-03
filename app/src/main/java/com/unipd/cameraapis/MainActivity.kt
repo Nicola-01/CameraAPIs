@@ -148,7 +148,6 @@ class MainActivity : AppCompatActivity() {
     private var hdr = true
     private var gps = false
     private var feedback = true
-    private var volumeClicked = false   // true se un pulsante del volume viene premuto
 
     companion object {
 
@@ -191,8 +190,9 @@ class MainActivity : AppCompatActivity() {
         if (allPermissionsGranted()) {
             startCamera(savedInstanceState)
         } else {
-            ActivityCompat.requestPermissions(
-                this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
+            val showPopUp = PopUpFragment()
+            showPopUp.show(supportFragmentManager, "showPopUp")
+            //ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         }
 
         //Todo ???? che fa?
@@ -203,8 +203,7 @@ class MainActivity : AppCompatActivity() {
      * TODO: da commentare
      */
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
-        ContextCompat.checkSelfPermission(
-            baseContext, it) == PackageManager.PERMISSION_GRANTED
+        ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED
     }
 
     /**
@@ -634,12 +633,16 @@ class MainActivity : AppCompatActivity() {
 
             CM_recTimer.base = SystemClock.elapsedRealtime() // resetto il timer
             CM_recTimer.start()
+
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) // mantiene lo schermo attivo durante la registrazione
         }
         else
         {
             viewPH = View.VISIBLE
             viewVI = View.INVISIBLE
             CM_recTimer.stop()
+
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) // permette allo schermo di spegnersi
         }
         recOptions() // cambio la grafica del pulsante
 
@@ -918,38 +921,29 @@ class MainActivity : AppCompatActivity() {
         Log.d(TAG, "[current camera] - zoom: $currentCamera")
     }
 
-    var clickCount : Int = 0    // test, da rimuovere se non serve
-
     /**
      * Metodo per gestire il tocco dei pulsanti del volume
      */
     override fun dispatchKeyEvent(event: KeyEvent?): Boolean
     {
-        if (event?.keyCode == KeyEvent.KEYCODE_VOLUME_UP || event?.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
-            clickCount++
-            if(volumeClicked) {
-                volumeClicked = false
-                return super.dispatchKeyEvent(event)
-            }
-            volumeClicked = true
+        if (event?.action == KeyEvent.ACTION_DOWN &&
+            (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP || event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
             when (volumeKey) {
                 "volume" ->  super.dispatchKeyEvent(event)
                 "zoom" -> {
-                    Log.d(TAG, "clickCount: $clickCount")
                     // Volume_UP -> zoom in, Volume_DOWN -> zoom out
                     SB_zoom.incrementProgressBy( if (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP) 1 else -1)
                     return true
                 }
                 "shot" -> {
-                    Log.d(TAG, "clickCount: $clickCount")
                     changeMode(event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)
                     timerShot(event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) // scatto una foto o inizio la registrazione di un video
                     return true
                 }
             }
         }
-
-
+        //else if (event?.action == KeyEvent.ACTION_UP && (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP || event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN))
+        //TODO se tengo premuto più di un secondo (o meno, da testare) allora registra finchè non si molla il tasto, o scatto continuo se è per la foto
         return super.dispatchKeyEvent(event)
     }
 
@@ -989,9 +983,7 @@ class MainActivity : AppCompatActivity() {
     private val orientationEventListener by lazy {
         object : OrientationEventListener(this) {
             override fun onOrientationChanged(orientation: Int) {
-                if (orientation == ORIENTATION_UNKNOWN) {
-                    return
-                }
+                if (orientation == ORIENTATION_UNKNOWN) return
 
                 val rotation = when (orientation) {
                     in 50 .. 130 -> 270
@@ -1087,8 +1079,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-
-
     /**
      * Metodo per rendere visibile o no la griglia
      *
@@ -1111,7 +1101,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     *
+     * todo commento
      */
     private fun rotateCamera() { // id = 0 default back, id = 1 front default
         if(currentCamera== 0 || currentCamera == 2)
@@ -1119,21 +1109,7 @@ class MainActivity : AppCompatActivity() {
         else if(currentCamera==1 || currentCamera==3)
             currentCamera = 0 // passo in back
         SB_zoom.progress = changeCameraSeekBar
-        /* TODO: se non serve cancellare
-        else if(currentCamera==2)
-        {
-            cameraSelector = availableCameraInfos[0].cameraSelector // passo in back, dovrei mettere la camera 3
-            currentCamera = 0
-            reBuild=true
-        } */
-        /*
-        else if(currentCamera==3)
-        {
-            cameraSelector = availableCameraInfos[2].cameraSelector // passo in front grand-angolare
-            currentCamera = 2
-            reBuild=true
-        }
-        */
+
         if(!isRecording) // se sta registrando non cambia fotocamera
             buildCamera()
         Log.d(TAG, "[current camera]  - rotate: $currentCamera")
@@ -1392,6 +1368,7 @@ class MainActivity : AppCompatActivity() {
 
         editor.apply()
 
+        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
     /**
