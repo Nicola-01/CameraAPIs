@@ -921,6 +921,10 @@ class MainActivity : AppCompatActivity() {
         Log.d(TAG, "[current camera] - zoom: $currentCamera")
     }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> dev
     /**
      * Metodo per gestire il tocco dei pulsanti del volume
      */
