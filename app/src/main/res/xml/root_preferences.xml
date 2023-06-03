@@ -11,13 +11,7 @@
             android:entryValues="@array/volumeKey_values"
             android:key="LS_volumeKey"
             android:title="Tasti Volume"
-            app:useSimpleSummaryProvider="true" />
-        <ListPreference
-            android:defaultValue="changeCamera"
-            android:entries="@array/power_entries"
-            android:entryValues="@array/power_values"
-            android:key="LS_pwerKey"
-            android:title="Doppio click tasto Power"
+            app:iconSpaceReserved="false"
             app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
     <PreferenceCategory
@@ -30,6 +24,7 @@
             android:entryValues="@array/ratio_values"
             android:key="LS_ratioPhoto"
             android:title="Rapporto Foto"
+            app:iconSpaceReserved="false"
             app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
     <PreferenceCategory
@@ -41,7 +36,8 @@
             android:entries="@array/ratio_entries"
             android:entryValues="@array/ratio_values"
             android:key="LS_ratioVideo"
-            android:title="Rapporto VIdeo"
+            android:title="Rapporto Video"
+            app:iconSpaceReserved="false"
             app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
     <PreferenceCategory
@@ -51,18 +47,22 @@
         <SwitchPreference
             android:defaultValue="true"
             android:key="SW_grid"
+            app:iconSpaceReserved="false"
             android:title="Griglia" />
         <SwitchPreference
             android:defaultValue="true"
             android:key="SW_HDR"
+            app:iconSpaceReserved="false"
             android:title="HDR" />
         <SwitchPreference
             android:defaultValue="false"
             android:key="SW_GPS"
+            app:iconSpaceReserved="false"
             android:title="GPS" />
         <SwitchPreference
             android:defaultValue="true"
             android:key="SW_feedback"
+            app:iconSpaceReserved="false"
             android:title="Feedback vibrazione" />
     </PreferenceCategory>
 

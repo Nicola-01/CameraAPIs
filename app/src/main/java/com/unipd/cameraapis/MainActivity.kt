@@ -87,7 +87,6 @@ class MainActivity : AppCompatActivity() {
     // Widget di activity_main.xml
     private lateinit var BT_flash : Button
     private lateinit var BT_gallery : Button
-    private lateinit var BT_grid : Button
     private lateinit var BT_pause : Button
     private lateinit var BT_photoMode : Button
     private lateinit var BT_recMode : Button
@@ -138,13 +137,11 @@ class MainActivity : AppCompatActivity() {
     private var isRecording = false
     private var inPause = false
     private var timerOn = false
-    private var grid = true
     private var qrscanner = true
     private var captureJob: Job? = null
     private var isBT_shootLongClicke = false
 
     private lateinit var volumeKey : String
-    private lateinit var powerKey : String
     private lateinit var aspectRatioPhoto : Rational
     private lateinit var aspectRatioVideo : Rational
     private var hdr = true
@@ -162,7 +159,6 @@ class MainActivity : AppCompatActivity() {
         private const val REQUEST_CODE_PERMISSIONS = 10
 
         private const val KEY_CAMERA = "CurrentCamera"
-        private const val KEY_GRID = "GridMode"
         private const val KEY_FLASH = "FlashMode"
         private const val KEY_TIMER = "TimerMode"
         private const val KEY_ZOOM = "ZoomProgress"
@@ -180,8 +176,6 @@ class MainActivity : AppCompatActivity() {
             ).apply {
             }.toTypedArray()
     }
-
-    var test = 0;
 
     /**
      * Todo commento
@@ -231,12 +225,11 @@ class MainActivity : AppCompatActivity() {
                 showPopUp.onDismissListener = {
                     popUpVisible = false
                     if (allPermissionsGranted())
-                        startCamera() // Todo: manca bundle
+                        startCamera()
                 }
                 popUpVisible = true
             }
-            test ++
-            Log.d(TAG, "[test]  time: $test")
+            Log.d(TAG, "Perission Request")
         }
     }
 
@@ -248,6 +241,11 @@ class MainActivity : AppCompatActivity() {
             // recupero le variabili dalle preferences
             var h = preferences.getInt("bottomBandHeight", -1)
 
+            Log.d(TAG, "height $h")
+
+            var bottomBand = findViewById<View>(R.id.VW_bottomBand)
+            val layoutParams = bottomBand.layoutParams
+
             if (h == -1) // primo avvio del app
             {
                 val displayMetrics = DisplayMetrics()
@@ -258,13 +256,14 @@ class MainActivity : AppCompatActivity() {
                 var bottomBand = findViewById<View>(R.id.VW_bottomBand)
                 val layoutParams = bottomBand.layoutParams
                 h = height - viewPreview.bottom // Imposta l'altezza desiderata in pixel
-                layoutParams.height = h
-                bottomBand.layoutParams = layoutParams
 
                 val editor = preferences.edit()
                 editor.putInt("bottomBandHeight", h)
                 editor.apply()
             }
+
+            layoutParams.height = h
+            bottomBand.layoutParams = layoutParams
         }
     }
 
@@ -276,7 +275,6 @@ class MainActivity : AppCompatActivity() {
     {
         BT_flash = viewBinding.BTFlash
         BT_gallery = viewBinding.BTGallery
-        BT_grid = viewBinding.BTGrid
         BT_pause = viewBinding.BTPause
         BT_photoMode = viewBinding.BTPhotoMode
         BT_recMode = viewBinding.BTRecordMode
@@ -353,7 +351,6 @@ class MainActivity : AppCompatActivity() {
             cursor.close()
         }
 
-        BT_grid.setOnClickListener { grid = !grid; viewGrid(grid) }
         BT_pause.setOnClickListener{ pauseVideo() }
         BT_photoMode.setOnClickListener { changeMode(false) }
         BT_recMode.setOnClickListener { changeMode(true) }
@@ -766,11 +763,9 @@ class MainActivity : AppCompatActivity() {
 
         // recupero le variabili dalle preferences
         currentCamera = preferences.getInt(KEY_CAMERA,0)
-        grid = preferences.getBoolean(KEY_GRID,true)
         val flashMode = preferences.getString(KEY_FLASH, "OFF")
         val timerMode = preferences.getString(KEY_TIMER, "OFF")
 
-        viewGrid(grid)
         while(currFlashMode.toString() != flashMode)
             switchFlashMode()
         setFlashMode()
@@ -804,7 +799,6 @@ class MainActivity : AppCompatActivity() {
 
         // -- Impostazioni Tasti
         volumeKey = pm.getString("LS_volumeKey","zoom")!!
-        powerKey = pm.getString("LS_volumeKey","zoom")!!
 
         // -- Foto
 
@@ -854,11 +848,12 @@ class MainActivity : AppCompatActivity() {
         changeMode(recordMode) // richiamo per cambiare la grandezza della preview
 
         // -- Generali
-        grid = pm.getBoolean("SW_grid", true)
+        findViewById<Group>(R.id.Group_grid).visibility =
+            if(pm.getBoolean("SW_grid", true)) View.VISIBLE else View.INVISIBLE // le righe sono al interno di un gruppo, quindi prendo direttamente quello
         hdr = pm.getBoolean("SW_HDR", true)
         gps = pm.getBoolean("SW_GPS", true)
         feedback = pm.getBoolean("SW_feedback", true)
-        viewGrid(grid)
+
 
     }
 
@@ -1124,27 +1119,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Metodo per rendere visibile o no la griglia
-     *
-     * @param status True se si vuole visibile
-     *               False altrimenti
-     */
-    private fun viewGrid(status : Boolean)
-    {
-        val view =
-            if(status){
-                BT_grid.setBackgroundResource(R.drawable.grid_on) // cambio grafica al pulsante
-                BT_grid.backgroundTintList = getColorStateList(R.color.aureolin_yellow)
-                View.VISIBLE
-            } else{
-                BT_grid.setBackgroundResource(R.drawable.grid_off) // cambio grafica al pulsante
-                BT_grid.backgroundTintList = getColorStateList(R.color.white)
-                View.INVISIBLE
-            }
-        findViewById<Group>(R.id.Group_grid).visibility = view // le righe sono al interno di un gruppo, quindi prendo direttamente quello
-    }
-
-    /**
      * todo commento
      */
     private fun rotateCamera() { // id = 0 default back, id = 1 front default
@@ -1231,7 +1205,6 @@ class MainActivity : AppCompatActivity() {
         BT_zoom1_0.rotation = angle
         BT_zoomRec.rotation = angle
         CM_recTimer.rotation = angle
-        BT_grid.rotation = angle
         BT_recMode.rotation = angle
         BT_photoMode.rotation = angle
     }
@@ -1407,7 +1380,6 @@ class MainActivity : AppCompatActivity() {
         }
         editor.putString(KEY_FLASH, currFlashMode.toString())
         editor.putString(KEY_TIMER, currTimerMode.toString())
-        editor.putBoolean(KEY_GRID, grid)
         editor.putBoolean(KEY_QRCODE, qrscanner)
 
         editor.apply()

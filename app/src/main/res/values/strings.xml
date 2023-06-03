@@ -8,5 +8,5 @@
     <string name="title_activity_settings">SettingsActivity</string>
 
     <!-- PopUpFragment -->
-    <string name="PermissionText">Per procedere è necessario dare i permessi per l\'accesso alla fotocamera e ai microfono al applicazione. \nPuoi fornirli nelle Autorizzazioni dell applicazione del dispositivo</string>
+    <string name="PermissionText">Per procedere è necessario l\'accesso alla fotocamera e ai microfono all\'applicazione.</string>
 </resources>

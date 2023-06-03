@@ -4,6 +4,8 @@ import android.app.Activity
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
@@ -34,6 +36,8 @@ class PopUpFragment : DialogFragment() {
 
         val bt_settings = view.findViewById<Button>(R.id.BT_settingsPopUp)
         val bt_close = view.findViewById<Button>(R.id.BT_closePopUp)
+
+        dialog!!.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
 
         bt_settings.setOnClickListener {
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
