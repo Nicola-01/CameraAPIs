@@ -232,7 +232,7 @@ class MainActivity : AppCompatActivity() {
                     if (allPermissionsGranted())
                         startCamera()
                     else
-
+                        startActivity(Intent(this, PermissionDenyActivity::class.java))
                 }
                 popUpVisible = true
             }
@@ -450,10 +450,7 @@ class MainActivity : AppCompatActivity() {
         } */
 
         BT_settings.setOnClickListener {view ->
-            val myIntent = Intent(view.context, SettingsActivity::class.java)
-
-            // Start Activity2. No information will be received when Activity2 exits
-            startActivity(myIntent)
+            startActivity(Intent(view.context, SettingsActivity::class.java))
         }
 
     }
