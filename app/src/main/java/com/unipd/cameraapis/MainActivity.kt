@@ -224,6 +224,11 @@ class MainActivity : AppCompatActivity() {
             if (allPermissionsGranted()) {
                 startCamera()
             }
+            else if(permissionDenyAsk)
+            {
+                val intent = Intent(this, PermissionDenyActivity::class.java)
+                startActivityForResult(intent, 0)
+            }
             else if(!popUpVisible) // limita le apperture delle schede
             {
                 showPopUp.show(supportFragmentManager, "showPopUp")
@@ -231,13 +236,29 @@ class MainActivity : AppCompatActivity() {
                     popUpVisible = false
                     if (allPermissionsGranted())
                         startCamera()
-                    else
-                        startActivity(Intent(this, PermissionDenyActivity::class.java))
+                    else {
+                        val intent = Intent(this, PermissionDenyActivity::class.java)
+                        startActivityForResult(intent, 0)
+                    }
                 }
                 popUpVisible = true
             }
         }
         Log.d(TAG, "Permission Request")
+    }
+
+    var permissionDenyAsk = false;
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (resultCode == 1)
+        {
+            permissionDenyAsk = true
+            askPermission()
+        }
+        else
+            finish()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
