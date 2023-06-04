@@ -39,6 +39,14 @@
             android:title="Rapporto Video"
             app:iconSpaceReserved="false"
             app:useSimpleSummaryProvider="true" />
+        <ListPreference
+            android:defaultValue="UHD"
+            android:entries="@array/videoQuality_entries"
+            android:entryValues="@array/videoQuality_values"
+            android:key="LS_videoResolution"
+            android:title="Risoluzione Video"
+            app:iconSpaceReserved="false"
+            app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
     <PreferenceCategory
         android:title="Generali"

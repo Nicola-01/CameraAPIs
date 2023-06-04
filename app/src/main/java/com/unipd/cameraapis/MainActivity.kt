@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.Cursor
+import android.graphics.Rect
 import android.hardware.camera2.CameraManager
 import android.net.Uri
 import android.os.Bundle
@@ -35,6 +36,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
@@ -42,6 +44,7 @@ import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
+import androidx.camera.core.impl.ImageCaptureConfig
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Quality
@@ -50,6 +53,7 @@ import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
+import androidx.camera.video.impl.VideoCaptureConfig
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.Group
 import androidx.core.app.ActivityCompat
@@ -201,6 +205,7 @@ class MainActivity : AppCompatActivity() {
 
     fun askPermission() {
         ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
+        Log.d(TAG, "Permission asked")
     }
 
     /**
@@ -226,11 +231,13 @@ class MainActivity : AppCompatActivity() {
                     popUpVisible = false
                     if (allPermissionsGranted())
                         startCamera()
+                    else
+
                 }
                 popUpVisible = true
             }
-            Log.d(TAG, "Perission Request")
         }
+        Log.d(TAG, "Permission Request")
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -513,8 +520,10 @@ class MainActivity : AppCompatActivity() {
 
             recorder = Recorder.Builder()
                 .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
+                .setAspectRatio(AspectRatio.RATIO_16_9)
                 .build()
             videoCapture = VideoCapture.withOutput(recorder)
+
 
             imageCapture = ImageCapture.Builder().setFlashMode(ImageCapture.FLASH_MODE_OFF).build()
 
@@ -816,7 +825,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         try {
-            imageCapture!!.setCropAspectRatio(aspectRatioPhoto)
+            imageCapture?.setCropAspectRatio(aspectRatioPhoto)
         }
         catch (e : Exception)
         {
@@ -837,13 +846,22 @@ class MainActivity : AppCompatActivity() {
             else -> Rational(4, 3) // Rapporto d'aspetto predefinito se nessun caso corrisponde
         }
 
+         var videoResolution = when (pm.getString("LS_videoResolution", "UHD")!!) {
+            "UHD" -> QualitySelector.from(Quality.UHD)
+            "FHD" -> QualitySelector.from(Quality.FHD)
+            "HD" -> QualitySelector.from(Quality.HD)
+            else -> QualitySelector.from(Quality.SD)
+        }
+
         try {
-            //videoCapture!!.setCropAspectRatio(aspectRatioPhoto)
+
         }
         catch (e : Exception)
         {
             Log.e(TAG, "[LoadFromSetting] $e")
         }
+
+
 
         changeMode(recordMode) // richiamo per cambiare la grandezza della preview
 
@@ -1159,11 +1177,6 @@ class MainActivity : AppCompatActivity() {
             takePhoto()
             return
         }
-        /*todo: non dovrebbe più servire
-        if(inPause && !recordMode)  { // se
-            pauseVideo()
-            return
-        }*/
 
         timerOn = true
         timer = object : CountDownTimer(countdown*1000, 1000){
@@ -1431,4 +1444,3 @@ class MainActivity : AppCompatActivity() {
     }
 
 }
-
