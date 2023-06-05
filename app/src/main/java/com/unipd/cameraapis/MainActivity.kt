@@ -12,6 +12,7 @@ import android.hardware.camera2.CameraManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.os.Handler
 import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.DisplayMetrics
@@ -123,11 +124,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var scaleGestureDetector: ScaleGestureDetector
     private lateinit var scaleUp: Animation
     private lateinit var timer: CountDownTimer
+    private var volumeTimer: CountDownTimer? = null
 
     private val changeCameraSeekBar = 50
     private var CM_pauseAt : Long = 0
     private var countdown : Long = 0
-    private var lastPowerButtonClicked : Long = 0   // tempo in cui è stato rilevato l'ultimo tocco del pulsante di accensione
     private var currFlashMode : FlashModes = FlashModes.OFF
     private var currTimerMode : TimerModes = TimerModes.OFF
     private var currentCamera = 0
@@ -143,7 +144,8 @@ class MainActivity : AppCompatActivity() {
     private var timerOn = false
     private var qrscanner = true
     private var captureJob: Job? = null
-    private var isBT_shootLongClicke = false
+    private var isBT_shootLongClicked = false
+    private var isVolumeButtonClicked : Boolean = false
 
     private lateinit var volumeKey : String
     private lateinit var aspectRatioPhoto : Rational
@@ -170,6 +172,8 @@ class MainActivity : AppCompatActivity() {
         private const val KEY_QRCODE = "qrscanner"
 
         private const val TOUCH_THRESHOLD = 0.1
+
+        private const val LONGCLICKDURATION = 1000L
 
         private const val DOUBLE_CLICK_DELTA_TIME : Long = 300      // Tempo entro il quale viene rilevato il doppio tocco
 
@@ -996,21 +1000,53 @@ class MainActivity : AppCompatActivity() {
     {
         if (event?.action == KeyEvent.ACTION_DOWN &&
             (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP || event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
-            when (volumeKey) {
-                "volume" ->  super.dispatchKeyEvent(event)
-                "zoom" -> {
-                    // Volume_UP -> zoom in, Volume_DOWN -> zoom out
-                    SB_zoom.incrementProgressBy( if (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP) 1 else -1)
-                    return true
+            if(volumeTimer==null) {
+                volumeTimer = object: CountDownTimer(LONGCLICKDURATION, LONGCLICKDURATION) {
+                    override fun onTick(millisUntilFinished: Long) {
+                        // non fa nulla
+                    }
+
+                    override fun onFinish() {
+                        if(!isRecording && volumeKey == "shot") {
+                            var temporaryCountDown = countdown
+                            countdown = 0
+                            timerShot(true)
+                            countdown = temporaryCountDown
+                        }
+                    }
                 }
-                "shot" -> {
-                    changeMode(event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)
-                    timerShot(event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) // scatto una foto o inizio la registrazione di un video
-                    return true
+                volumeTimer?.start()
+            }
+
+
+        }
+        else if (event?.action == KeyEvent.ACTION_UP &&
+            (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP || event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
+            volumeTimer?.cancel()   // fermo il timer quando sollevo il dito dal pulsante
+            volumeTimer = null
+            if(isRecording) {       // se sto registrando
+                isVolumeButtonClicked = true
+                timerShot(true)
+            }
+
+            if(!isVolumeButtonClicked) {    // azioni da tocco singolo, controllo che non partano quando sollevo il dito per terminare il video
+                when (volumeKey) {
+                    "volume" ->  super.dispatchKeyEvent(event)
+                    "zoom" -> {
+                        // Volume_UP -> zoom in, Volume_DOWN -> zoom out
+                        SB_zoom.incrementProgressBy( if (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP) 1 else -1)
+                        return true
+                    }
+                    "shot" -> {
+                        changeMode(event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)
+                        timerShot(event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) // scatto una foto o inizio la registrazione di un video
+                        return true
+                    }
                 }
             }
+            isVolumeButtonClicked = false
+
         }
-        //else if (event?.action == KeyEvent.ACTION_UP && (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP || event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN))
         //TODO se tengo premuto più di un secondo (o meno, da testare) allora registra finchè non si molla il tasto, o scatto continuo se è per la foto
         return super.dispatchKeyEvent(event)
     }
