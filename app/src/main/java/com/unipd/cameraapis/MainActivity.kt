@@ -997,19 +997,27 @@ class MainActivity : AppCompatActivity() {
      * Metodo per gestire il tocco dei pulsanti del volume
      */
     override fun dispatchKeyEvent(event: KeyEvent?): Boolean
-    {
+    {   // gestisco la registrazione video tenendo premuto il pulsante del volume per almeno 1 secondo e lo interrompo quando alzo il dito
         if (event?.action == KeyEvent.ACTION_DOWN &&
             (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP || event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
-            if(volumeTimer==null) {
+            when(volumeKey) {
+                "zoom" -> {
+                    // Volume_UP -> zoom in, Volume_DOWN -> zoom out
+                    SB_zoom.incrementProgressBy(if (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP) 1 else -1)
+                    return true
+                }
+                "volume" ->  return super.dispatchKeyEvent(event)
+            }
+            if(volumeTimer==null  && volumeKey == "shot") {
                 volumeTimer = object: CountDownTimer(LONGCLICKDURATION, LONGCLICKDURATION) {
                     override fun onTick(millisUntilFinished: Long) {
                         // non fa nulla
                     }
 
                     override fun onFinish() {
-                        if(!isRecording && volumeKey == "shot") {
+                        if(!isRecording) {
                             var temporaryCountDown = countdown
-                            countdown = 0
+                            countdown = 0   // faccio partire direttamente il video, senza countdown
                             timerShot(true)
                             countdown = temporaryCountDown
                         }
@@ -1018,34 +1026,25 @@ class MainActivity : AppCompatActivity() {
                 volumeTimer?.start()
             }
 
-
+            return true
         }
         else if (event?.action == KeyEvent.ACTION_UP &&
             (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP || event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
             volumeTimer?.cancel()   // fermo il timer quando sollevo il dito dal pulsante
             volumeTimer = null
-            if(isRecording) {       // se sto registrando
-                isVolumeButtonClicked = true
+            if(isRecording) {       // se sto registrando interrompo la registrazione
                 timerShot(true)
+                return true
             }
 
-            if(!isVolumeButtonClicked) {    // azioni da tocco singolo, controllo che non partano quando sollevo il dito per terminare il video
-                when (volumeKey) {
-                    "volume" ->  super.dispatchKeyEvent(event)
-                    "zoom" -> {
-                        // Volume_UP -> zoom in, Volume_DOWN -> zoom out
-                        SB_zoom.incrementProgressBy( if (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP) 1 else -1)
-                        return true
-                    }
-                    "shot" -> {
-                        changeMode(event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)
-                        timerShot(event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) // scatto una foto o inizio la registrazione di un video
-                        return true
-                    }
+            // scatto da tocco singolo
+            when (volumeKey) {
+                "shot" -> {
+                    changeMode(event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)
+                    timerShot(event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) // scatto una foto o inizio la registrazione di un video
+                    return true
                 }
             }
-            isVolumeButtonClicked = false
-
         }
         //TODO se tengo premuto più di un secondo (o meno, da testare) allora registra finchè non si molla il tasto, o scatto continuo se è per la foto
         return super.dispatchKeyEvent(event)
