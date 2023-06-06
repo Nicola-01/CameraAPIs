@@ -410,7 +410,7 @@ class MainActivity : AppCompatActivity() {
                 timerShot(true)
                 if(feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
             } else {
-                var captureJob = CoroutineScope(Dispatchers.Main).launch {
+                captureJob = CoroutineScope(Dispatchers.Main).launch {
                     while (isActive) {
                         takePhoto()
                         delay(500) // Intervallo tra i singoli scatti
