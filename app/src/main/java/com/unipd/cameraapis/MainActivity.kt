@@ -143,7 +143,7 @@ class MainActivity : AppCompatActivity() {
     private var isRecording = false
     private var inPause = false
     private var timerOn = false
-    private var qrscanner = true
+    private var qrScanner = true
     private var captureJob: Job? = null
     private var isbtShootLongClicked = false
     private var isVolumeButtonClicked : Boolean = false
@@ -171,7 +171,7 @@ class MainActivity : AppCompatActivity() {
         private const val KEY_TIMER = "TimerMode"
         private const val KEY_ZOOM = "ZoomProgress"
         private const val KEY_REC = "RecordMode"
-        private const val KEY_QRCODE = "qrscanner"
+        private const val KEY_QRCODE = "qrScanner"
 
         private const val TOUCH_THRESHOLD = 0.1
 
@@ -407,14 +407,19 @@ class MainActivity : AppCompatActivity() {
         }
         
         btShoot.setOnLongClickListener{
-            countMultiShot = 0
-            countDownText.visibility = View.VISIBLE
-            captureJob = CoroutineScope(Dispatchers.Main).launch {
-                while (isActive) {
-                    takePhoto()
-                    countDownText.text = "${++countMultiShot}"
-                    delay(300) // Intervallo tra i singoli scatti
-                    if(feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+            if (recordMode) {
+                timerShot(true)
+                if(feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+            } else {
+                countMultiShot = 0
+                countDownText.visibility = View.VISIBLE
+                captureJob = CoroutineScope(Dispatchers.Main).launch {
+                    while (isActive) {
+                        takePhoto()
+                        countDownText.text = "${++countMultiShot}"
+                        delay(300) // Intervallo tra i singoli scatti
+                        if (feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                    }
                 }
             }
             true // Restituisce true per indicare che l'evento di click lungo è stato gestito correttamente
@@ -459,8 +464,8 @@ class MainActivity : AppCompatActivity() {
 
         // listener per il pulsante QR
         btQR.setOnClickListener {
-            qrscanner = !qrscanner
-            qrCode(qrscanner)
+            qrScanner = !qrScanner
+            qrCode(qrScanner)
 
             //Todo: butta dentro QrCode plz, che lo richiamo dal loadBundle
             //Todo: inoltre prima di mostrare risultati contollare che il timer sia disattivato, -> "timerOn"
@@ -540,6 +545,7 @@ class MainActivity : AppCompatActivity() {
                 .also {
                     it.setSurfaceProvider(viewBinding.viewPreview.surfaceProvider)
                 }
+
 
             recorder = Recorder.Builder()
                 .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
@@ -806,8 +812,8 @@ class MainActivity : AppCompatActivity() {
         setTimerMode()
         var progress = changeCameraSeekBar
 
-        qrscanner = preferences.getBoolean(KEY_QRCODE, true)
-        qrCode(qrscanner)
+        qrScanner = preferences.getBoolean(KEY_QRCODE, true)
+        qrCode(qrScanner)
 
         if (savedInstanceState != null) { // controlo che ci sia il bundle
             //recupero variabili dal bundle
@@ -856,17 +862,16 @@ class MainActivity : AppCompatActivity() {
         }
 
         // -- Video
+        var ratioVideo = 0
         aspectRatioVideo = when (pm.getString("LS_ratioVideo", "3_4")!!) {
-            "3_4" -> Rational(3, 4)
-            "9_16" -> Rational(9, 16)
-            "1_1" -> Rational(1, 1)
-            "full" -> {
-                val metrics = DisplayMetrics()
-                val display = windowManager.defaultDisplay
-                display.getRealMetrics(metrics)
-                Rational(metrics.widthPixels, metrics.heightPixels)
+            "3_4" -> {
+                ratioVideo = AspectRatio.RATIO_4_3
+                Rational(3, 4)
             }
-            else -> Rational(4, 3) // Rapporto d'aspetto predefinito se nessun caso corrisponde
+            else -> {
+                ratioVideo = AspectRatio.RATIO_16_9
+                Rational(9, 16)
+            }
         }
 
          var videoResolution = when (pm.getString("LS_videoResolution", "UHD")!!) {
@@ -877,7 +882,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         try {
-
+            recorder = Recorder.Builder()
+                .setQualitySelector(videoResolution)
+                .setAspectRatio(ratioVideo)
+                .build()
+            videoCapture = VideoCapture.withOutput(recorder)
+            buildCamera()
         }
         catch (e : Exception)
         {
@@ -1072,10 +1082,12 @@ class MainActivity : AppCompatActivity() {
         bt2.backgroundTintList = getColorStateList(R.color.gray_onyx)
         bt2.setTextColor(getColor(R.color.white))
 
-        // cambia rapporto preview
-        val layoutParams = viewPreview.layoutParams as ConstraintLayout.LayoutParams
-        layoutParams.dimensionRatio = "H,${aspect.numerator}:${aspect.denominator}" // Cambia l'aspect ratio desiderato qui
-        viewPreview.layoutParams = layoutParams
+        if(!isRecording) // cambia rapporto preview solo se non sta registrando
+        {
+            val layoutParams = viewPreview.layoutParams as ConstraintLayout.LayoutParams
+            layoutParams.dimensionRatio = "H,${aspect.numerator}:${aspect.denominator}" // Cambia l'aspect ratio desiderato qui
+            viewPreview.layoutParams = layoutParams
+        }
 
 
         if(!timerOn) // se non c'è il timer attivato
@@ -1447,7 +1459,7 @@ class MainActivity : AppCompatActivity() {
         }
         editor.putString(KEY_FLASH, currFlashMode.toString())
         editor.putString(KEY_TIMER, currTimerMode.toString())
-        editor.putBoolean(KEY_QRCODE, qrscanner)
+        editor.putBoolean(KEY_QRCODE, qrScanner)
 
         editor.apply()
 
