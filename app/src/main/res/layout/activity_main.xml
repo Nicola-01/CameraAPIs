@@ -218,6 +218,20 @@
         app:layout_constraintEnd_toStartOf="@+id/vertical_centerline3"
         app:layout_constraintStart_toStartOf="@+id/vertical_centerline" />
 
+    <!-- Risultato dello scan -->
+    <TextView
+        android:id="@+id/QR_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        android:text="prova"
+        android:visibility="invisible"
+        android:textColor="@color/black"
+        android:textSize="24sp"
+        app:layout_constraintBottom_toTopOf="@+id/GR_horiz1"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent" />
+
     <Button
         android:id="@+id/BT_flash"
         android:layout_width="35dp"

@@ -475,9 +475,6 @@ class MainActivity : AppCompatActivity() {
 
         }
 
-        btSettings.setOnClickListener {view ->
-            startActivity(Intent(view.context, SettingsActivity::class.java))
-        }
 
     }
 
@@ -489,15 +486,6 @@ class MainActivity : AppCompatActivity() {
             btQR.backgroundTintList = getColorStateList(R.color.white)
 
 
-    }
-
-    // risultato dello scan
-    var scanResult = registerForActivityResult(ActivityResultContracts.StartActivityForResult()){
-        result ->
-        if(result.resultCode==Activity.RESULT_OK){
-            val scanIntent : Intent? = result.data
-            // ....
-        }
     }
 
     /**
@@ -525,51 +513,54 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * TODO: commentare e sistemare
+     * Crea la Preview della fotocamera e ne seleziona l'output, seleziona l'aspect ratio e la qualità video
      */
     private fun startCamera() {
+        // si ottiene un'istanza di tipo ListenableFuture che rappresenta un'istanza di ProcessCameraProvider, disponibile in seguito
+        // permette di recuperare l'istanza di ProcessCameraProvider in modo asincrono
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
 
         cameraProviderFuture.addListener({
-            // Used to bind the lifecycle of cameras to the lifecycle owner
+            // recupera l'istanza di ProcessCameraProvider
             cameraProvider = cameraProviderFuture.get()
 
-            // Preview
+            // crea la Preview
             preview = Preview.Builder()
-                .build()
+                .build()    // creo l'istanza di Preview
                 .also {
-                    it.setSurfaceProvider(viewBinding.viewPreview.surfaceProvider)
+                    it.setSurfaceProvider(viewBinding.viewPreview.surfaceProvider)  // seleziono dove visualizzare la preview
                 }
 
+            // costruita un'istanza di Recorder
             recorder = Recorder.Builder()
-                .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
-                .setAspectRatio(AspectRatio.RATIO_16_9)
+                .setQualitySelector(QualitySelector.from(Quality.HIGHEST))      // qualità video
+                .setAspectRatio(AspectRatio.RATIO_16_9)                         // aspect ratio 16:9
                 .build()
-            videoCapture = VideoCapture.withOutput(recorder)
+            videoCapture = VideoCapture.withOutput(recorder)    // crea un oggetto di tipo VideoCapture e imposto record come output video
 
-
+            // crea un'istanza di ImageCapture e imposta il flash a OFF
             imageCapture = ImageCapture.Builder().setFlashMode(ImageCapture.FLASH_MODE_OFF).build()
 
-            // Select back camera as a default
+            // seleziona la fotocamera dorsale di default
             cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
             // Crea un oggetto CameraSelector per la fotocamera ultra grandangolare
             availableCameraInfos = cameraProvider.availableCameraInfos
             Log.i(TAG, "[startCamera] available cameras Info:$availableCameraInfos")
             cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
-            val availableCamera : Array<String> = cameraManager.cameraIdList
+            val availableCamera : Array<String> = cameraManager.cameraIdList    // lista contenente le fotocamere del dispositivo
             Log.i(TAG, "[startCamera] available cameras:${availableCamera}")
 
             try {
-                createListener() // creo i Listener
+                createListener() // crea i Listener
                 buildCamera()
-                loadFromBundle(savedBundle) // carico gli elementi dal Bundle/Preferences
+                loadFromBundle(savedBundle) // carica gli elementi dal Bundle/Preferences
                 setFlashMode() // non so perchè ma se lo lascio al interno di loadFromBundle, viene modificato ma successivamente perde lo stato
             } catch(exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
             }
 
-        }, ContextCompat.getMainExecutor(this))
+        }, ContextCompat.getMainExecutor(this)) // specifica che le operazioni del listener vengano eseguite nel thread principale
     }
 
     /**
@@ -1009,24 +1000,40 @@ class MainActivity : AppCompatActivity() {
                 }
                 "volume" ->  return super.dispatchKeyEvent(event)
             }
-            if(volumeTimer==null  && volumeKey == "shot") {
-                volumeTimer = object: CountDownTimer(LONGCLICKDURATION, LONGCLICKDURATION) {
-                    override fun onTick(millisUntilFinished: Long) {
-                        // non fa nulla
-                    }
+            if(volumeTimer==null && volumeKey == "shot") {
+                if(event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) { // video tenendo premuto il pulsante per abbassare il volume
+                    volumeTimer = object: CountDownTimer(LONGCLICKDURATION, LONGCLICKDURATION) {
+                        override fun onTick(millisUntilFinished: Long) {
+                            // non fa nulla
+                        }
 
-                    override fun onFinish() {
-                        if(!isRecording) {
-                            var temporaryCountDown = countdown
-                            countdown = 0   // faccio partire direttamente il video, senza countdown
-                            timerShot(true)
-                            countdown = temporaryCountDown
+                        override fun onFinish() {
+                            if(!isRecording) {
+                                var temporaryCountDown = countdown
+                                countdown = 0   // faccio partire direttamente il video, senza countdown
+                                timerShot(true)
+                                countdown = temporaryCountDown
+                            }
                         }
                     }
+                    volumeTimer?.start()
                 }
-                volumeTimer?.start()
+                else {
+                    if(!recordMode) {
+                        countMultiShot = 0
+                        countDownText.visibility = View.VISIBLE
+                        captureJob = CoroutineScope(Dispatchers.Main).launch {
+                            while (isActive) {
+                                takePhoto()
+                                countDownText.text = "${++countMultiShot}"
+                                delay(500) // Intervallo tra i singoli scatti
+                                //if(feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                            }
+                        }
+                        return true
+                    }
+                }
             }
-
             return true
         }
         else if (event?.action == KeyEvent.ACTION_UP &&
