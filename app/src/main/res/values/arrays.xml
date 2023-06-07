@@ -30,17 +30,28 @@
 
     <!-- List ratio -->
     <string-array name="ratio_entries">
+        <item>1:1</item>
         <item>3:4</item>
         <item>9:16</item>
-        <item>1:1</item>
         <item>Full</item>
     </string-array>
 
     <string-array name="ratio_values">
+        <item>1_1</item>
         <item>3_4</item>
         <item>9_16</item>
-        <item>1_1</item>
         <item>full</item>
+    </string-array>
+
+    <!-- List ratio Video -->
+    <string-array name="ratioVideo_entries">
+        <item>3:4</item>
+        <item>9:16</item>
+    </string-array>
+
+    <string-array name="ratioVideo_values">
+        <item>3_4</item>
+        <item>9_16</item>
     </string-array>
 
     <!-- List ratio -->
