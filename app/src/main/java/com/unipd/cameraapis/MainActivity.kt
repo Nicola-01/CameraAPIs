@@ -74,7 +74,6 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.math.abs
 
-
 class MainActivity : AppCompatActivity() {
 
     private lateinit var viewBinding: ActivityMainBinding
@@ -175,7 +174,7 @@ class MainActivity : AppCompatActivity() {
 
         private const val TOUCH_THRESHOLD = 0.1
 
-        private const val LONGCLICKDURATION = 1000L
+        private const val LONGCLICKDURATION = 300L
 
         private const val DOUBLE_CLICK_DELTA_TIME : Long = 300      // Tempo entro il quale viene rilevato il doppio tocco
 
@@ -271,29 +270,37 @@ class MainActivity : AppCompatActivity() {
             val preferences = getPreferences(MODE_PRIVATE)
 
             // recupero le variabili dalle preferences
-            var h = preferences.getInt("bottomBandHeight", -1)
+            var hB = preferences.getInt("bottomBandHeight", -1)
+            var hT = preferences.getInt("topBandHeight", -1)
 
-            Log.d(TAG, "height $h")
+            Log.d(TAG, "height bottom $hB")
+            Log.d(TAG, "height top $hT")
 
             var bottomBand = findViewById<View>(R.id.VW_bottomBand)
-            val layoutParams = bottomBand.layoutParams
+            var topBand = findViewById<View>(R.id.VW_topBand)
+            val layoutParamsB = bottomBand.layoutParams
+            val layoutParamsT = topBand.layoutParams
 
-            if (h == -1) // primo avvio del app
+            if (hB == -1) // primo avvio del app
             {
                 val displayMetrics = DisplayMetrics()
                 windowManager.defaultDisplay.getMetrics(displayMetrics)
                 val height = displayMetrics.heightPixels
-                val width = displayMetrics.widthPixels
 
-                h = height - viewPreview.bottom // Imposta l'altezza desiderata in pixel
+                hB = height - viewPreview.bottom // Imposta l'altezza desiderata in pixel
+                hT = viewPreview.top // Imposta l'altezza desiderata in pixel
 
                 val editor = preferences.edit()
-                editor.putInt("bottomBandHeight", h)
+                editor.putInt("bottomBandHeight", hB)
+                editor.putInt("topBandHeight", hT)
                 editor.apply()
             }
 
-            layoutParams.height = h
-            bottomBand.layoutParams = layoutParams
+            layoutParamsB.height = hB
+            bottomBand.layoutParams = layoutParamsB
+
+            layoutParamsT.height = hT
+            topBand.layoutParams = layoutParamsT
         }
     }
 
@@ -475,6 +482,9 @@ class MainActivity : AppCompatActivity() {
 
         }
 
+        btSettings.setOnClickListener {view ->
+            startActivity(Intent(view.context, SettingsActivity::class.java))
+        }
 
     }
 
@@ -1054,7 +1064,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-        //TODO se tengo premuto più di un secondo (o meno, da testare) allora registra finchè non si molla il tasto, o scatto continuo se è per la foto
         return super.dispatchKeyEvent(event)
     }
 
