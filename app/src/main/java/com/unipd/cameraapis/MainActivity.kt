@@ -90,25 +90,25 @@ class MainActivity : AppCompatActivity() {
     private var cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
     // Widget di activity_main.xml
-    private lateinit var BT_flash : Button
-    private lateinit var BT_gallery : Button
-    private lateinit var BT_pause : Button
-    private lateinit var BT_photoMode : Button
-    private lateinit var BT_recMode : Button
-    private lateinit var BT_rotation : Button
-    private lateinit var BT_shoot : Button
-    private lateinit var BT_stop : Button
-    private lateinit var BT_timer : Button
-    private lateinit var BT_zoom0_5 : Button
-    private lateinit var BT_zoom1_0 : Button
-    private lateinit var BT_zoomRec : Button
-    private lateinit var BT_QR : Button
-    private lateinit var BT_settings : Button
+    private lateinit var btFlash : Button
+    private lateinit var btGallery : Button
+    private lateinit var btPause : Button
+    private lateinit var btPhotoMode : Button
+    private lateinit var btRecMode : Button
+    private lateinit var btRotation : Button
+    private lateinit var btShoot : Button
+    private lateinit var btStop : Button
+    private lateinit var btTimer : Button
+    private lateinit var btZoom05 : Button
+    private lateinit var btZoom10 : Button
+    private lateinit var btZoomRec : Button
+    private lateinit var btQR : Button
+    private lateinit var btSettings : Button
     private lateinit var focusCircle : View
     private lateinit var focusView : View
     private lateinit var viewPreview : View
-    private lateinit var SB_zoom : SeekBar
-    private lateinit var CM_recTimer : Chronometer
+    private lateinit var sbZoom : SeekBar
+    private lateinit var cmRecTimer : Chronometer
     private lateinit var countDownText : TextView
 
     // variabili
@@ -127,7 +127,7 @@ class MainActivity : AppCompatActivity() {
     private var volumeTimer: CountDownTimer? = null
 
     private val changeCameraSeekBar = 50
-    private var CM_pauseAt : Long = 0
+    private var cmPauseAt : Long = 0
     private var countdown : Long = 0
     private var currFlashMode : FlashModes = FlashModes.OFF
     private var currTimerMode : TimerModes = TimerModes.OFF
@@ -137,6 +137,7 @@ class MainActivity : AppCompatActivity() {
     // 2 -> back;           ultra grand angolare
     // 3 -> front;          grand angolare
     private var zoomLv : Float = 0.toFloat() // va da 0 a 1
+    private var countMultiShot = 0
 
     private var recordMode = false
     private var isRecording = false
@@ -144,7 +145,7 @@ class MainActivity : AppCompatActivity() {
     private var timerOn = false
     private var qrscanner = true
     private var captureJob: Job? = null
-    private var isBT_shootLongClicked = false
+    private var isbtShootLongClicked = false
     private var isVolumeButtonClicked : Boolean = false
 
     private lateinit var volumeKey : String
@@ -154,9 +155,10 @@ class MainActivity : AppCompatActivity() {
     private var gps = false
     private var feedback = true
 
-    private var savedInstanceState_: Bundle? = null
-    val showPopUp = PopUpFragment()
-    var popUpVisible = false
+    private var savedBundle: Bundle? = null
+    private val showPopUp = PopUpFragment()
+    private var popUpVisible = false
+    private var permissionDenyAsk = false
 
     companion object {
 
@@ -193,7 +195,7 @@ class MainActivity : AppCompatActivity() {
         viewBinding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(viewBinding.root)
 
-        savedInstanceState_ = savedInstanceState
+        savedBundle = savedInstanceState
 
         createElement() // inizializza le variabili
 
@@ -251,8 +253,6 @@ class MainActivity : AppCompatActivity() {
         Log.d(TAG, "Permission Request")
     }
 
-    var permissionDenyAsk = false;
-
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
@@ -285,8 +285,6 @@ class MainActivity : AppCompatActivity() {
                 val height = displayMetrics.heightPixels
                 val width = displayMetrics.widthPixels
 
-                var bottomBand = findViewById<View>(R.id.VW_bottomBand)
-                val layoutParams = bottomBand.layoutParams
                 h = height - viewPreview.bottom // Imposta l'altezza desiderata in pixel
 
                 val editor = preferences.edit()
@@ -305,24 +303,24 @@ class MainActivity : AppCompatActivity() {
      */
     private fun createElement()
     {
-        BT_flash = viewBinding.BTFlash
-        BT_gallery = viewBinding.BTGallery
-        BT_pause = viewBinding.BTPause
-        BT_photoMode = viewBinding.BTPhotoMode
-        BT_recMode = viewBinding.BTRecordMode
-        BT_rotation = viewBinding.BTRotation
-        BT_shoot = viewBinding.BTShoots
-        BT_stop = viewBinding.BTStop
-        BT_timer = viewBinding.BTTimer
-        BT_zoom0_5 = viewBinding.BT05
-        BT_zoom1_0 = viewBinding.BT10
-        BT_zoomRec = viewBinding.BTZoomRec
-        BT_QR = viewBinding.BTQrcode
-        BT_settings = viewBinding.BTSettings
-        CM_recTimer = viewBinding.CMRecTimer
-        CM_recTimer.format = "%02d:%02d:%02d"
+        btFlash = viewBinding.BTFlash
+        btGallery = viewBinding.BTGallery
+        btPause = viewBinding.BTPause
+        btPhotoMode = viewBinding.BTPhotoMode
+        btRecMode = viewBinding.BTRecordMode
+        btRotation = viewBinding.BTRotation
+        btShoot = viewBinding.BTShoots
+        btStop = viewBinding.BTStop
+        btTimer = viewBinding.BTTimer
+        btZoom05 = viewBinding.BT05
+        btZoom10 = viewBinding.BT10
+        btZoomRec = viewBinding.BTZoomRec
+        btQR = viewBinding.BTQrcode
+        btSettings = viewBinding.BTSettings
+        cmRecTimer = viewBinding.CMRecTimer
+        cmRecTimer.format = "%02d:%02d:%02d"
         focusCircle = viewBinding.FocusCircle
-        SB_zoom = viewBinding.SBZoom
+        sbZoom = viewBinding.SBZoom
         countDownText = viewBinding.TextTimer
         focusView = viewBinding.FocusCircle
         viewPreview = viewBinding.viewPreview
@@ -342,10 +340,10 @@ class MainActivity : AppCompatActivity() {
     private fun createListener()
     {
         //Con un click sul pulsante si passa alla modalità successiva del flash
-        BT_flash.setOnClickListener { switchFlashMode() }
+        btFlash.setOnClickListener { switchFlashMode() }
         /*Con un click prolungato si apre un menù contestuale che permette di selezionare una
           specifica modalità del flash*/
-        BT_flash.setOnCreateContextMenuListener { menu, v, menuInfo ->
+        btFlash.setOnCreateContextMenuListener { menu, _, _ ->
             menu.setHeaderTitle("Flash")
             for(mode in FlashModes.values()) {
                 val item: MenuItem = menu.add(Menu.NONE, mode.ordinal, Menu.NONE, mode.text)
@@ -356,7 +354,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         //Con un click sul pulsante di apre la galleria
-        BT_gallery.setOnClickListener{
+        btGallery.setOnClickListener{
             val uriExternal: Uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
 
             val projection = arrayOf(
@@ -383,15 +381,15 @@ class MainActivity : AppCompatActivity() {
             cursor.close()
         }
 
-        BT_pause.setOnClickListener{ pauseVideo() }
-        BT_photoMode.setOnClickListener { changeMode(false) }
-        BT_recMode.setOnClickListener { changeMode(true) }
-        BT_rotation.setOnClickListener {
+        btPause.setOnClickListener{ pauseVideo() }
+        btPhotoMode.setOnClickListener { changeMode(false) }
+        btRecMode.setOnClickListener { changeMode(true) }
+        btRotation.setOnClickListener {
             rotateCamera()
             if(feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         }
 
-        BT_shoot.setOnTouchListener { _, event ->
+        btShoot.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_UP) {
                 captureJob?.cancel()
                 captureJob = null
@@ -403,13 +401,12 @@ class MainActivity : AppCompatActivity() {
             false
         }
 
-        BT_shoot.setOnClickListener {
+        btShoot.setOnClickListener {
             timerShot(recordMode)
             if(feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         }
-
-        var countMultiShot = 0
-        BT_shoot.setOnLongClickListener{
+        
+        btShoot.setOnLongClickListener{
             countMultiShot = 0
             countDownText.visibility = View.VISIBLE
             captureJob = CoroutineScope(Dispatchers.Main).launch {
@@ -423,11 +420,11 @@ class MainActivity : AppCompatActivity() {
             true // Restituisce true per indicare che l'evento di click lungo è stato gestito correttamente
         }
 
-        BT_stop.setOnClickListener{
+        btStop.setOnClickListener{
             timerShot(recordMode)
         }
-        BT_timer.setOnClickListener { switchTimerMode() }
-        BT_timer.setOnCreateContextMenuListener { menu, v, menuInfo ->
+        btTimer.setOnClickListener { switchTimerMode() }
+        btTimer.setOnCreateContextMenuListener { menu, _, _ ->
             menu.setHeaderTitle("Timer")
             for(mode in TimerModes.values()) {
                 val item: MenuItem = menu.add(Menu.NONE, mode.ordinal, Menu.NONE, mode.text)
@@ -438,13 +435,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        BT_zoom1_0.setOnClickListener { SB_zoom.progress = changeCameraSeekBar }
-        BT_zoom0_5.setOnClickListener{ SB_zoom.progress = 0 }
-        SB_zoom.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+        btZoom10.setOnClickListener { sbZoom.progress = changeCameraSeekBar }
+        btZoom05.setOnClickListener{ sbZoom.progress = 0 }
+        sbZoom.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 changeZoom(progress)
                 if(feedback && progress%5 == 0 && fromUser) // ogni 5 do un feedback, e solo se muovo manualmente la SB
-                    SB_zoom.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                    sbZoom.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
             }
             override fun onStartTrackingTouch(seek: SeekBar) = Unit
             override fun onStopTrackingTouch(seek: SeekBar) = Unit
@@ -459,36 +456,37 @@ class MainActivity : AppCompatActivity() {
             true
         })
 
-        /*
+
         // listener per il pulsante QR
-        BT_QR.setOnClickListener {
+        btQR.setOnClickListener {
             qrscanner = !qrscanner
-            QrCode(qrscanner)
+            qrCode(qrscanner)
 
             //Todo: butta dentro QrCode plz, che lo richiamo dal loadBundle
             //Todo: inoltre prima di mostrare risultati contollare che il timer sia disattivato, -> "timerOn"
 
+            /*
             val intentIntegrator = IntentIntegrator(this)
             intentIntegrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
             intentIntegrator.setOrientationLocked(true)
             intentIntegrator.setPrompt("Scanning")
             intentIntegrator.initiateScan()
+            */
 
+        }
 
-        } */
-
-        BT_settings.setOnClickListener {view ->
+        btSettings.setOnClickListener {view ->
             startActivity(Intent(view.context, SettingsActivity::class.java))
         }
 
     }
 
-    fun QrCode(status: Boolean)
+    private fun qrCode(status: Boolean)
     {
         if(status)
-            BT_QR.backgroundTintList = getColorStateList(R.color.aureolin_yellow)
+            btQR.backgroundTintList = getColorStateList(R.color.aureolin_yellow)
         else
-            BT_QR.backgroundTintList = getColorStateList(R.color.white)
+            btQR.backgroundTintList = getColorStateList(R.color.white)
 
 
     }
@@ -565,7 +563,7 @@ class MainActivity : AppCompatActivity() {
             try {
                 createListener() // creo i Listener
                 buildCamera()
-                loadFromBundle(savedInstanceState_) // carico gli elementi dal Bundle/Preferences
+                loadFromBundle(savedBundle) // carico gli elementi dal Bundle/Preferences
                 setFlashMode() // non so perchè ma se lo lascio al interno di loadFromBundle, viene modificato ma successivamente perde lo stato
             } catch(exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
@@ -601,7 +599,7 @@ class MainActivity : AppCompatActivity() {
 
         // Set up image capture listener, which is triggered after photo has
         // been taken
-        BT_shoot.startAnimation(scaleDown)
+        btShoot.startAnimation(scaleDown)
         viewPreview.startAnimation(scaleUp)
         imageCapture.takePicture( // caso d'uso
             outputOptions,
@@ -619,7 +617,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         )
-        BT_timer.visibility = View.VISIBLE   //rendo di nuovo visibile il pulsante del timer dopo aver scattato la foto
+        btTimer.visibility = View.VISIBLE   //rendo di nuovo visibile il pulsante del timer dopo aver scattato la foto
     }
 
     /**
@@ -683,7 +681,7 @@ class MainActivity : AppCompatActivity() {
                             if(currFlashMode == FlashModes.ON) { cameraControl.enableTorch(false) }
                         }
                         startRecording(false)
-                        BT_timer.visibility = View.VISIBLE   //rendo di nuovo visibile il pulsante del timer dopo la registrazione
+                        btTimer.visibility = View.VISIBLE   //rendo di nuovo visibile il pulsante del timer dopo la registrazione
                     }
                 }
             }
@@ -705,8 +703,8 @@ class MainActivity : AppCompatActivity() {
             viewPH = View.INVISIBLE
             viewVI = View.VISIBLE
 
-            CM_recTimer.base = SystemClock.elapsedRealtime() // resetto il timer
-            CM_recTimer.start()
+            cmRecTimer.base = SystemClock.elapsedRealtime() // resetto il timer
+            cmRecTimer.start()
 
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) // mantiene lo schermo attivo durante la registrazione
         }
@@ -714,33 +712,33 @@ class MainActivity : AppCompatActivity() {
         {
             viewPH = View.VISIBLE
             viewVI = View.INVISIBLE
-            CM_recTimer.stop()
+            cmRecTimer.stop()
 
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) // permette allo schermo di spegnersi
         }
         recOptions() // cambio la grafica del pulsante
 
         // nascondo/visualizzo
-        BT_rotation.visibility = viewPH
-        BT_gallery.visibility = viewPH
-        BT_zoom1_0.visibility = viewPH
-        BT_zoom0_5.visibility = viewPH
+        btRotation.visibility = viewPH
+        btGallery.visibility = viewPH
+        btZoom10.visibility = viewPH
+        btZoom05.visibility = viewPH
 
         // visualizzo/nascondo
-        BT_zoomRec.visibility = viewVI
-        CM_recTimer.visibility = viewVI
+        btZoomRec.visibility = viewVI
+        cmRecTimer.visibility = viewVI
 
         // se inizio a registrare non posso più cambiare camera,
         // quindi devo sistemare il valore della seekbar
         if(status) {
-            SB_zoom.progress = (zoomLv*SB_zoom.max).toInt()
+            sbZoom.progress = (zoomLv*sbZoom.max).toInt()
         }
         else
         {
             if(currentCamera==0 || currentCamera==3) // camere normali
-                SB_zoom.progress = (zoomLv*(SB_zoom.max - changeCameraSeekBar)).toInt() + changeCameraSeekBar
+                sbZoom.progress = (zoomLv*(sbZoom.max - changeCameraSeekBar)).toInt() + changeCameraSeekBar
             else // camere ultra grand angolari
-                SB_zoom.progress = (zoomLv*SB_zoom.max*0.54).toInt()
+                sbZoom.progress = (zoomLv*sbZoom.max*0.54).toInt()
         }
     }
 
@@ -751,15 +749,15 @@ class MainActivity : AppCompatActivity() {
         // inPause = true se la registrazione è in pausa
         if(inPause) {
             recording?.resume() // ripristina registrazione
-            CM_recTimer.base = SystemClock.elapsedRealtime() - CM_pauseAt // calcolo per riesumare il timer correttamente
-            CM_recTimer.start()
-            BT_pause.setBackgroundResource(R.drawable.pause_button) // cambio grafica al pulsante
+            cmRecTimer.base = SystemClock.elapsedRealtime() - cmPauseAt // calcolo per riesumare il timer correttamente
+            cmRecTimer.start()
+            btPause.setBackgroundResource(R.drawable.pause_button) // cambio grafica al pulsante
         }
         else {
             recording?.pause() // mette in pausa la registrazione
-            CM_recTimer.stop()
-            CM_pauseAt = SystemClock.elapsedRealtime() - CM_recTimer.base
-            BT_pause.setBackgroundResource(R.drawable.play_button) // cambio grafica al pulsante
+            cmRecTimer.stop()
+            cmPauseAt = SystemClock.elapsedRealtime() - cmRecTimer.base
+            btPause.setBackgroundResource(R.drawable.play_button) // cambio grafica al pulsante
         }
         inPause = !inPause
     }
@@ -773,17 +771,17 @@ class MainActivity : AppCompatActivity() {
      */
     private fun recOptions()
     {
-        BT_shoot.visibility = if(recordMode && isRecording) View.INVISIBLE else View.VISIBLE
+        btShoot.visibility = if(recordMode && isRecording) View.INVISIBLE else View.VISIBLE
         findViewById<Group>(R.id.Group_rec).visibility = if(recordMode && isRecording) View.VISIBLE else View.INVISIBLE
         // R.id.Group_rec è un gruppo contenente i pulsanti per fermare e riprendere la registrazione video
 
         if(recordMode && !isRecording) // scelta del pulsante
-            BT_shoot.setBackgroundResource( R.drawable.in_recording_button)
+            btShoot.setBackgroundResource( R.drawable.in_recording_button)
         else if(!recordMode)  {
             if(isRecording)
-                BT_shoot.setBackgroundResource( R.drawable.rounded_corner_red)
+                btShoot.setBackgroundResource( R.drawable.rounded_corner_red)
             else
-                BT_shoot.setBackgroundResource( R.drawable.rounded_corner)
+                btShoot.setBackgroundResource( R.drawable.rounded_corner)
         }
     }
 
@@ -809,7 +807,7 @@ class MainActivity : AppCompatActivity() {
         var progress = changeCameraSeekBar
 
         qrscanner = preferences.getBoolean(KEY_QRCODE, true)
-        QrCode(qrscanner)
+        qrCode(qrscanner)
 
         if (savedInstanceState != null) { // controlo che ci sia il bundle
             //recupero variabili dal bundle
@@ -820,7 +818,7 @@ class MainActivity : AppCompatActivity() {
             progress = savedInstanceState.getInt(KEY_ZOOM)
             recordMode = savedInstanceState.getBoolean(KEY_REC)
 
-            SB_zoom.progress = progress
+            sbZoom.progress = progress
             changeZoom(progress, true) // cambio zoom e forzo il rebuild
             changeMode(recordMode)
         }
@@ -910,7 +908,7 @@ class MainActivity : AppCompatActivity() {
     {
         var reBuild = false // evito di costruitr la camera ogni volta
 
-        // SB_zoom va da 0 a 150, quindi i primi 50 valori sono per lo zoom con la ultra grand angolare,
+        // sbZoom va da 0 a 150, quindi i primi 50 valori sono per lo zoom con la ultra grand angolare,
         // gli altri per la camera grand angolare, non sono riuscito a recoperare la telephoto
         // valori corrispondenti a quale camara (Samsung S21)
         // 0 -> back default;   grand angolare
@@ -920,15 +918,15 @@ class MainActivity : AppCompatActivity() {
 
 
         if(isRecording) // se sto registrando, non posso cambiare camera, quindi c'è un valore di zoom diverso
-            zoomLv = progress/SB_zoom.max.toFloat() // calcolo per ottenere un valore compreso ltra 0 e 1 per lo zoom
+            zoomLv = progress/sbZoom.max.toFloat() // calcolo per ottenere un valore compreso ltra 0 e 1 per lo zoom
         else
         {
             if(progress<changeCameraSeekBar) // sono sulle camere ultra grand angolari (changeCameraSeekBar = 50)
             {
                 // sperimentalmente ho trovato che sul mio dispositivo (S21) al valore di zoomLv = 0.525 circa
                 // lo zoom della camera ultra grand angolare corrisponde al valore della camera principale a 1.0x
-                // quindi 2.14 = zoomLv*SB_zoom.max/maxProgress = 0.525*200/49
-                zoomLv = (progress.toFloat()/SB_zoom.max * 2.25f)
+                // quindi 2.14 = zoomLv*sbZoom.max/maxProgress = 0.525*200/49
+                zoomLv = (progress.toFloat()/sbZoom.max * 2.25f)
                 // calcolo per ottenere un valore tra 0 e 1 per lo zoom
 
                 if(currentCamera==0) // se sono in back default
@@ -944,11 +942,11 @@ class MainActivity : AppCompatActivity() {
             }
             else
             {
-                zoomLv = (progress-changeCameraSeekBar)/(SB_zoom.max - changeCameraSeekBar).toFloat()
+                zoomLv = (progress-changeCameraSeekBar)/(sbZoom.max - changeCameraSeekBar).toFloat()
                 // calcolo per ottenere un valore tra 0 e 1 per lo zoom
                 // è presente - changeCameraSeekBar perchè devo escultere i valori sotto changeCameraSeekBar
                 // quindi quando progress è a 50 (=changeCameraSeekBar) allora zoomLv deve essere 0
-                // mentre quando progress è a 150 (=SB_zoom.max) allora zoomLv deve essere 1
+                // mentre quando progress è a 150 (=sbZoom.max) allora zoomLv deve essere 1
 
                 if(currentCamera==2) // se sono in back grand angolare
                 {
@@ -967,26 +965,26 @@ class MainActivity : AppCompatActivity() {
         val zoomState = camera.cameraInfo.zoomState
         val maxzoom : Float = zoomState.value?.maxZoomRatio!!
 
-        BT_zoom0_5.text = getString(R.string.zoom_0_5x)
-        BT_zoom1_0.text = getString(R.string.zoom_1_0x)
-        BT_zoom0_5.backgroundTintList = getColorStateList(R.color.gray_onyx)
-        BT_zoom1_0.backgroundTintList = getColorStateList(R.color.gray_onyx)
-        BT_zoom0_5.setTextColor(getColor(R.color.white))
-        BT_zoom1_0.setTextColor(getColor(R.color.white))
+        btZoom05.text = getString(R.string.zoom_0_5x)
+        btZoom10.text = getString(R.string.zoom_1_0x)
+        btZoom05.backgroundTintList = getColorStateList(R.color.gray_onyx)
+        btZoom10.backgroundTintList = getColorStateList(R.color.gray_onyx)
+        btZoom05.setTextColor(getColor(R.color.white))
+        btZoom10.setTextColor(getColor(R.color.white))
 
         if(currentCamera==0 || currentCamera == 3) // camera normale 1 -> 8
         {
-            BT_zoomRec.text = "${(zoomLv*(maxzoom-1)+1).toString().substring(0,3)}x" // (zoomLv*(maxzoom-1)+1) fa si che visualizzi maxzoom come massimo e 1x come minimo
-            BT_zoom1_0.text = "${(zoomLv*(maxzoom-1)+1).toString().substring(0,3)}x"
-            BT_zoom1_0.backgroundTintList = getColorStateList(R.color.white)
-            BT_zoom1_0.setTextColor(getColor(R.color.black))
+            btZoomRec.text = "${(zoomLv*(maxzoom-1)+1).toString().substring(0,3)}x" // (zoomLv*(maxzoom-1)+1) fa si che visualizzi maxzoom come massimo e 1x come minimo
+            btZoom10.text = "${(zoomLv*(maxzoom-1)+1).toString().substring(0,3)}x"
+            btZoom10.backgroundTintList = getColorStateList(R.color.white)
+            btZoom10.setTextColor(getColor(R.color.black))
         }
         else // camera grand angolare 0.5 -> 8
         {
-            BT_zoomRec.text = "${(zoomLv*(maxzoom-0.5)+0.5).toString().substring(0,3)}x" // (zoomLv*(maxzoom-0.5)+0.5) fa si che visualizzi maxzoom come massimo e 0.5x come minimo
-            BT_zoom0_5.text = "${(zoomLv+0.5).toString().substring(0,3)}x"
-            BT_zoom0_5.backgroundTintList = getColorStateList(R.color.white)
-            BT_zoom0_5.setTextColor(getColor(R.color.black))
+            btZoomRec.text = "${(zoomLv*(maxzoom-0.5)+0.5).toString().substring(0,3)}x" // (zoomLv*(maxzoom-0.5)+0.5) fa si che visualizzi maxzoom come massimo e 0.5x come minimo
+            btZoom05.text = "${(zoomLv+0.5).toString().substring(0,3)}x"
+            btZoom05.backgroundTintList = getColorStateList(R.color.white)
+            btZoom05.setTextColor(getColor(R.color.black))
         }
 
         if(buildAnyway || (reBuild && !isRecording)) // se sta registrando non cambia fotocamera
@@ -1006,7 +1004,7 @@ class MainActivity : AppCompatActivity() {
             when(volumeKey) {
                 "zoom" -> {
                     // Volume_UP -> zoom in, Volume_DOWN -> zoom out
-                    SB_zoom.incrementProgressBy(if (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP) 1 else -1)
+                    sbZoom.incrementProgressBy(if (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP) 1 else -1)
                     return true
                 }
                 "volume" ->  return super.dispatchKeyEvent(event)
@@ -1063,8 +1061,8 @@ class MainActivity : AppCompatActivity() {
      */
     private fun changeMode(record : Boolean) {
         recordMode = record
-        val bt1 = if(record) BT_recMode else BT_photoMode
-        val bt2 = if(record) BT_photoMode else BT_recMode
+        val bt1 = if(record) btRecMode else btPhotoMode
+        val bt2 = if(record) btPhotoMode else btRecMode
         val aspect = if(record) aspectRatioVideo else aspectRatioPhoto
 
         bt1.backgroundTintList = getColorStateList(R.color.white)
@@ -1083,7 +1081,7 @@ class MainActivity : AppCompatActivity() {
         if(!timerOn) // se non c'è il timer attivato
         {
             if(!isRecording) // se non sta registrando
-                BT_shoot.setBackgroundResource( // cambio la grafica del pulsante in base a se sto registrando o no
+                btShoot.setBackgroundResource( // cambio la grafica del pulsante in base a se sto registrando o no
                     if(record) R.drawable.in_recording_button else R.drawable.rounded_corner
                 )
             recOptions()
@@ -1185,9 +1183,9 @@ class MainActivity : AppCompatActivity() {
             Log.d(TAG, "[zoom] $scaleFactor")
 
             if(scaleFactor>1) // se pinch in allora zoommo
-                SB_zoom.incrementProgressBy(1) // cambio il valore della SeekBar che a sua volta cambia il valore dello zoom
+                sbZoom.incrementProgressBy(1) // cambio il valore della SeekBar che a sua volta cambia il valore dello zoom
             else // altrimienti è pinch out e allora dezoommo
-                SB_zoom.incrementProgressBy(-1)
+                sbZoom.incrementProgressBy(-1)
             return true
         }
     }
@@ -1200,7 +1198,7 @@ class MainActivity : AppCompatActivity() {
             currentCamera = 3 // passo in front, è la camera frontale grand angolare
         else if(currentCamera==1 || currentCamera==3)
             currentCamera = 0 // passo in back
-        SB_zoom.progress = changeCameraSeekBar
+        sbZoom.progress = changeCameraSeekBar
 
         if(!isRecording) // se sta registrando non cambia fotocamera
             buildCamera()
@@ -1237,9 +1235,9 @@ class MainActivity : AppCompatActivity() {
         timerOn = true
         timer = object : CountDownTimer(countdown*1000, 1000){
             override fun onTick(remainingMillis: Long) {
-                //BT_timer.visibility = View.INVISIBLE //rendo invisibile il pulsante del timer durante il countdown
+                //btTimer.visibility = View.INVISIBLE //rendo invisibile il pulsante del timer durante il countdown
                 findViewById<Group>(R.id.Group_extraFunc).visibility = View.INVISIBLE
-                BT_shoot.setBackgroundResource(R.drawable.rounded_stop_button)
+                btShoot.setBackgroundResource(R.drawable.rounded_stop_button)
                 countDownText.text = "${remainingMillis/1000 + 1}"
                 countDownText.visibility = View.VISIBLE
                 Log.d(TAG, "Secondi rimanenti: "+remainingMillis/1000)
@@ -1266,16 +1264,16 @@ class MainActivity : AppCompatActivity() {
      */
     private fun rotateButton(angle : Float)
     {
-        BT_gallery.rotation = angle
-        BT_rotation.rotation = angle
-        BT_flash.rotation = angle
-        BT_timer.rotation = angle
-        BT_zoom0_5.rotation = angle
-        BT_zoom1_0.rotation = angle
-        BT_zoomRec.rotation = angle
-        CM_recTimer.rotation = angle
-        BT_recMode.rotation = angle
-        BT_photoMode.rotation = angle
+        btGallery.rotation = angle
+        btRotation.rotation = angle
+        btFlash.rotation = angle
+        btTimer.rotation = angle
+        btZoom05.rotation = angle
+        btZoom10.rotation = angle
+        btZoomRec.rotation = angle
+        cmRecTimer.rotation = angle
+        btRecMode.rotation = angle
+        btPhotoMode.rotation = angle
     }
 
     /**
@@ -1316,11 +1314,11 @@ class MainActivity : AppCompatActivity() {
      * TODO: da commentare
      */
     private fun setTimerIcon(status : String){
-        BT_timer.backgroundTintList = getColorStateList(R.color.aureolin_yellow)
-        BT_timer.setBackgroundResource(
+        btTimer.backgroundTintList = getColorStateList(R.color.aureolin_yellow)
+        btTimer.setBackgroundResource(
             when(status){
                 "OFF" -> {
-                    BT_timer.backgroundTintList = getColorStateList(R.color.white)
+                    btTimer.backgroundTintList = getColorStateList(R.color.white)
                     R.drawable.timer_0
                 }
                 "3" -> R.drawable.timer_3
@@ -1360,22 +1358,22 @@ class MainActivity : AppCompatActivity() {
     private fun setFlashMode() {
         when(currFlashMode) {
             FlashModes.OFF -> {
-                BT_flash.setBackgroundResource(R.drawable.flash_off)
-                BT_flash.backgroundTintList = getColorStateList(R.color.white)
+                btFlash.setBackgroundResource(R.drawable.flash_off)
+                btFlash.backgroundTintList = getColorStateList(R.color.white)
                 imageCapture?.flashMode = ImageCapture.FLASH_MODE_OFF
                 //Nel caso in cui si stia registrando disattiva il flash in modalità OFF
                 if(recording != null) { cameraControl.enableTorch(false) }
             }
             FlashModes.ON -> {
-                BT_flash.setBackgroundResource(R.drawable.flash_on)
-                BT_flash.backgroundTintList = getColorStateList(R.color.aureolin_yellow)
+                btFlash.setBackgroundResource(R.drawable.flash_on)
+                btFlash.backgroundTintList = getColorStateList(R.color.aureolin_yellow)
                 imageCapture?.flashMode = ImageCapture.FLASH_MODE_ON
                 //Nel caso in cui si stia registrando attiva il flash in modalità ON
                 if(recording != null) { cameraControl.enableTorch(true) }
             }
             FlashModes.AUTO -> {
-                BT_flash.setBackgroundResource(R.drawable.flash_auto)
-                BT_flash.backgroundTintList = getColorStateList(R.color.aureolin_yellow)
+                btFlash.setBackgroundResource(R.drawable.flash_auto)
+                btFlash.backgroundTintList = getColorStateList(R.color.aureolin_yellow)
                 imageCapture?.flashMode = ImageCapture.FLASH_MODE_AUTO
                 //Nel caso in cui si stia registrando disattiva il flash in modalità AUTO
                 if(recording != null) { cameraControl.enableTorch(false) }
@@ -1465,13 +1463,13 @@ class MainActivity : AppCompatActivity() {
         Log.d(TAG, "onResume")
         try { // il lifecycle dello zoom viene chiso con la chiusura dell'app,
             // e non viene ripristinato manualmente, quindi chiamo changeZoom
-            // con il valore SB_zoom.progress che è ancora salvato
+            // con il valore sbZoom.progress che è ancora salvato
             // Se invece l'applicazione va in background e viene killata da android
-            // allora changeZoom(SB_zoom.progress) restituisce errore che non è
+            // allora changeZoom(sbZoom.progress) restituisce errore che non è
             // necessario gestire, in quel caso allora i dati sono stati salvati dul Bundle
             // e ripristinati da loadFromBundle, se invece viene killata dal utente
             // allora non viene ripristinato lo stato
-            changeZoom(SB_zoom.progress)
+            changeZoom(sbZoom.progress)
         }
         catch (e : Exception) {
             Log.e(TAG, "Exception $e")
@@ -1487,7 +1485,7 @@ class MainActivity : AppCompatActivity() {
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
         savedInstanceState.putInt(KEY_CAMERA, currentCamera)
-        savedInstanceState.putInt(KEY_ZOOM, SB_zoom.progress)
+        savedInstanceState.putInt(KEY_ZOOM, sbZoom.progress)
         savedInstanceState.putBoolean(KEY_REC, recordMode)
     }
 
