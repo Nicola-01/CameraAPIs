@@ -175,7 +175,7 @@ class MainActivity : AppCompatActivity() {
 
         private const val TOUCH_THRESHOLD = 0.1
 
-        private const val LONGCLICKDURATION = 1000L
+        private const val LONGCLICKDURATION = 300L
 
         private const val DOUBLE_CLICK_DELTA_TIME : Long = 300      // Tempo entro il quale viene rilevato il doppio tocco
 

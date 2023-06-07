@@ -34,20 +34,19 @@ class PopUpFragment : DialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val bt_settings = view.findViewById<Button>(R.id.BT_settingsPopUp)
-        val bt_close = view.findViewById<Button>(R.id.BT_closePopUp)
+        val btSettings = view.findViewById<Button>(R.id.BT_settingsPopUp)
+        val btClose = view.findViewById<Button>(R.id.BT_closePopUp)
 
         dialog!!.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
 
-        bt_settings.setOnClickListener {
+        btSettings.setOnClickListener {
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
             val uri = Uri.fromParts("package", context?.packageName, null)
             intent.data = uri
             startActivity(intent)
             ask = true
         }
-
-        bt_close.setOnClickListener{
+        btClose.setOnClickListener{
             dismiss()
         }
     }
@@ -55,10 +54,8 @@ class PopUpFragment : DialogFragment() {
     lateinit var onDismissListener : () -> Any
 
     override fun onDismiss(dialog: DialogInterface) {
-        if (this::onDismissListener.isInitialized) {
+        if (this::onDismissListener.isInitialized)
             onDismissListener()
-        }
-
         super.onDismiss(dialog)
     }
     override fun onResume() {
@@ -69,8 +66,5 @@ class PopUpFragment : DialogFragment() {
         ask = false
         if(mainActivity.allPermissionsGranted())
             dismiss()
-
     }
-
-
 }
