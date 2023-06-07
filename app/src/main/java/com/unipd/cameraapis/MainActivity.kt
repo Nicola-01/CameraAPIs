@@ -395,6 +395,9 @@ class MainActivity : AppCompatActivity() {
             if (event.action == MotionEvent.ACTION_UP) {
                 captureJob?.cancel()
                 captureJob = null
+                countDownText.postDelayed(Runnable {
+                    countDownText.visibility = View.INVISIBLE
+                }, 1000)
                 true
             }
             false
@@ -405,16 +408,16 @@ class MainActivity : AppCompatActivity() {
             if(feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         }
 
+        var countMultiShot = 0
         BT_shoot.setOnLongClickListener{
-            if (recordMode) {
-                timerShot(true)
-                if(feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
-            } else {
-                captureJob = CoroutineScope(Dispatchers.Main).launch {
-                    while (isActive) {
-                        takePhoto()
-                        delay(500) // Intervallo tra i singoli scatti
-                    }
+            countMultiShot = 0
+            countDownText.visibility = View.VISIBLE
+            captureJob = CoroutineScope(Dispatchers.Main).launch {
+                while (isActive) {
+                    takePhoto()
+                    countDownText.text = "${++countMultiShot}"
+                    delay(300) // Intervallo tra i singoli scatti
+                    if(feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
                 }
             }
             true // Restituisce true per indicare che l'evento di click lungo è stato gestito correttamente
