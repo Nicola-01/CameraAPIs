@@ -33,8 +33,8 @@
 
         <ListPreference
             android:defaultValue="3_4"
-            android:entries="@array/ratio_entries"
-            android:entryValues="@array/ratio_values"
+            android:entries="@array/ratioVideo_entries"
+            android:entryValues="@array/ratioVideo_values"
             android:key="LS_ratioVideo"
             android:title="Rapporto Video"
             app:iconSpaceReserved="false"
