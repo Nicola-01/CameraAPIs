@@ -151,7 +151,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var aspectRatioPhoto : Rational
     private lateinit var aspectRatioVideo : Rational
     private var ratioVideo = AspectRatio.RATIO_4_3
-    private var videoResolution = QualitySelector.from(Quality.UHD)
+    private var videoResolution = QualitySelector.from(Quality.HIGHEST)
     private var hdr = true
     private var gps = false
     private var feedback = true
@@ -547,11 +547,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
             // costruita un'istanza di Recorder
-            recorder = Recorder.Builder()
-                .setQualitySelector(QualitySelector.from(Quality.HIGHEST))      // qualità video
-                .setAspectRatio(AspectRatio.RATIO_16_9)                         // aspect ratio 16:9
-                .build()
-            videoCapture = VideoCapture.withOutput(recorder)    // crea un oggetto di tipo VideoCapture e imposto record come output video
+            createRecorder()
 
             // crea un'istanza di ImageCapture e imposta il flash a OFF
             imageCapture = ImageCapture.Builder().setFlashMode(ImageCapture.FLASH_MODE_OFF).build()
@@ -576,6 +572,20 @@ class MainActivity : AppCompatActivity() {
             }
 
         }, ContextCompat.getMainExecutor(this)) // specifica che le operazioni del listener vengano eseguite nel thread principale
+    }
+
+    private fun createRecorder() {
+        try {
+            recorder = Recorder.Builder()
+                .setQualitySelector(videoResolution)    // qualità video
+                .setAspectRatio(ratioVideo)             // aspect ratio
+                .build()
+            videoCapture = VideoCapture.withOutput(recorder)    // crea un oggetto di tipo VideoCapture e imposto record come output video
+        }
+        catch ( e : Exception)
+        {
+            Log.e(TAG, "[createRecorder]", e)
+        }
     }
 
     /**
@@ -874,23 +884,14 @@ class MainActivity : AppCompatActivity() {
         }
 
         videoResolution = when (pm.getString("LS_videoResolution", "UHD")!!) {
-            "UHD" -> QualitySelector.from(Quality.UHD)
+            "UHD" -> QualitySelector.from(Quality.HIGHEST)  // con il mio dispositivo non posso registrare in 4k a 4:3
+                                                            // quindi non metto Quality.UHD, altrimenti crasherebbe
             "FHD" -> QualitySelector.from(Quality.FHD)
             "HD" -> QualitySelector.from(Quality.HD)
             else -> QualitySelector.from(Quality.SD)
         }
 
-        try {
-            recorder = Recorder.Builder()
-                .setQualitySelector(videoResolution)
-                .setAspectRatio(ratioVideo)
-                .build()
-            videoCapture = VideoCapture.withOutput(recorder)
-        }
-        catch ( e : Exception)
-        {
-            Log.e(TAG, "[LoadFromSettings]", e)
-        }
+        createRecorder()
 
         buildCamera()
 
