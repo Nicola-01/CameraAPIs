@@ -3,7 +3,7 @@
     <shortcut
         android:shortcutId="selfie_shortcut"
         android:enabled="true"
-        android:icon="@drawable/rounded_corner"
+        android:icon="@drawable/shortcut_selfie"
         android:shortcutShortLabel="@string/ScSelfie">
         <intent
             android:action="shortcut.selfie"
@@ -14,7 +14,7 @@
     <shortcut
     android:shortcutId="photo_shortcut"
     android:enabled="true"
-    android:icon="@drawable/rounded_corner"
+    android:icon="@drawable/shortcut_photo"
     android:shortcutShortLabel="@string/ScPhoto">
     <intent
         android:action="shortcut.photo"
@@ -25,7 +25,7 @@
     <shortcut
         android:shortcutId="video_shortcut"
         android:enabled="true"
-        android:icon="@drawable/rounded_corner"
+        android:icon="@drawable/shortcut_video"
         android:shortcutShortLabel="@string/ScVideo">
         <intent
             android:action="shortcut.video"
@@ -36,7 +36,7 @@
     <shortcut
         android:shortcutId="qrcode_shortcut"
         android:enabled="true"
-        android:icon="@drawable/rounded_corner"
+        android:icon="@drawable/shortcut_qrcode"
         android:shortcutShortLabel="@string/scQrCode">
         <intent
             android:action="shortcut.qrcode"
