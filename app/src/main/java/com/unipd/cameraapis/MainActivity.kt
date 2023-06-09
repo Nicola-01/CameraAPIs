@@ -437,11 +437,7 @@ class MainActivity : AppCompatActivity() {
 
         btShoot.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_UP) {
-                captureJob?.cancel()
-                captureJob = null
-                countDownText.postDelayed(Runnable {
-                    countDownText.visibility = View.INVISIBLE
-                }, 1000)
+                multishot(false)
                 true
             }
             false
@@ -457,16 +453,7 @@ class MainActivity : AppCompatActivity() {
                 timerShot(true)
                 if(feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
             } else {
-                countMultiShot = 0
-                countDownText.visibility = View.VISIBLE
-                captureJob = CoroutineScope(Dispatchers.Main).launch {
-                    while (isActive) {
-                        takePhoto()
-                        countDownText.text = "${++countMultiShot}"
-                        delay(300) // Intervallo tra i singoli scatti
-                        if (feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
-                    }
-                }
+                multishot(true)
             }
             true // Restituisce true per indicare che l'evento di click lungo e' stato gestito correttamente
         }
@@ -678,6 +665,30 @@ class MainActivity : AppCompatActivity() {
         btTimer.visibility = View.VISIBLE   //rendo di nuovo visibile il pulsante del timer dopo aver scattato la foto
     }
 
+    /**
+     * Metodo per iniziare o fermare il multishot
+     */
+    private fun multishot(on_off: Boolean) {
+        if(on_off) {
+            countMultiShot = 0
+            countDownText.visibility = View.VISIBLE
+            captureJob = CoroutineScope(Dispatchers.Main).launch {
+                while (isActive) {
+                    takePhoto()
+                    countDownText.text = "${++countMultiShot}"
+                    delay(300) // Intervallo tra i singoli scatti
+                    if (feedback) viewPreview.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                }
+            }
+        }
+        else {
+            captureJob?.cancel()
+            captureJob = null
+            countDownText.postDelayed(Runnable {
+                countDownText.visibility = View.INVISIBLE
+            }, 1000)
+        }
+    }
     /**
      * Metodo utilizzato per avviare e fermare la registrazione video
      */
