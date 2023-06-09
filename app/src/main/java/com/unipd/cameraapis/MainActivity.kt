@@ -669,15 +669,18 @@ class MainActivity : AppCompatActivity() {
      * Metodo per iniziare o fermare il multishot
      */
     private fun multishot(on_off: Boolean) {
-        if(on_off && captureJob == null) {
-            countMultiShot = 0
-            countDownText.visibility = View.VISIBLE
-            captureJob = CoroutineScope(Dispatchers.Main).launch {
-                while (isActive) {
-                    takePhoto()
-                    countDownText.text = "${++countMultiShot}"
-                    delay(300) // Intervallo tra i singoli scatti
-                    if (feedback) viewPreview.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+        if(on_off) {
+            if(captureJob == null)
+            {
+                countMultiShot = 0
+                countDownText.visibility = View.VISIBLE
+                captureJob = CoroutineScope(Dispatchers.Main).launch {
+                    while (isActive) {
+                        takePhoto()
+                        countDownText.text = "${++countMultiShot}"
+                        delay(300) // Intervallo tra i singoli scatti
+                        if (feedback) viewPreview.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                    }
                 }
             }
         }
