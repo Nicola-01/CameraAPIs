@@ -201,7 +201,7 @@ class MainActivity : AppCompatActivity() {
             askPermission()
 
         //Todo ???? che fa?
-        cameraExecutor = Executors.newSingleThreadExecutor()
+        //cameraExecutor = Executors.newSingleThreadExecutor()
     }
 
     /**
@@ -269,9 +269,9 @@ class MainActivity : AppCompatActivity() {
                 showPopUp.show(supportFragmentManager, "showPopUp")
                 showPopUp.onDismissListener = {
                     popUpVisible = false
-                    if (allPermissionsGranted())
-                        startCamera()
-                    else {
+                    if (allPermissionsGranted())    // controllo se sono stati accettati i permessi
+                        startCamera()               // se si lancio la camera
+                    else {                          // altimenti mosto un altra activity
                         val intent = Intent(this, PermissionDenyActivity::class.java)
                         startActivityForResult(intent, 0)
                     }
@@ -581,39 +581,39 @@ class MainActivity : AppCompatActivity() {
         // permette di recuperare l'istanza di ProcessCameraProvider in modo asincrono
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
 
-        cameraProviderFuture.addListener({
-            // recupera l'istanza di ProcessCameraProvider
-            cameraProvider = cameraProviderFuture.get()
+        //cameraProviderFuture.addListener({
+        // recupera l'istanza di ProcessCameraProvider
+        cameraProvider = cameraProviderFuture.get()
 
-            // crea la Preview
-            preview = Preview.Builder()
-                .build()    // creo l'istanza di Preview
-                .also {
-                    it.setSurfaceProvider(viewBinding.viewPreview.surfaceProvider)  // seleziono dove visualizzare la preview
-                }
+        // crea la Preview
+        preview = Preview.Builder()
+            .build()    // creo l'istanza di Preview
+            .also {
+                it.setSurfaceProvider(viewBinding.viewPreview.surfaceProvider)  // seleziono dove visualizzare la preview
+            }
 
-            // crea un'istanza di ImageCapture e imposta il flash a OFF
-            imageCapture = ImageCapture.Builder().setFlashMode(ImageCapture.FLASH_MODE_OFF).build()
+        // crea un'istanza di ImageCapture e imposta il flash a OFF
+        imageCapture = ImageCapture.Builder().setFlashMode(ImageCapture.FLASH_MODE_OFF).build()
 
-            // seleziona la fotocamera dorsale di default
-            cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+        // seleziona la fotocamera dorsale di default
+        cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
-            // Crea un oggetto CameraSelector per la fotocamera ultra grandangolare
-            availableCameraInfos = cameraProvider.availableCameraInfos
-            Log.i(TAG, "[startCamera] available cameras Info:$availableCameraInfos")
-            cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
-            val availableCamera : Array<String> = cameraManager.cameraIdList    // lista contenente le fotocamere del dispositivo
-            Log.i(TAG, "[startCamera] available cameras: ${availableCamera}")
+        // Crea un oggetto CameraSelector per la fotocamera ultra grandangolare
+        availableCameraInfos = cameraProvider.availableCameraInfos
+        Log.i(TAG, "[startCamera] available cameras Info:$availableCameraInfos")
+        cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        val availableCamera : Array<String> = cameraManager.cameraIdList    // lista contenente le fotocamere del dispositivo
+        Log.i(TAG, "[startCamera] available cameras: ${availableCamera}")
 
-            // inizializzazione della camera
-            createListener()            // crea i Listener
-            createRecorder()            // costruita un'istanza di Recorder
-            buildCamera()               // crea effettivamente la camera
-            loadFromSetting()           // recupera le impostazioni
-            loadFromBundle(savedBundle) // carica gli elementi dal Bundle/Preferences
-            openByShortCut()            // controlla come e' stata aperta l'app
+        // inizializzazione della camera
+        createListener()            // crea i Listener
+        createRecorder()            // costruita un'istanza di Recorder
+        buildCamera()               // crea effettivamente la camera
+        loadFromSetting()           // recupera le impostazioni
+        loadFromBundle(savedBundle) // carica gli elementi dal Bundle/Preferences
+        openByShortCut()            // controlla come e' stata aperta l'app
 
-        }, ContextCompat.getMainExecutor(this)) // specifica che le operazioni del listener vengano eseguite nel thread principale
+        //}, ContextCompat.getMainExecutor(this)) // specifica che le operazioni del listener vengano eseguite nel thread principale
     }
 
     /**

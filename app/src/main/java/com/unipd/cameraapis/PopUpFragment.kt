@@ -41,14 +41,14 @@ class PopUpFragment : DialogFragment() {
 
 
 
-        btSettings.setOnClickListener {
+        btSettings.setOnClickListener { // apre le impostazioni dell'app
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
             val uri = Uri.fromParts("package", context?.packageName, null)
             intent.data = uri
             startActivity(intent)
             ask = true
         }
-        btClose.setOnClickListener{
+        btClose.setOnClickListener{ // chiude il popup
             dismiss()
         }
     }
