@@ -1,24 +1,20 @@
 package com.unipd.cameraapis
 
 import android.Manifest
-import android.app.Activity
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.Cursor
-import android.graphics.Rect
 import android.hardware.camera2.CameraManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.CountDownTimer
-import android.os.Handler
 import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.DisplayMetrics
 import android.util.Log
 import android.util.Rational
-import android.util.Size
 import android.view.GestureDetector
 import android.view.HapticFeedbackConstants
 import android.view.KeyEvent
@@ -35,8 +31,6 @@ import android.widget.Button
 import android.widget.Chronometer
 import android.widget.SeekBar
 import android.widget.TextView
-import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraControl
@@ -46,9 +40,6 @@ import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
-import androidx.camera.core.UseCaseGroup
-import androidx.camera.core.ViewPort
-import androidx.camera.core.impl.ImageCaptureConfig
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Quality
@@ -57,7 +48,6 @@ import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
-import androidx.camera.video.impl.VideoCaptureConfig
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.Group
 import androidx.core.app.ActivityCompat
@@ -76,6 +66,7 @@ import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.math.abs
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -162,6 +153,7 @@ class MainActivity : AppCompatActivity() {
 
     private var savedBundle: Bundle? = null
     private val showPopUp = PopUpFragment()
+    private var qrCodePopUp = QrCodeFragment()
     private var popUpVisible = false
     private var permissionDenyAsk = false
 
@@ -418,7 +410,7 @@ class MainActivity : AppCompatActivity() {
             timerShot(recordMode)
             if(feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         }
-        
+
         btShoot.setOnLongClickListener{
             if (recordMode) {
                 timerShot(true)
@@ -478,7 +470,7 @@ class MainActivity : AppCompatActivity() {
         // listener per il pulsante QR
         btQR.setOnClickListener {
             qrScanner = !qrScanner
-            qrCode(qrScanner)
+            //qrCode(qrScanner)
 
             //Todo: butta dentro QrCode plz, che lo richiamo dal loadBundle
             //Todo: inoltre prima di mostrare risultati contollare che il timer sia disattivato, -> "timerOn"
@@ -491,6 +483,11 @@ class MainActivity : AppCompatActivity() {
             intentIntegrator.initiateScan()
             */
 
+            // PopUp per il qrCode
+            var bundle = Bundle()
+            bundle.putString("URL", "https://stem.elearning.unipd.it/")
+            qrCodePopUp.arguments = bundle
+            qrCodePopUp.show(supportFragmentManager, "showPopUp")
         }
 
         btSettings.setOnClickListener {view ->

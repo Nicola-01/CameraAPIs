@@ -34,10 +34,12 @@ class PopUpFragment : DialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        dialog!!.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+
         val btSettings = view.findViewById<Button>(R.id.BT_settingsPopUp)
         val btClose = view.findViewById<Button>(R.id.BT_closePopUp)
 
-        dialog!!.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+
 
         btSettings.setOnClickListener {
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)

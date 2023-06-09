@@ -26,9 +26,9 @@
         android:textColor="?attr/colorOnSecondary"
         android:textSize="18sp"
         android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="@+id/TV_text"
+        app:layout_constraintEnd_toEndOf="@+id/TV_linkQR"
         app:layout_constraintHorizontal_bias="0.515"
-        app:layout_constraintStart_toStartOf="@+id/TV_text"
+        app:layout_constraintStart_toStartOf="@+id/TV_linkQR"
         app:layout_constraintTop_toBottomOf="@+id/imageView" />
 
     <Button
@@ -45,7 +45,7 @@
         app:layout_constraintTop_toTopOf="@+id/space3" />
 
     <Button
-        android:id="@+id/BT_operQrCodePopUp"
+        android:id="@+id/BT_openQrCodePopUp"
         android:layout_width="110dp"
         android:layout_height="40dp"
         android:background="@drawable/rounded_corner"
@@ -58,11 +58,11 @@
         app:layout_constraintTop_toTopOf="@+id/space3" />
 
     <TextView
-        android:id="@+id/TV_text"
+        android:id="@+id/TV_linkQR"
         android:layout_width="300dp"
         android:layout_height="50dp"
         android:layout_marginTop="8dp"
-        android:text="@string/QrCodeFrag"
+        android:text=""
         android:textColor="?attr/colorOnSecondary"
         android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="@+id/view2"
@@ -74,9 +74,9 @@
         android:layout_width="15dp"
         android:layout_height="15dp"
         android:layout_marginTop="16dp"
-        app:layout_constraintEnd_toEndOf="@+id/TV_text"
-        app:layout_constraintStart_toStartOf="@+id/TV_text"
-        app:layout_constraintTop_toBottomOf="@+id/TV_text" />
+        app:layout_constraintEnd_toEndOf="@+id/TV_linkQR"
+        app:layout_constraintStart_toStartOf="@+id/TV_linkQR"
+        app:layout_constraintTop_toBottomOf="@+id/TV_linkQR" />
 
     <ImageView
         android:id="@+id/imageView"
