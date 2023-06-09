@@ -23,5 +23,11 @@
     <string name="swGPS">Aggiunge tag alle foto e ai vidoe per mostrare dove sono stati realizzati.</string>
     <string name="swFeedback">Se attiva alcuni tasti restituiranno una vibrazione</string>
 
+    <!-- ShortCut -->
+    <string name="ScSelfie">Scatta Selfie</string>
+    <string name="ScPhoto">Scatta Foto</string>
+    <string name="ScVideo">Registra Video</string>
+    <string name="scQrCode">Acquisisci QrCode</string>
+
 
 </resources>

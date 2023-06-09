@@ -206,6 +206,33 @@ class MainActivity : AppCompatActivity() {
         cameraExecutor = Executors.newSingleThreadExecutor()
     }
 
+    private fun openByShortCut() {
+        if (intent == null)
+            return
+        when (intent.action) {
+            "shortcut.selfie" -> {
+                Log.d(TAG, "selfie_shortcut")
+                rotateCamera(true, false)
+            }
+
+            "shortcut.photo" -> {
+                Log.d(TAG, "photo_shortcut")
+                rotateCamera(true, true)
+                changeMode(false)
+            }
+
+            "shortcut.video" -> {
+                Log.d(TAG, "video_shortcut")
+                changeMode(true)
+            }
+
+            "shortcut.qrcode" -> {
+                Log.d(TAG, "qrcode_shortcut")
+                qrCode(true)
+            }
+        }
+    }
+
     fun askPermission() {
         ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         Log.d(TAG, "Permission asked")
@@ -469,8 +496,8 @@ class MainActivity : AppCompatActivity() {
 
         // listener per il pulsante QR
         btQR.setOnClickListener {
-            qrScanner = !qrScanner
-            //qrCode(qrScanner)
+            //qrScanner = !qrScanner
+            qrCode(qrScanner)
 
             //Todo: butta dentro QrCode plz, che lo richiamo dal loadBundle
             //Todo: inoltre prima di mostrare risultati contollare che il timer sia disattivato, -> "timerOn"
@@ -483,11 +510,6 @@ class MainActivity : AppCompatActivity() {
             intentIntegrator.initiateScan()
             */
 
-            // PopUp per il qrCode
-            var bundle = Bundle()
-            bundle.putString("URL", "https://stem.elearning.unipd.it/")
-            qrCodePopUp.arguments = bundle
-            qrCodePopUp.show(supportFragmentManager, "showPopUp")
         }
 
         btSettings.setOnClickListener {view ->
@@ -498,10 +520,19 @@ class MainActivity : AppCompatActivity() {
 
     private fun qrCode(status: Boolean)
     {
+        /*
         if(status)
             btQR.backgroundTintList = getColorStateList(R.color.aureolin_yellow)
         else
             btQR.backgroundTintList = getColorStateList(R.color.white)
+        */
+
+
+        // PopUp per il qrCode
+        var bundle = Bundle()
+        bundle.putString("URL", "https://stem.elearning.unipd.it/")
+        qrCodePopUp.arguments = bundle
+        qrCodePopUp.show(supportFragmentManager, "showPopUp")
     }
 
     /**
@@ -569,6 +600,7 @@ class MainActivity : AppCompatActivity() {
                 loadFromSetting()
                 loadFromBundle(savedBundle) // carica gli elementi dal Bundle/Preferences
                 setFlashMode() // non so perchè ma se lo lascio al interno di loadFromBundle, viene modificato ma successivamente perde lo stato
+                openByShortCut()
             } catch(exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
             }
@@ -826,7 +858,7 @@ class MainActivity : AppCompatActivity() {
         var progress = changeCameraSeekBar
 
         qrScanner = preferences.getBoolean(KEY_QRCODE, true)
-        qrCode(qrScanner)
+        //qrCode(qrScanner)
 
         if(saveMode)
             recordMode = preferences.getBoolean(KEY_REC, true)
@@ -1227,11 +1259,13 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * todo commento
+     * @param override permette di decidere quale camera usare
+     * @param back se true mette seleziona la camera back
      */
-    private fun rotateCamera() { // id = 0 default back, id = 1 front default
-        if(currentCamera== 0 || currentCamera == 2)
-            currentCamera = 3 // passo in front, è la camera frontale grand angolare
-        else if(currentCamera==1 || currentCamera==3)
+    private fun rotateCamera(override:Boolean = false, back: Boolean = true) { // id = 0 default back, id = 1 front default
+        if((currentCamera== 0 || currentCamera == 2) || (!override && back))
+            currentCamera = 3 // passo in front
+        else if((currentCamera==1 || currentCamera==3) || (!override && !back))
             currentCamera = 0 // passo in back
         sbZoom.progress = changeCameraSeekBar
 
