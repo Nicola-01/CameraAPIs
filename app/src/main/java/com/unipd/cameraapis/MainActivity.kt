@@ -137,7 +137,7 @@ class MainActivity : AppCompatActivity() {
     private var qrScanner = true
     private var captureJob: Job? = null
     private var isbtShootLongClicked = false
-    private var isVolumeButtonClicked : Boolean = false
+    private var isVolumeButtonClicked : Boolean = true
 
     private lateinit var volumeKey : String
     private lateinit var aspectRatioPhoto : Rational
@@ -503,13 +503,6 @@ class MainActivity : AppCompatActivity() {
             //Todo: butta dentro QrCode plz, che lo richiamo dal loadBundle
             //Todo: inoltre prima di mostrare risultati contollare che il timer sia disattivato, -> "timerOn"
 
-            /*
-            val intentIntegrator = IntentIntegrator(this)
-            intentIntegrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
-            intentIntegrator.setOrientationLocked(true)
-            intentIntegrator.setPrompt("Scanning")
-            intentIntegrator.initiateScan()
-            */
 
         }
 
@@ -1098,25 +1091,15 @@ class MainActivity : AppCompatActivity() {
                     volumeTimer?.start()
                 }
                 else {
-                    if(!recordMode) {
-                        countMultiShot = 0
-                        countDownText.visibility = View.VISIBLE
-                        captureJob = CoroutineScope(Dispatchers.Main).launch {
-                            while (isActive) {
-                                takePhoto()
-                                countDownText.text = "${++countMultiShot}"
-                                delay(500) // Intervallo tra i singoli scatti
-                                //if(feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
-                            }
-                        }
-                        return true
-                    }
+                    changeMode(false)
+                    multishot(true)
                 }
             }
             return true
         }
         else if (event?.action == KeyEvent.ACTION_UP &&
             (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP || event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
+            multishot(false)  // termina il multishot
             volumeTimer?.cancel()   // fermo il timer quando sollevo il dito dal pulsante
             volumeTimer = null
             if(isRecording) {       // se sto registrando interrompo la registrazione
