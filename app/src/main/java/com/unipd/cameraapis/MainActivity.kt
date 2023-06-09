@@ -52,7 +52,6 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.Group
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.content.PermissionChecker
 import androidx.preference.PreferenceManager
 import com.unipd.cameraapis.databinding.ActivityMainBinding
 import kotlinx.coroutines.CoroutineScope
@@ -66,7 +65,6 @@ import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.math.abs
-
 
 class MainActivity : AppCompatActivity() {
 
@@ -206,6 +204,9 @@ class MainActivity : AppCompatActivity() {
         cameraExecutor = Executors.newSingleThreadExecutor()
     }
 
+    /**
+     *  Controlla se l'app e' stata aperta tramite shortcut, ed esegue l'azione corrispondente
+     */
     private fun openByShortCut() {
         if (intent == null)
             return
@@ -233,33 +234,37 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Mostra popup di android per accettare i permessi, è una funzione a parte perchè è utilizzata anche un PopUpFragment
+     */
     fun askPermission() {
         ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         Log.d(TAG, "Permission asked")
     }
 
     /**
-     * TODO: da commentare
+     * controlla se i permessi sono stati accettati
      */
     fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
         ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED
     }
 
     /**
-     * TODO: da commentare
+     * metodo che viene esegito quando il pop up che compare con [askPermission] viene chiuso
      */
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
-            if (allPermissionsGranted()) {
+            if (allPermissionsGranted()) // se sono stati accettati tutti i permessi allora avvio la camera
                 startCamera()
-            }
-            else if(permissionDenyAsk)
+            else if(permissionDenyAsk) //
+            // se non vengono accettati i permessi anche dopo il popup custom (leggere else if successivo)
+            // allora mostro una chermata custom impedendo l'utilizzo dell'app
             {
                 val intent = Intent(this, PermissionDenyActivity::class.java)
                 startActivityForResult(intent, 0)
             }
-            else if(!popUpVisible) // limita le apperture delle schede
+            else if(!popUpVisible) // se non sono stati accettati i permessi allora lancio un popup custom
             {
                 showPopUp.show(supportFragmentManager, "showPopUp")
                 showPopUp.onDismissListener = {
@@ -277,6 +282,9 @@ class MainActivity : AppCompatActivity() {
         Log.d(TAG, "Permission Request")
     }
 
+    /**
+     * Risultato di un activity
+     */
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
@@ -289,6 +297,12 @@ class MainActivity : AppCompatActivity() {
             finish()
     }
 
+    /**
+     * viene eseguito appena viene caricata tutta la grafica
+     * mi salvo l'altezza in cui impostare le barre più scure per quando
+     * la preview occupa un area più grande di 3:4, è principalmente per
+     * bellezza estetica
+     */
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) {
@@ -306,7 +320,7 @@ class MainActivity : AppCompatActivity() {
             val layoutParamsB = bottomBand.layoutParams
             val layoutParamsT = topBand.layoutParams
 
-            if (hB == -1) // primo avvio del app
+            if (hB == -1) // primo avvio assoluto del app
             {
                 val displayMetrics = DisplayMetrics()
                 windowManager.defaultDisplay.getMetrics(displayMetrics)
@@ -371,10 +385,10 @@ class MainActivity : AppCompatActivity() {
      */
     private fun createListener()
     {
-        //Con un click sul pulsante si passa alla modalità successiva del flash
+        //Con un click sul pulsante si passa alla modalita' successiva del flash
         btFlash.setOnClickListener { switchFlashMode() }
-        /*Con un click prolungato si apre un menù contestuale che permette di selezionare una
-          specifica modalità del flash*/
+        /*Con un click prolungato si apre un menu' contestuale che permette di selezionare una
+          specifica modalita' del flash*/
         btFlash.setOnCreateContextMenuListener { menu, _, _ ->
             menu.setHeaderTitle("Flash")
             for(mode in FlashModes.values()) {
@@ -454,7 +468,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
-            true // Restituisce true per indicare che l'evento di click lungo è stato gestito correttamente
+            true // Restituisce true per indicare che l'evento di click lungo e' stato gestito correttamente
         }
 
         btStop.setOnClickListener{
@@ -530,13 +544,13 @@ class MainActivity : AppCompatActivity() {
 
         // PopUp per il qrCode
         var bundle = Bundle()
-        bundle.putString("URL", "https://stem.elearning.unipd.it/")
+        bundle.putString("URL", "https://stem.elearning.unipd.it/") // impostare url qui
         qrCodePopUp.arguments = bundle
         qrCodePopUp.show(supportFragmentManager, "showPopUp")
     }
 
     /**
-     * Ricostruisce la camera
+     * costruisce la camera
      */
     private fun buildCamera()
     {
@@ -544,7 +558,7 @@ class MainActivity : AppCompatActivity() {
             try { // dato che uso gli id della mia camera allora potrebbe non esistere qulla camera
                 availableCameraInfos[currentCamera].cameraSelector
             } catch (e : Exception) {
-                if (currentCamera % 2 == 0) // se è camera 0 o 2 è back
+                if (currentCamera % 2 == 0) // se e' camera 0 o 2 e' back
                     CameraSelector.DEFAULT_BACK_CAMERA
                 else
                     CameraSelector.DEFAULT_FRONT_CAMERA
@@ -560,7 +574,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Crea la Preview della fotocamera e ne seleziona l'output, seleziona l'aspect ratio e la qualità video
+     * Crea la Preview della fotocamera e ne seleziona l'output, seleziona l'aspect ratio e la qualita' video
      */
     private fun startCamera() {
         // si ottiene un'istanza di tipo ListenableFuture che rappresenta un'istanza di ProcessCameraProvider, disponibile in seguito
@@ -578,9 +592,6 @@ class MainActivity : AppCompatActivity() {
                     it.setSurfaceProvider(viewBinding.viewPreview.surfaceProvider)  // seleziono dove visualizzare la preview
                 }
 
-            // costruita un'istanza di Recorder
-            createRecorder()
-
             // crea un'istanza di ImageCapture e imposta il flash a OFF
             imageCapture = ImageCapture.Builder().setFlashMode(ImageCapture.FLASH_MODE_OFF).build()
 
@@ -592,26 +603,26 @@ class MainActivity : AppCompatActivity() {
             Log.i(TAG, "[startCamera] available cameras Info:$availableCameraInfos")
             cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
             val availableCamera : Array<String> = cameraManager.cameraIdList    // lista contenente le fotocamere del dispositivo
-            Log.i(TAG, "[startCamera] available cameras:${availableCamera}")
+            Log.i(TAG, "[startCamera] available cameras: ${availableCamera}")
 
-            try {
-                createListener() // crea i Listener
-                buildCamera()
-                loadFromSetting()
-                loadFromBundle(savedBundle) // carica gli elementi dal Bundle/Preferences
-                setFlashMode() // non so perchè ma se lo lascio al interno di loadFromBundle, viene modificato ma successivamente perde lo stato
-                openByShortCut()
-            } catch(exc: Exception) {
-                Log.e(TAG, "Use case binding failed", exc)
-            }
+            // inizializzazione della camera
+            createListener()            // crea i Listener
+            createRecorder()            // costruita un'istanza di Recorder
+            buildCamera()               // crea effettivamente la camera
+            loadFromSetting()           // recupera le impostazioni
+            loadFromBundle(savedBundle) // carica gli elementi dal Bundle/Preferences
+            openByShortCut()            // controlla come e' stata aperta l'app
 
         }, ContextCompat.getMainExecutor(this)) // specifica che le operazioni del listener vengano eseguite nel thread principale
     }
 
+    /**
+     * Metodo per creare/riassegnare recorder, permettendo di modificare la qualita' video e l'aspect ratio con cui registra
+     */
     private fun createRecorder() {
         try {
             recorder = Recorder.Builder()
-                .setQualitySelector(videoResolution)    // qualità video
+                .setQualitySelector(videoResolution)    // qualita' video
                 .setAspectRatio(ratioVideo)             // aspect ratio
                 .build()
             videoCapture = VideoCapture.withOutput(recorder)    // crea un oggetto di tipo VideoCapture e imposto record come output video
@@ -624,20 +635,20 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Metodo per scattare una foto usando le impostazioni di [imageCapture]
+     * Todo: finire commentare il funzionamento
      */
     private fun takePhoto() {
-        //Log.d(TAG,"ClickListener")
         // Get a stable reference of the modifiable image capture use case
-        val imageCapture = imageCapture ?: return
-        // Create time stamped name and MediaStore entry.
-        val name = SimpleDateFormat(FILENAME_FORMAT, Locale.US)
-            .format(System.currentTimeMillis())
-        val contentValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, name)
-            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+        if(imageCapture == null)
+            return
 
-            //put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/CameraX-Image")
-            put(MediaStore.Images.Media.RELATIVE_PATH, "DCIM/CameraAPIs")
+        // creazione degli elementi necessari per avviare la cattura delle immagini
+
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME,
+                SimpleDateFormat(FILENAME_FORMAT, Locale.US).format(System.currentTimeMillis()))    // nome con cui salvare il file
+            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")                                    // formato del file
+            put(MediaStore.Images.Media.RELATIVE_PATH, "DCIM/CameraAPIs")                           // percorso dove salvare il file
         }
 
         // Create output options object which contains file + metadata
@@ -647,90 +658,83 @@ class MainActivity : AppCompatActivity() {
                 contentValues)
             .build()
 
-        // Set up image capture listener, which is triggered after photo has
-        // been taken
+        // Set up image capture listener, which is triggered after photo has been taken
+
+        // imposto le animazioni per lo scatto
         btShoot.startAnimation(scaleDown)
         viewPreview.startAnimation(scaleUp)
-        imageCapture.takePicture( // caso d'uso
-            outputOptions,
-            ContextCompat.getMainExecutor(this),
+
+        imageCapture!!.takePicture( // caso d'uso
+            outputOptions, ContextCompat.getMainExecutor(this),
             object : ImageCapture.OnImageSavedCallback {
 
                 override fun onError(exc: ImageCaptureException) {
                     Log.e(TAG, "Photo capture failed: ${exc.message}", exc)
                 }
 
-                override fun onImageSaved(output: ImageCapture.OutputFileResults){
-                    /*val msg = "Photo capture succeeded: ${output.savedUri}"
-                    Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
-                    Log.d(TAG, msg)*/
-                }
+                override fun onImageSaved(output: ImageCapture.OutputFileResults) {}
             }
         )
         btTimer.visibility = View.VISIBLE   //rendo di nuovo visibile il pulsante del timer dopo aver scattato la foto
     }
 
     /**
-     * TODO: commentare e sistemare
-     *
+     * Metodo utilizzato per avviare e fermare la registrazione video
      */
     private fun captureVideo() : Boolean {
-        val videoCapture = this.videoCapture ?: return true
+        if (videoCapture == null) // controllo di nullita'
+            return true
 
-        val curRecording = recording
-        if (curRecording != null) {
-            // Stop the current recording session.
-            curRecording.stop()
+        val videoCapture = this.videoCapture
+
+        if (recording != null) { // se sto gia' registrando allora la fermo
+            recording!!.stop()
             recording = null
             return true
         }
 
-        // create and start a new recording session
-        val name = SimpleDateFormat(FILENAME_FORMAT, Locale.US)
-            .format(System.currentTimeMillis())
+        // creazione degli elementi necessari per avviare la registrazione
         val contentValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, name)
-            put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
-
-            //put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/CameraX-Video")
-            put(MediaStore.Video.Media.RELATIVE_PATH, "DCIM/CameraAPIs")
+            put(MediaStore.MediaColumns.DISPLAY_NAME,
+                SimpleDateFormat(FILENAME_FORMAT, Locale.US).format(System.currentTimeMillis()))    // nome con cui salvare il file
+            put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")                                     // formato del file
+            put(MediaStore.Video.Media.RELATIVE_PATH, "DCIM/CameraAPIs")                            // percorso dove salvare il file
         }
 
-        if(currFlashMode == FlashModes.ON) cameraControl.enableTorch(true)
-
+        // output per il salvataggio di un file video
         val mediaStoreOutputOptions = MediaStoreOutputOptions
             .Builder(contentResolver, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
             .setContentValues(contentValues)
             .build()
-        recording = videoCapture.output
+
+        if(currFlashMode == FlashModes.ON) cameraControl.enableTorch(true)  // se si e' impostato il flash su on questo viene acceso
+
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
+            return false // Controlla che sia presente il permesso per registrare l'audio
+        // NB. e' un controllo ridondante, dato che non si può avviare la telecamera se
+        // non si acccettano tutti i permessi,
+
+        recording = videoCapture!!.output
             .prepareRecording(this, mediaStoreOutputOptions)
-            .apply {
-                if (PermissionChecker.checkSelfPermission(this@MainActivity,
-                        Manifest.permission.RECORD_AUDIO) ==
-                    PermissionChecker.PERMISSION_GRANTED)
-                {
-                    withAudioEnabled()
-                }
-            }
+            .withAudioEnabled()  // consente di registrare l'audio
             .start(ContextCompat.getMainExecutor(this)) { recordEvent ->
                 when(recordEvent) {
-                    is VideoRecordEvent.Start -> {
-                        startRecording(true)
+                    is VideoRecordEvent.Start -> { // inizia la registrazione
                         inPause = false
+                        startRecording(true) // cambio la grafica
                     }
-                    is VideoRecordEvent.Finalize -> {
-                        if (!recordEvent.hasError()) {
-                            val msg = "Video capture succeeded: " + "${recordEvent.outputResults.outputUri}"
-                            if(currFlashMode == FlashModes.ON) { cameraControl.enableTorch(false) }
-                            //Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
-                            Log.d(TAG, msg)
-                        } else {
+                    is VideoRecordEvent.Finalize -> { // finisce la registrazione
+                        if (recordEvent.hasError()) { // se c'e' un errore
                             recording?.close()
                             recording = null
-                            Log.e(TAG, "Video capture ends with error: " + "${recordEvent.error}")
-                            if(currFlashMode == FlashModes.ON) { cameraControl.enableTorch(false) }
+                            Log.e(TAG, "Errore nella registrazione: " + "${recordEvent.error}")
                         }
+                        if(currFlashMode == FlashModes.ON) cameraControl.enableTorch(false)
+                        // resetto la grafica..
                         startRecording(false)
+                        inPause = false
+                        pauseVideo()
                         btTimer.visibility = View.VISIBLE   //rendo di nuovo visibile il pulsante del timer dopo la registrazione
                     }
                 }
@@ -741,8 +745,8 @@ class MainActivity : AppCompatActivity() {
     /**
      * Metodo per impostare la visuale durante la regisrazione
      *
-     * @param status True se è stata avviata la registrazione;
-     *               False se è stata interrotta
+     * @param status True se e' stata avviata la registrazione;
+     *               False se e' stata interrotta
      */
     private fun startRecording(status : Boolean)
     {
@@ -778,7 +782,7 @@ class MainActivity : AppCompatActivity() {
         btZoomRec.visibility = viewVI
         cmRecTimer.visibility = viewVI
 
-        // se inizio a registrare non posso più cambiare camera,
+        // se inizio a registrare non posso piu' cambiare camera,
         // quindi devo sistemare il valore della seekbar
         if(status) {
             sbZoom.progress = (zoomLv*sbZoom.max).toInt()
@@ -796,7 +800,7 @@ class MainActivity : AppCompatActivity() {
      * Funzione per mettere in pausa o ripristinare la registrazione
      */
     private fun pauseVideo() {
-        // inPause = true se la registrazione è in pausa
+        // inPause = true se la registrazione e' in pausa
         if(inPause) {
             recording?.resume() // ripristina registrazione
             cmRecTimer.base = SystemClock.elapsedRealtime() - cmPauseAt // calcolo per riesumare il timer correttamente
@@ -814,16 +818,16 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Funzione per visualizzare i comandi corretti;
-     * Se sono in modalità foto il pulsante è bianco,
-     * se inizio a registrare (sempre in modalità foto) diventa rosso,
-     * se sono in modalità video e non sto registrando è bianco con pallino rosso;
-     * se sono in modalità video e sto registrando mostra i tasti per fermare e riprendere la registrazione
+     * Se sono in modalita' foto il pulsante e' bianco,
+     * se inizio a registrare (sempre in modalita' foto) diventa rosso,
+     * se sono in modalita' video e non sto registrando e' bianco con pallino rosso;
+     * se sono in modalita' video e sto registrando mostra i tasti per fermare e riprendere la registrazione
      */
     private fun recOptions()
     {
         btShoot.visibility = if(recordMode && isRecording) View.INVISIBLE else View.VISIBLE
         findViewById<Group>(R.id.Group_rec).visibility = if(recordMode && isRecording) View.VISIBLE else View.INVISIBLE
-        // R.id.Group_rec è un gruppo contenente i pulsanti per fermare e riprendere la registrazione video
+        // R.id.Group_rec e' un gruppo contenente i pulsanti per fermare e riprendere la registrazione video
 
         if(recordMode && !isRecording) // scelta del pulsante
             btShoot.setBackgroundResource( R.drawable.in_recording_button)
@@ -837,7 +841,7 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Metodo per ricaricare i valori nel bundle o nelle preferences.
-     * Non è nel onCreate perchè usa variabili che vengono dichiarate nel startCamera
+     * Non e' nel onCreate perche' usa variabili che vengono dichiarate nel startCamera
      */
     private fun loadFromBundle(savedInstanceState : Bundle?)
     {
@@ -866,8 +870,8 @@ class MainActivity : AppCompatActivity() {
         if (savedInstanceState != null) { // controlo che ci sia il bundle
             //recupero variabili dal bundle
             currentCamera = savedInstanceState.getInt(KEY_CAMERA)
-            // se già ricaricato da preferences lo sovrascrivo,
-            // in quanto con preference salvo solo se è posteriore o anteriore
+            // se gia' ricaricato da preferences lo sovrascrivo,
+            // in quanto con preference salvo solo se e' posteriore o anteriore
             // mentre nel bundle salvo effettivamente la camera corretta
             progress = savedInstanceState.getInt(KEY_ZOOM)
             recordMode = savedInstanceState.getBoolean(KEY_REC)
@@ -879,6 +883,9 @@ class MainActivity : AppCompatActivity() {
         changeZoom(progress, true) // cambio zoom e forzo il rebuild
     }
 
+    /**
+     * recupero i settaggi dopo che questi sono stati modificati
+     */
     private fun loadFromSetting() {
         val pm = PreferenceManager.getDefaultSharedPreferences(this)
 
@@ -928,10 +935,7 @@ class MainActivity : AppCompatActivity() {
             else -> QualitySelector.from(Quality.SD)
         }
 
-        createRecorder()
-
-        //buildCamera() // forse non serve, lo faccio tramite changeZoom
-
+        createRecorder() // costruita un'istanza di Recorder
         changeMode(recordMode) // richiamo per cambiare la grandezza della preview
 
         // -- Generali
@@ -970,7 +974,7 @@ class MainActivity : AppCompatActivity() {
         // 3 -> front;          grand angolare
 
 
-        if(isRecording) // se sto registrando, non posso cambiare camera, quindi c'è un valore di zoom diverso
+        if(isRecording) // se sto registrando, non posso cambiare camera, quindi c'e' un valore di zoom diverso
             zoomLv = progress/sbZoom.max.toFloat() // calcolo per ottenere un valore compreso ltra 0 e 1 per lo zoom
         else
         {
@@ -997,9 +1001,9 @@ class MainActivity : AppCompatActivity() {
             {
                 zoomLv = (progress-changeCameraSeekBar)/(sbZoom.max - changeCameraSeekBar).toFloat()
                 // calcolo per ottenere un valore tra 0 e 1 per lo zoom
-                // è presente - changeCameraSeekBar perchè devo escultere i valori sotto changeCameraSeekBar
-                // quindi quando progress è a 50 (=changeCameraSeekBar) allora zoomLv deve essere 0
-                // mentre quando progress è a 150 (=sbZoom.max) allora zoomLv deve essere 1
+                // e' presente - changeCameraSeekBar perche' devo escultere i valori sotto changeCameraSeekBar
+                // quindi quando progress e' a 50 (=changeCameraSeekBar) allora zoomLv deve essere 0
+                // mentre quando progress e' a 150 (=sbZoom.max) allora zoomLv deve essere 1
 
                 if(currentCamera==2) // se sono in back grand angolare
                 {
@@ -1120,11 +1124,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Funzione per switchare tra modalità Foto e Video;
+     * Funzione per switchare tra modalita' Foto e Video;
      * quindi cambia i pulsanti visualizzati
      *
-     * @param record True se devo passare in modalità Video;
-     *                False se devo passare in modalità Foto
+     * @param record True se devo passare in modalita' Video;
+     *                False se devo passare in modalita' Foto
      */
     private fun changeMode(record : Boolean) {
         recordMode = record
@@ -1145,7 +1149,7 @@ class MainActivity : AppCompatActivity() {
         viewPreview.layoutParams = layoutParams
 
 
-        if(!timerOn) // se non c'è il timer attivato
+        if(!timerOn) // se non c'e' il timer attivato
         {
             if(!isRecording) // se non sta registrando
                 btShoot.setBackgroundResource( // cambio la grafica del pulsante in base a se sto registrando o no
@@ -1176,16 +1180,16 @@ class MainActivity : AppCompatActivity() {
                 if(!isRecording && rotation != -1 ) // gira solo se non sta registrando, per salvare i video nel orientamento iniziale
                 {
                     rotateButton(rotation.toFloat())
-                    // Surface.ROTATION_0 è = 0, ROTATION_90 = 1, ... ROTATION_270 = 3, quindi = rotation/90
+                    // Surface.ROTATION_0 e' = 0, ROTATION_90 = 1, ... ROTATION_270 = 3, quindi = rotation/90
                     videoCapture?.targetRotation = rotation/90
                 }
-                imageCapture?.targetRotation = rotation/90 // è fuori dal if, in questo modo l'immagine è sempre orientata correttamente
+                imageCapture?.targetRotation = rotation/90 // e' fuori dal if, in questo modo l'immagine e' sempre orientata correttamente
             }
         }
     }
 
     private inner class MyGestureListener : GestureDetector.SimpleOnGestureListener() {
-        private val TRESHOLD_VELOCITY : Float = 100.0f  // velocità minima per rilevare lo swipe
+        private val TRESHOLD_VELOCITY : Float = 100.0f  // velocita' minima per rilevare lo swipe
         private val TRESHOLD : Float = 100.0f           // lunghezza minima del trascinamento per rilevare lo swipe
         override fun onSingleTapUp(motionEvent: MotionEvent): Boolean {
             when (motionEvent.action) {
@@ -1251,7 +1255,7 @@ class MainActivity : AppCompatActivity() {
 
             if(scaleFactor>1) // se pinch in allora zoommo
                 sbZoom.incrementProgressBy(1) // cambio il valore della SeekBar che a sua volta cambia il valore dello zoom
-            else // altrimienti è pinch out e allora dezoommo
+            else // altrimienti e' pinch out e allora dezoommo
                 sbZoom.incrementProgressBy(-1)
             return true
         }
@@ -1279,11 +1283,11 @@ class MainActivity : AppCompatActivity() {
     /**
      * Metodo che permette di scattare una foto o di registrare un video a seconda del valore di record
      *
-     * @param record True se in modalità video
-     *               False se in modalità foto
+     * @param record True se in modalita' video
+     *               False se in modalita' foto
      */
     private fun timerShot(record : Boolean){
-        if(timerOn) { // se c'è il timer in funzione allora lo blocco
+        if(timerOn) { // se c'e' il timer in funzione allora lo blocco
             Log.d(TAG,"Timer bloccato")
             timerOn = false
             timer.cancel()
@@ -1292,12 +1296,12 @@ class MainActivity : AppCompatActivity() {
             changeMode(recordMode)
             return
         }
-        if(isRecording && record){ // se sto già registrando e tengo premuto il pulsante rosso in modalità foto
-            // o premo il pulsante per fermare in modalità vidoe
+        if(isRecording && record){ // se sto gia' registrando e tengo premuto il pulsante rosso in modalita' foto
+            // o premo il pulsante per fermare in modalita' vidoe
             captureVideo() // lo richiamo per fermare la registraizone
             return
         }
-        if (isRecording && !record){ // se sto già registrando e premo il pulsante rosso in moodalità foto
+        if (isRecording && !record){ // se sto gia' registrando e premo il pulsante rosso in moodalita' foto
             // scatta una foto senza usare il timer
             takePhoto()
             return
@@ -1331,7 +1335,7 @@ class MainActivity : AppCompatActivity() {
     /**
      * Ruoto i pulsanti per far si che siano dritti
      *
-     * @param angle è il numero di gradi per ruotare i tasti
+     * @param angle e' il numero di gradi per ruotare i tasti
      */
     private fun rotateButton(angle : Float)
     {
@@ -1399,9 +1403,8 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-
     /**
-     * Metodo per passare alla prossima modalità del flash, nell'ordine:
+     * Metodo per passare alla prossima modalita' del flash, nell'ordine:
      *  - OFF
      *  - ON
      *  - AUTO
@@ -1424,7 +1427,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Metodo che permette di imposta la modalità del flash specificata da [currFlashMode]
+     * Metodo che permette di imposta la modalita' del flash specificata da [currFlashMode]
      */
     private fun setFlashMode() {
         when(currFlashMode) {
@@ -1432,48 +1435,25 @@ class MainActivity : AppCompatActivity() {
                 btFlash.setBackgroundResource(R.drawable.flash_off)
                 btFlash.backgroundTintList = getColorStateList(R.color.white)
                 imageCapture?.flashMode = ImageCapture.FLASH_MODE_OFF
-                //Nel caso in cui si stia registrando disattiva il flash in modalità OFF
+                //Nel caso in cui si stia registrando disattiva il flash in modalita' OFF
                 if(recording != null) { cameraControl.enableTorch(false) }
             }
             FlashModes.ON -> {
                 btFlash.setBackgroundResource(R.drawable.flash_on)
                 btFlash.backgroundTintList = getColorStateList(R.color.aureolin_yellow)
                 imageCapture?.flashMode = ImageCapture.FLASH_MODE_ON
-                //Nel caso in cui si stia registrando attiva il flash in modalità ON
+                //Nel caso in cui si stia registrando attiva il flash in modalita' ON
                 if(recording != null) { cameraControl.enableTorch(true) }
             }
             FlashModes.AUTO -> {
                 btFlash.setBackgroundResource(R.drawable.flash_auto)
                 btFlash.backgroundTintList = getColorStateList(R.color.aureolin_yellow)
                 imageCapture?.flashMode = ImageCapture.FLASH_MODE_AUTO
-                //Nel caso in cui si stia registrando disattiva il flash in modalità AUTO
+                //Nel caso in cui si stia registrando disattiva il flash in modalita' AUTO
                 if(recording != null) { cameraControl.enableTorch(false) }
             }
         }
     }
-
-    /* TODO: guardare se serve
-    private class LuminosityAnalyzer(private val listener: LumaListener) : ImageAnalysis.Analyzer {
-
-        private fun ByteBuffer.toByteArray(): ByteArray {
-            rewind()    // Rewind the buffer to zero
-            val data = ByteArray(remaining())
-            get(data)   // Copy the buffer into a byte array
-            return data // Return the byte array
-        }
-
-        override fun analyze(image: ImageProxy) {
-
-            val buffer = image.planes[0].buffer
-            val data = buffer.toByteArray()
-            val pixels = data.map { it.toInt() and 0xFF }
-            val luma = pixels.average()
-
-            listener(luma)
-
-            image.close()
-        }
-    } */
 
     /**
      * abilita il "sensore" per l'angolo
@@ -1496,7 +1476,7 @@ class MainActivity : AppCompatActivity() {
      * da ripristinare al avvio, anche se viene completamente chiusa
      *
      * Ho deciso di non salvare tutti i dati, quindi escludo lo zoom
-     * e anche la modalità in cui viene lasciata
+     * e anche la modalita' in cui viene lasciata
      */
     override fun onPause()
     {
@@ -1507,7 +1487,7 @@ class MainActivity : AppCompatActivity() {
         val editor = preferences.edit()
 
         if(currentCamera%2==0) // a differenza di onSaveInstanceState non salvo lo zoom e la camera corretta
-        // salvo solo se è frontale o posteriore
+        // salvo solo se e' frontale o posteriore
             editor.putInt(KEY_CAMERA, 0)
         else
         {
@@ -1535,9 +1515,9 @@ class MainActivity : AppCompatActivity() {
         Log.d(TAG, "onResume")
         try { // il lifecycle dello zoom viene chiso con la chiusura dell'app,
             // e non viene ripristinato manualmente, quindi chiamo changeZoom
-            // con il valore sbZoom.progress che è ancora salvato
+            // con il valore sbZoom.progress che e' ancora salvato
             // Se invece l'applicazione va in background e viene killata da android
-            // allora changeZoom(sbZoom.progress) restituisce errore che non è
+            // allora changeZoom(sbZoom.progress) restituisce errore che non e'
             // necessario gestire, in quel caso allora i dati sono stati salvati dul Bundle
             // e ripristinati da loadFromBundle, se invece viene killata dal utente
             // allora non viene ripristinato lo stato
@@ -1552,7 +1532,7 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * salvo la camera corrente (a differenza delle preference in cui salvo solo
-     * se è anteriore o posteriore, lo zoom e la modalità
+     * se e' anteriore o posteriore, lo zoom e la modalita'
      */
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
