@@ -10,7 +10,7 @@
             android:entries="@array/volumeKey_entries"
             android:entryValues="@array/volumeKey_values"
             android:key="LS_volumeKey"
-            android:title="Tasti Volume"
+            android:title="Usat tasti volume per:"
             app:iconSpaceReserved="false"
             app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
@@ -54,24 +54,34 @@
 
         <SwitchPreference
             android:defaultValue="true"
-            android:key="SW_grid"
+            android:key="SW_mode"
+            android:title="Modalità Camera"
             app:iconSpaceReserved="false"
-            android:title="Griglia" />
+            app:summary="@string/swMode" />
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="SW_grid"
+            android:title="Griglia"
+            app:iconSpaceReserved="false"
+            app:summary="@string/swGrid" />
         <SwitchPreference
             android:defaultValue="true"
             android:key="SW_HDR"
+            android:title="HDR"
             app:iconSpaceReserved="false"
-            android:title="HDR" />
+            app:summary="@string/swHDR" />
         <SwitchPreference
             android:defaultValue="false"
             android:key="SW_GPS"
+            android:title="Tag posizione"
             app:iconSpaceReserved="false"
-            android:title="GPS" />
+            app:summary="@string/swGPS" />
         <SwitchPreference
             android:defaultValue="true"
             android:key="SW_feedback"
+            android:title="Feedback vibrazione"
             app:iconSpaceReserved="false"
-            android:title="Feedback vibrazione" />
+            app:summary="@string/swFeedback" />
     </PreferenceCategory>
 
 </PreferenceScreen>

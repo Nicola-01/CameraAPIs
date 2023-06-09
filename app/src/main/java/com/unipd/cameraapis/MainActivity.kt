@@ -18,6 +18,7 @@ import android.provider.MediaStore
 import android.util.DisplayMetrics
 import android.util.Log
 import android.util.Rational
+import android.util.Size
 import android.view.GestureDetector
 import android.view.HapticFeedbackConstants
 import android.view.KeyEvent
@@ -45,6 +46,8 @@ import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
+import androidx.camera.core.UseCaseGroup
+import androidx.camera.core.ViewPort
 import androidx.camera.core.impl.ImageCaptureConfig
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.MediaStoreOutputOptions
@@ -155,6 +158,7 @@ class MainActivity : AppCompatActivity() {
     private var hdr = true
     private var gps = false
     private var feedback = true
+    private var saveMode = true
 
     private var savedBundle: Bundle? = null
     private val showPopUp = PopUpFragment()
@@ -565,6 +569,7 @@ class MainActivity : AppCompatActivity() {
             try {
                 createListener() // crea i Listener
                 buildCamera()
+                loadFromSetting()
                 loadFromBundle(savedBundle) // carica gli elementi dal Bundle/Preferences
                 setFlashMode() // non so perchè ma se lo lascio al interno di loadFromBundle, viene modificato ma successivamente perde lo stato
             } catch(exc: Exception) {
@@ -807,6 +812,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun loadFromBundle(savedInstanceState : Bundle?)
     {
+        Log.d(TAG, "LoadFromBundle")
         val preferences = getPreferences(MODE_PRIVATE)
 
         // recupero le variabili dalle preferences
@@ -825,6 +831,9 @@ class MainActivity : AppCompatActivity() {
         qrScanner = preferences.getBoolean(KEY_QRCODE, true)
         qrCode(qrScanner)
 
+        if(saveMode)
+            recordMode = preferences.getBoolean(KEY_REC, true)
+
         if (savedInstanceState != null) { // controlo che ci sia il bundle
             //recupero variabili dal bundle
             currentCamera = savedInstanceState.getInt(KEY_CAMERA)
@@ -835,9 +844,8 @@ class MainActivity : AppCompatActivity() {
             recordMode = savedInstanceState.getBoolean(KEY_REC)
 
             sbZoom.progress = progress
-            changeZoom(progress, true) // cambio zoom e forzo il rebuild
-            changeMode(recordMode)
         }
+        changeMode(recordMode)
         // uso changeZoom per cambiare lo zoom e ricostruire la camera
         changeZoom(progress, true) // cambio zoom e forzo il rebuild
     }
@@ -893,7 +901,9 @@ class MainActivity : AppCompatActivity() {
 
         createRecorder()
 
-        buildCamera()
+        //buildCamera()
+
+
 
         changeMode(recordMode) // richiamo per cambiare la grandezza della preview
 
@@ -903,8 +913,15 @@ class MainActivity : AppCompatActivity() {
         hdr = pm.getBoolean("SW_HDR", true)
         gps = pm.getBoolean("SW_GPS", true)
         feedback = pm.getBoolean("SW_feedback", true)
+        saveMode = pm.getBoolean("SW_mode", true)
 
-
+        try {
+            changeZoom(sbZoom.progress, true)
+        }
+        catch (e : Exception)
+        {
+            Log.e(TAG,"Error changeZoom", e)
+        }
     }
 
     /**
@@ -1074,7 +1091,6 @@ class MainActivity : AppCompatActivity() {
         }
         return super.dispatchKeyEvent(event)
     }
-
 
     /**
      * Funzione per switchare tra modalità Foto e Video;
@@ -1472,6 +1488,7 @@ class MainActivity : AppCompatActivity() {
         editor.putString(KEY_FLASH, currFlashMode.toString())
         editor.putString(KEY_TIMER, currTimerMode.toString())
         editor.putBoolean(KEY_QRCODE, qrScanner)
+        editor.putBoolean(KEY_REC, recordMode)
 
         editor.apply()
 
