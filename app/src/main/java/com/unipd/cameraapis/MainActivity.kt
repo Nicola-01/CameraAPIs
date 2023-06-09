@@ -670,8 +670,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun multishot(on_off: Boolean) {
         if(on_off) {
-            if(captureJob == null)
-            {
+            if(captureJob == null) {
                 countMultiShot = 0
                 countDownText.visibility = View.VISIBLE
                 captureJob = CoroutineScope(Dispatchers.Main).launch {
