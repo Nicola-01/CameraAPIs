@@ -10,6 +10,9 @@
     <!-- PopUpFragment -->
     <string name="PermissionText">Per procedere è necessario l\'accesso alla fotocamera e ai microfono all\'applicazione.</string>
 
+    <!-- QrCodeFragment -->
+    <string name="QrCodeFrag">https://stem.elearning.unipd.it/</string>
+
     <!-- PermissionDenyActivity -->
     <string name="permission_denied_message">I permessi sono necessari per utilizzare l\'app. Si prega di concedere i permessi nelle impostazioni dell\'app.</string>
 
