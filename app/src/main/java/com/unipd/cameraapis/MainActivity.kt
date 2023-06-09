@@ -1263,14 +1263,16 @@ class MainActivity : AppCompatActivity() {
      * @param back se true mette seleziona la camera back
      */
     private fun rotateCamera(override:Boolean = false, back: Boolean = true) { // id = 0 default back, id = 1 front default
-        if((currentCamera== 0 || currentCamera == 2) || (!override && back))
-            currentCamera = 3 // passo in front
-        else if((currentCamera==1 || currentCamera==3) || (!override && !back))
-            currentCamera = 0 // passo in back
-        sbZoom.progress = changeCameraSeekBar
-
         if(!isRecording) // se sta registrando non cambia fotocamera
+        {
+            if((override && !back) || (currentCamera== 0 || currentCamera == 2))
+                currentCamera = 3 // passo in front
+            else if((override && back) || (currentCamera==1 || currentCamera==3))
+                currentCamera = 0 // passo in back
+            sbZoom.progress = changeCameraSeekBar
+
             buildCamera()
+        }
         Log.d(TAG, "[current camera]  - rotate: $currentCamera")
     }
 
