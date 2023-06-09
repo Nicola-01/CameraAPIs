@@ -859,9 +859,9 @@ class MainActivity : AppCompatActivity() {
         // -- Foto
 
         aspectRatioPhoto = when (pm.getString("LS_ratioPhoto", "3_4")!!) {
+            "1_1" -> Rational(1, 1)
             "3_4" -> Rational(3, 4)
             "9_16" -> Rational(9, 16)
-            "1_1" -> Rational(1, 1)
             "full" -> {
                 val metrics = DisplayMetrics()
                 val display = windowManager.defaultDisplay
@@ -901,9 +901,7 @@ class MainActivity : AppCompatActivity() {
 
         createRecorder()
 
-        //buildCamera()
-
-
+        //buildCamera() // forse non serve, lo faccio tramite changeZoom
 
         changeMode(recordMode) // richiamo per cambiare la grandezza della preview
 
@@ -1290,7 +1288,7 @@ class MainActivity : AppCompatActivity() {
                     captureVideo()
                 else
                     takePhoto()
-                changeMode(recordMode)
+                changeMode(recordMode) // richiamo change mode per impostre la grafica corretta
             }
 
         }.start()
