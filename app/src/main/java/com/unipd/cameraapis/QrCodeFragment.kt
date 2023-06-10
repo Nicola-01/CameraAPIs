@@ -106,10 +106,10 @@ class QrCodeFragment : DialogFragment() {
                 else
                     dialog?.setContentView(layoutId)
 
-                 */
 
 
-                tv.text = "${mainActivity.mOrientation}"
+
+                tv.text = "${mainActivity.mOrientation}"*/
             }
         }
     }
