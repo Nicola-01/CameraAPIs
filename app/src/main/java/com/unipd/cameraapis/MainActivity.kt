@@ -137,7 +137,7 @@ class MainActivity : AppCompatActivity() {
     private var qrScanner = true
     private var captureJob: Job? = null
     private var isbtShootLongClicked = false
-    private var isVolumeButtonClicked : Boolean = true
+    private var isVolumeButtonClicked : Boolean = false
 
     private lateinit var volumeKey : String
     private lateinit var aspectRatioPhoto : Rational
@@ -1091,19 +1091,33 @@ class MainActivity : AppCompatActivity() {
                     volumeTimer?.start()
                 }
                 else {
-                    changeMode(false)
-                    multishot(true)
+                    volumeTimer = object: CountDownTimer(300, 300) {
+                        override fun onTick(millisUntilFinished: Long) {
+                            // non fa nulla
+                        }
+
+                        override fun onFinish() {
+                            changeMode(false)
+                            multishot(true)
+                            isVolumeButtonClicked = true
+                        }
+                    }
+                    volumeTimer?.start()
                 }
             }
             return true
         }
         else if (event?.action == KeyEvent.ACTION_UP &&
             (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP || event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
-            multishot(false)  // termina il multishot
             volumeTimer?.cancel()   // fermo il timer quando sollevo il dito dal pulsante
             volumeTimer = null
             if(isRecording) {       // se sto registrando interrompo la registrazione
                 timerShot(true)
+                return true
+            }
+            if(isVolumeButtonClicked) {
+                multishot(false)  // termina il multishot
+                isVolumeButtonClicked = false
                 return true
             }
 
