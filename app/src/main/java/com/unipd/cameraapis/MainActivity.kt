@@ -1,6 +1,7 @@
 package com.unipd.cameraapis
 
 import android.Manifest
+import android.app.AlertDialog
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
@@ -1169,6 +1170,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+
+    public var mOrientation = 0;
     /**
      * Mi permette di ottenere l'inclinazione del dispositivo
      */
@@ -1176,7 +1179,7 @@ class MainActivity : AppCompatActivity() {
         object : OrientationEventListener(this) {
             override fun onOrientationChanged(orientation: Int) {
                 if (orientation == ORIENTATION_UNKNOWN) return
-
+                mOrientation = orientation
                 val rotation = when (orientation) {
                     in 50 .. 130 -> 270
                     in 140 .. 220 -> 180
