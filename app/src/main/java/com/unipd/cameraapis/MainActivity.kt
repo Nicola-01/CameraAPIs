@@ -32,6 +32,9 @@ import android.widget.Button
 import android.widget.Chronometer
 import android.widget.SeekBar
 import android.widget.TextView
+import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraControl
@@ -54,6 +57,8 @@ import androidx.constraintlayout.widget.Group
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
 import com.unipd.cameraapis.databinding.ActivityMainBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -136,6 +141,7 @@ class MainActivity : AppCompatActivity() {
     private var inPause = false
     private var timerOn = false
     private var qrScanner = true
+    private lateinit var qrCodeLauncher: ActivityResultLauncher<ScanOptions>
     private var captureJob: Job? = null
     private var isbtShootLongClicked = false
     private var isVolumeButtonClicked : Boolean = false
@@ -378,6 +384,16 @@ class MainActivity : AppCompatActivity() {
         gestureDetector = GestureDetector(this, MyGestureListener())
         scaleGestureDetector = ScaleGestureDetector(this, ScaleGestureListener())
 
+        qrCodeLauncher = registerForActivityResult(ScanContract()) { result ->
+            if(result.contents.isNullOrEmpty()) {
+                Toast.makeText(this@MainActivity, "Not valid QR code", Toast.LENGTH_SHORT).show()
+                Log.d(TAG, "QR code content: ${result.contents}")
+            }
+            else {
+                Toast.makeText(this@MainActivity, "${result.contents.toString()}", Toast.LENGTH_SHORT).show()
+            }
+        }
+
     }
 
     /**
@@ -501,10 +517,13 @@ class MainActivity : AppCompatActivity() {
             //qrScanner = !qrScanner
             qrCode(qrScanner)
 
-            //Todo: butta dentro QrCode plz, che lo richiamo dal loadBundle
-            //Todo: inoltre prima di mostrare risultati contollare che il timer sia disattivato, -> "timerOn"
-
-
+            //Todo:  prima di mostrare risultati contollare che il timer sia disattivato, -> "timerOn"
+            val scanOptions: ScanOptions = ScanOptions()
+            scanOptions.setPrompt("Scan a QR code")
+            scanOptions.setBeepEnabled(true)
+            scanOptions.setOrientationLocked(false)
+            scanOptions.setCaptureActivity(ScannerCaptureActivity::class.java)
+            qrCodeLauncher.launch(scanOptions)
         }
 
         btSettings.setOnClickListener {view ->
