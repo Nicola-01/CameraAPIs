@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.OrientationEventListener
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
@@ -68,5 +69,25 @@ class PopUpFragment : DialogFragment() {
         ask = false
         if(mainActivity.allPermissionsGranted())
             dismiss()
+    }
+
+    private val orientationEventListener by lazy {
+        object : OrientationEventListener(requireContext()) {
+            override fun onOrientationChanged(orientation: Int) {
+                val mainActivity = requireActivity() as MainActivity
+                val rotation = mainActivity.rotation
+                val dialogRootView = dialog!!.window!!.decorView.rootView
+                dialogRootView.rotation = rotation.toFloat()
+            }
+        }
+    }
+    override fun onStart() {
+        super.onStart()
+        orientationEventListener.enable()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        orientationEventListener.disable()
     }
 }

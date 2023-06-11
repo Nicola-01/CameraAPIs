@@ -10,7 +10,10 @@ import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
-import android.view.*
+import android.view.LayoutInflater
+import android.view.OrientationEventListener
+import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -24,7 +27,6 @@ class QrCodeFragment : DialogFragment() {
         return inflater.inflate(R.layout.fragment_qrcode, container, false)
     }
 
-    lateinit var all : ConstraintLayout
     var url : String = ""
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -34,7 +36,6 @@ class QrCodeFragment : DialogFragment() {
         dialog!!.window?.attributes?.screenOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
 
         url = arguments?.getString("URL")!!
-        all = view.findViewById<ConstraintLayout>(R.id.qrCodeAll)
 
         view.findViewById<TextView>(R.id.TV_linkQR).text = url
         Log.d("QrCode", "btqrcode load")
@@ -61,7 +62,8 @@ class QrCodeFragment : DialogFragment() {
             override fun onOrientationChanged(orientation: Int) {
                 val mainActivity = requireActivity() as MainActivity
                 val rotation = mainActivity.rotation
-                all.rotation = rotation.toFloat()
+                val dialogRootView = dialog!!.window!!.decorView.rootView
+                dialogRootView.rotation = rotation.toFloat()
             }
         }
     }
