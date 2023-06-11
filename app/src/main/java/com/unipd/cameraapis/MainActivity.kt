@@ -247,7 +247,7 @@ class MainActivity : AppCompatActivity() {
 
             "shortcut.qrcode" -> {
                 Log.d(TAG, "qrcode_shortcut")
-                qrCode(true)
+                qrCode()
             }
         }
     }
@@ -402,6 +402,12 @@ class MainActivity : AppCompatActivity() {
             }
             else {
                 Toast.makeText(this@MainActivity, "${result.contents.toString()}", Toast.LENGTH_SHORT).show()
+
+                // PopUp per il qrCode
+                var bundle = Bundle()
+                bundle.putString("URL", result.contents) // impostare url qui
+                qrCodePopUp.arguments = bundle
+                qrCodePopUp.show(supportFragmentManager, "showPopUp")
             }
         }
 
@@ -526,15 +532,9 @@ class MainActivity : AppCompatActivity() {
         // listener per il pulsante QR
         btQR.setOnClickListener {
             //qrScanner = !qrScanner
-            qrCode(qrScanner)
+            qrCode()
 
-            //Todo:  prima di mostrare risultati contollare che il timer sia disattivato, -> "timerOn"
-            val scanOptions: ScanOptions = ScanOptions()
-            scanOptions.setPrompt("Scan a QR code")
-            scanOptions.setBeepEnabled(true)
-            scanOptions.setOrientationLocked(false)
-            scanOptions.setCaptureActivity(ScannerCaptureActivity::class.java)
-            //qrCodeLauncher.launch(scanOptions)
+            // ho buttato tutto dentro qrcode
         }
 
         btSettings.setOnClickListener {view ->
@@ -546,21 +546,21 @@ class MainActivity : AppCompatActivity() {
     /**
      * Modifica il valore di [qrCodePopUp] con il contenuto letto dal QR code.
      */
-    private fun qrCode(status: Boolean)
+    private fun qrCode()
     {
+        //Todo:  prima di mostrare risultati contollare che il timer sia disattivato, -> "timerOn"
+        val scanOptions: ScanOptions = ScanOptions()
+        scanOptions.setPrompt("Scan a QR code")
+        scanOptions.setBeepEnabled(true)
+        scanOptions.setOrientationLocked(false)
+        scanOptions.setCaptureActivity(ScannerCaptureActivity::class.java)
+        qrCodeLauncher.launch(scanOptions)
         /*
         if(status)
             btQR.backgroundTintList = getColorStateList(R.color.aureolin_yellow)
         else
             btQR.backgroundTintList = getColorStateList(R.color.white)
         */
-
-
-        // PopUp per il qrCode
-        var bundle = Bundle()
-        bundle.putString("URL", "https://stem.elearning.unipd.it/") // impostare url qui
-        qrCodePopUp.arguments = bundle
-        qrCodePopUp.show(supportFragmentManager, "showPopUp")
     }
 
     /**
