@@ -2,27 +2,27 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
+    android:id="@+id/qrCodeAll"
+    android:layout_width="320dp"
+    android:layout_height="320dp"
     tools:context=".PopUpFragment">
 
 
     <View
-        android:id="@+id/view2"
-        android:layout_width="318dp"
+        android:id="@+id/view_qrCode"
+        android:layout_width="320dp"
         android:layout_height="170dp"
-        android:layout_marginTop="26dp"
         android:background="@drawable/rounded_corner_100"
         android:backgroundTint="?attr/colorOnPrimary"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintStart_toStartOf="parent" />
 
     <TextView
-        android:id="@+id/TV_permission"
+        android:id="@+id/TV_qrCode"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Lettura QrCode"
+        android:text="Lettura QrCode testtt"
         android:textColor="?attr/colorOnSecondary"
         android:textSize="18sp"
         android:textStyle="bold"
@@ -65,9 +65,9 @@
         android:text=""
         android:textColor="?attr/colorOnSecondary"
         android:textSize="16sp"
-        app:layout_constraintEnd_toEndOf="@+id/view2"
-        app:layout_constraintStart_toStartOf="@+id/view2"
-        app:layout_constraintTop_toBottomOf="@+id/TV_permission" />
+        app:layout_constraintEnd_toEndOf="@+id/view_qrCode"
+        app:layout_constraintStart_toStartOf="@+id/view_qrCode"
+        app:layout_constraintTop_toBottomOf="@+id/TV_qrCode" />
 
     <Space
         android:id="@+id/space3"
@@ -87,10 +87,20 @@
         android:padding="10dp"
         android:src="@drawable/qrcode"
         android:tint="@color/floral_white"
-        app:layout_constraintBottom_toTopOf="@+id/view2"
-        app:layout_constraintEnd_toEndOf="@+id/TV_permission"
-        app:layout_constraintStart_toStartOf="@+id/TV_permission"
-        app:layout_constraintTop_toTopOf="@+id/view2" />
+        app:layout_constraintBottom_toTopOf="@+id/view_qrCode"
+        app:layout_constraintEnd_toEndOf="@+id/TV_qrCode"
+        app:layout_constraintStart_toStartOf="@+id/TV_qrCode"
+        app:layout_constraintTop_toTopOf="@+id/view_qrCode" />
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="aaa"
+        app:layout_constraintBottom_toTopOf="@+id/view_qrCode"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

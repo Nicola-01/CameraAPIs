@@ -135,6 +135,7 @@ class MainActivity : AppCompatActivity() {
     // 3 -> front;          grand angolare
     private var zoomLv : Float = 0.toFloat() // va da 0 a 1
     private var countMultiShot = 0
+    var rotation = 0
 
     private var recordMode = false
     private var isRecording = false
@@ -533,7 +534,7 @@ class MainActivity : AppCompatActivity() {
             scanOptions.setBeepEnabled(true)
             scanOptions.setOrientationLocked(false)
             scanOptions.setCaptureActivity(ScannerCaptureActivity::class.java)
-            qrCodeLauncher.launch(scanOptions)
+            //qrCodeLauncher.launch(scanOptions)
         }
 
         btSettings.setOnClickListener {view ->
@@ -1205,8 +1206,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-
-    public var mOrientation = 0;
     /**
      * Mi permette di ottenere l'inclinazione del dispositivo
      */
@@ -1214,8 +1213,7 @@ class MainActivity : AppCompatActivity() {
         object : OrientationEventListener(this) {
             override fun onOrientationChanged(orientation: Int) {
                 if (orientation == ORIENTATION_UNKNOWN) return
-                mOrientation = orientation
-                val rotation = when (orientation) {
+                rotation = when (orientation) {
                     in 50 .. 130 -> 270
                     in 140 .. 220 -> 180
                     in 230 .. 310 -> 90
