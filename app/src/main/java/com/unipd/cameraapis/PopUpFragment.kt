@@ -49,7 +49,12 @@ class PopUpFragment : DialogFragment() {
             startActivity(intent)
             ask = true
         }
+
         btClose.setOnClickListener{ // chiude il popup
+            dismiss()
+        }
+
+        view.findViewById<View>(R.id.vw_backPr).setOnClickListener {
             dismiss()
         }
     }

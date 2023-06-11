@@ -55,6 +55,10 @@ class QrCodeFragment : DialogFragment() {
             clipboard.setPrimaryClip(clip)
             Log.d("QrCode", "btqrcode copy")
         }
+
+        view.findViewById<View>(R.id.vw_backQr).setOnClickListener {
+            dismiss()
+        }
     }
 
     private val orientationEventListener by lazy {

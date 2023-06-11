@@ -561,6 +561,15 @@ class MainActivity : AppCompatActivity() {
         else
             btQR.backgroundTintList = getColorStateList(R.color.white)
         */
+
+
+        //todo: da eliminare (solo test)
+        /*
+        var bundle = Bundle()
+        bundle.putString("URL", "https://www.google.com/search?q=esim&oq=esim&aqs=chrome..69i57j0i271l2.2031j0j1&sourceid=chrome&ie=UTF-8") // impostare url qui
+        qrCodePopUp.arguments = bundle
+        qrCodePopUp.show(supportFragmentManager, "showPopUp")
+        */
     }
 
     /**

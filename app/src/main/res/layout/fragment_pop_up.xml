@@ -8,6 +8,15 @@
 
 
     <View
+        android:id="@+id/vw_backPr"
+        android:layout_width="320dp"
+        android:layout_height="110dp"
+        android:background="@color/red_pantone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
         android:id="@+id/view2"
         android:layout_width="320dp"
         android:layout_height="210dp"
