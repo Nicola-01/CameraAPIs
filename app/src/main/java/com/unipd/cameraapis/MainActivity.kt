@@ -175,11 +175,21 @@ class MainActivity : AppCompatActivity() {
         private const val KEY_REC = "RecordMode"
         private const val KEY_QRCODE = "qrScanner"
 
-        private const val TOUCH_THRESHOLD = 0.1
+        /**
+         * Velocita' minima per rilevare lo swipe.
+         */
+        private const val TRESHOLD_VELOCITY : Float = 100.0f
 
+        /**
+         * Lunghezza minima del trascinamento per rilevare lo swipe.
+         */
+        private const val TRESHOLD : Float = 100.0f
+
+        /**
+         * Durata pressione del pulsante del volume per far iniziare la registrazione video.
+         */
         private const val LONGCLICKDURATION = 300L
 
-        private const val DOUBLE_CLICK_DELTA_TIME : Long = 300      // Tempo entro il quale viene rilevato il doppio tocco
 
         private val REQUIRED_PERMISSIONS =
             mutableListOf (
@@ -212,7 +222,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     *  Controlla se l'app e' stata aperta tramite shortcut, ed esegue l'azione corrispondente
+     *  Controlla se l'app e' stata aperta tramite shortcut, ed esegue l'azione corrispondente.
      */
     private fun openByShortCut() {
         if (intent == null)
@@ -242,7 +252,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Mostra popup di android per accettare i permessi, è una funzione a parte perchè è utilizzata anche un PopUpFragment
+     * Mostra popup di android per accettare i permessi, è una funzione a parte perchè è utilizzata anche un PopUpFragment.
      */
     fun askPermission() {
         ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
@@ -250,14 +260,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * controlla se i permessi sono stati accettati
+     * controlla se i permessi sono stati accettati.
      */
     fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
         ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED
     }
 
     /**
-     * metodo che viene esegito quando il pop up che compare con [askPermission] viene chiuso
+     * metodo che viene esegito quando il pop up che compare con [askPermission] viene chiuso.
      */
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
@@ -290,7 +300,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Risultato di un activity
+     * Risultato di un activity.
      */
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -308,7 +318,7 @@ class MainActivity : AppCompatActivity() {
      * viene eseguito appena viene caricata tutta la grafica
      * mi salvo l'altezza in cui impostare le barre più scure per quando
      * la preview occupa un area più grande di 3:4, è principalmente per
-     * bellezza estetica
+     * bellezza estetica.
      */
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
@@ -352,7 +362,7 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Funzione per istanziare elementi del activity_main.xml;
-     * assagnazione dei widget e altre variabili
+     * assagnazione dei widget e altre variabili.
      */
     private fun createElement()
     {
@@ -397,7 +407,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Funzione per l'assegnazione dei Listener ai widget
+     * Funzione per l'assegnazione dei Listener ai widget.
      * Todo: da finire di commentare
      */
     private fun createListener()
@@ -532,6 +542,9 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    /**
+     * Modifica il valore di [qrCodePopUp] con il contenuto letto dal QR code.
+     */
     private fun qrCode(status: Boolean)
     {
         /*
@@ -550,7 +563,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * costruisce la camera
+     * Costruisce la camera.
      */
     private fun buildCamera()
     {
@@ -574,7 +587,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Crea la Preview della fotocamera e ne seleziona l'output, seleziona l'aspect ratio e la qualita' video
+     * Crea la Preview della fotocamera e ne seleziona l'output, l'aspect ratio e la qualita' video.
      */
     private fun startCamera() {
         // si ottiene un'istanza di tipo ListenableFuture che rappresenta un'istanza di ProcessCameraProvider, disponibile in seguito
@@ -607,7 +620,7 @@ class MainActivity : AppCompatActivity() {
 
             // inizializzazione della camera
             createListener()            // crea i Listener
-            createRecorder()            // costruita un'istanza di Recorder
+            createRecorder()            // crea un recorder per modificare la qualità video e l'aspect ratio
             buildCamera()               // crea effettivamente la camera
             loadFromSetting()           // recupera le impostazioni
             loadFromBundle(savedBundle) // carica gli elementi dal Bundle/Preferences
@@ -617,7 +630,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Metodo per creare/riassegnare recorder, permettendo di modificare la qualita' video e l'aspect ratio con cui registra
+     * Metodo per creare/riassegnare recorder, permettendo di modificare la qualita' video e l'aspect ratio con cui registra.
      */
     private fun createRecorder() {
         try {
@@ -634,7 +647,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Metodo per scattare una foto usando le impostazioni di [imageCapture]
+     * Metodo per scattare una foto usando le impostazioni di [imageCapture].
      * Todo: finire commentare il funzionamento
      */
     private fun takePhoto() {
@@ -679,7 +692,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Metodo per iniziare o fermare il multishot
+     * Metodo per iniziare o fermare il multishot.
      */
     private fun multishot(on_off: Boolean) {
         if(on_off) {
@@ -705,7 +718,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
     /**
-     * Metodo utilizzato per avviare e fermare la registrazione video
+     * Metodo utilizzato per avviare e fermare la registrazione video.
      */
     private fun captureVideo() : Boolean {
         if (videoCapture == null) // controllo di nullita'
@@ -769,10 +782,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Metodo per impostare la visuale durante la regisrazione
+     * Metodo per impostare la visuale durante la registrazione.
      *
      * @param status True se e' stata avviata la registrazione;
-     *               False se e' stata interrotta
+     *               False se e' stata interrotta.
      */
     private fun startRecording(status : Boolean)
     {
@@ -823,7 +836,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Funzione per mettere in pausa o ripristinare la registrazione
+     * Funzione per mettere in pausa o ripristinare la registrazione.
      */
     private fun pauseVideo() {
         // inPause = true se la registrazione e' in pausa
@@ -847,7 +860,7 @@ class MainActivity : AppCompatActivity() {
      * Se sono in modalita' foto il pulsante e' bianco,
      * se inizio a registrare (sempre in modalita' foto) diventa rosso,
      * se sono in modalita' video e non sto registrando e' bianco con pallino rosso;
-     * se sono in modalita' video e sto registrando mostra i tasti per fermare e riprendere la registrazione
+     * se sono in modalita' video e sto registrando mostra i tasti per fermare e riprendere la registrazione.
      */
     private fun recOptions()
     {
@@ -867,7 +880,7 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Metodo per ricaricare i valori nel bundle o nelle preferences.
-     * Non e' nel onCreate perche' usa variabili che vengono dichiarate nel startCamera
+     * Non e' nel onCreate perche' usa variabili che vengono dichiarate nel startCamera.
      */
     private fun loadFromBundle(savedInstanceState : Bundle?)
     {
@@ -910,7 +923,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * recupero i settaggi dopo che questi sono stati modificati
+     * Recupero i settaggi dopo che questi sono stati modificati.
      */
     private fun loadFromSetting() {
         val pm = PreferenceManager.getDefaultSharedPreferences(this)
@@ -982,7 +995,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Metodo usato per cambiare lo zoom della camera
+     * Metodo usato per cambiare lo zoom della camera.
      *
      * @param progress  valore della SeekBar
      * @param buildAnyway booleano per forzare il rebuild
@@ -1078,7 +1091,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Metodo per gestire il tocco dei pulsanti del volume
+     * Metodo per gestire il tocco dei pulsanti del volume.
+     * Un tocco singolo scatta una foto, cambia il volume o cambia il livello dello zoom a seconda della modalità selezionata dalle
+     * impostazioni. Tenendo premuto il pulsante per più di [LONGCLICKDURATION] millisecondi parte la registrazione di un video se viene
+     * premuto il tasto [KeyEvent.KEYCODE_VOLUME_DOWN] o viene richiamato il metodo [multishot] premendo [KeyEvent.KEYCODE_VOLUME_UP].
      */
     override fun dispatchKeyEvent(event: KeyEvent?): Boolean
     {   // gestisco la registrazione video tenendo premuto il pulsante del volume per almeno 1 secondo e lo interrompo quando alzo il dito
@@ -1221,8 +1237,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private inner class MyGestureListener : GestureDetector.SimpleOnGestureListener() {
-        private val TRESHOLD_VELOCITY : Float = 100.0f  // velocita' minima per rilevare lo swipe
-        private val TRESHOLD : Float = 100.0f           // lunghezza minima del trascinamento per rilevare lo swipe
         override fun onSingleTapUp(motionEvent: MotionEvent): Boolean {
             when (motionEvent.action) {
                 MotionEvent.ACTION_UP -> {
@@ -1249,6 +1263,13 @@ class MainActivity : AppCompatActivity() {
             return true
         }
 
+        /**
+         * Gestisce gli swipe orizzontali e verticali.
+         * @param e1 Inizio dello swipe.
+         * @param e2 Fine dello swipe.
+         * @param velocityX Velocità orizzontale dello swipe.
+         * @param velocityY Velocità verticale dello swipe.
+         */
         override fun onFling(
             e1: MotionEvent,
             e2: MotionEvent,
@@ -1294,7 +1315,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * todo commento
+     * Seleziona la fotocamera anteriore se attiva quella posteriore e viceversa.
      * @param override permette di decidere quale camera usare
      * @param back se true mette seleziona la camera back
      */
@@ -1313,10 +1334,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Metodo che permette di scattare una foto o di registrare un video a seconda del valore di record
+     * Metodo che permette di scattare una foto o di registrare un video tenendo conto dei secondi di countdown per l'autoscatto.
      *
-     * @param record True se in modalita' video
-     *               False se in modalita' foto
+     * @param record True se in modalita' video;
+     *               False se in modalita' foto.
      */
     private fun timerShot(record : Boolean){
         if(timerOn) { // se c'e' il timer in funzione allora lo blocco
@@ -1365,9 +1386,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Ruoto i pulsanti per far si che siano dritti
+     * Ruoto i pulsanti per far si che siano dritti.
      *
-     * @param angle e' il numero di gradi per ruotare i tasti
+     * @param angle e' il numero di gradi per ruotare i tasti.
      */
     private fun rotateButton(angle : Float)
     {
@@ -1384,7 +1405,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * TODO: da commentare
+     * Cambia i secondi di countdown passando al valore ammissibile successivo.
      */
     private fun switchTimerMode() {
         currTimerMode = TimerModes.next(currTimerMode)
@@ -1393,7 +1414,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * TODO: da commentare
+     * Permette di selezionare i secondi di countdown desiderati da una lista di possibili valori (0, 3, 5, 10).
      */
     private fun selectTimerMode(ordinal: Int?): Boolean{
         if(ordinal == null) {
@@ -1406,7 +1427,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * TODO: da commentare
+     * Imposta i secondi di countdown per l'autoscatto.
      */
     private fun setTimerMode(){
         countdown = when(currTimerMode){
@@ -1418,7 +1439,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * TODO: da commentare
+     * Cambia l'icona che indica i secondi di countdown per l'autoscatto e il colore dell'icona: bianco se l'autoscatto è impostato su OFF,
+     * giallo altrimenti.
+     *
+     * @param status OFF se è disattivato l'autoscatto, oppure i secondi di countdown (3, 5, 10)
      */
     private fun setTimerIcon(status : String){
         btTimer.backgroundTintList = getColorStateList(R.color.aureolin_yellow)
@@ -1459,7 +1483,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Metodo che permette di imposta la modalita' del flash specificata da [currFlashMode]
+     * Metodo che permette di impostare la modalita' del flash specificata da [currFlashMode]
      */
     private fun setFlashMode() {
         when(currFlashMode) {
