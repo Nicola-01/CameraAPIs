@@ -28,7 +28,7 @@ class PopUpFragment : DialogFragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
+        rotate() // viene mostrato gia' con l'angolazione corretta
         return inflater.inflate(R.layout.fragment_pop_up, container, false)
     }
 
@@ -49,6 +49,8 @@ class PopUpFragment : DialogFragment() {
             startActivity(intent)
             ask = true
         }
+
+        view.findViewById<View>(R.id.view_permission).setOnClickListener { } // senza di questo se si preme sopra il popUp si chiude
 
         btClose.setOnClickListener{ // chiude il popup
             dismiss()
@@ -79,12 +81,19 @@ class PopUpFragment : DialogFragment() {
     private val orientationEventListener by lazy {
         object : OrientationEventListener(requireContext()) {
             override fun onOrientationChanged(orientation: Int) {
-                val mainActivity = requireActivity() as MainActivity
-                val rotation = mainActivity.rotation
-                val dialogRootView = dialog!!.window!!.decorView.rootView
-                dialogRootView.rotation = rotation.toFloat()
+                rotate()
             }
         }
+    }
+
+    /**
+     *  giro il popUp
+     */
+    fun rotate()
+    {
+        val mainActivity = requireActivity() as MainActivity
+        val dialogRootView = dialog!!.window!!.decorView.rootView
+        dialogRootView.rotation = mainActivity.rotation.toFloat()
     }
     override fun onStart() {
         super.onStart()

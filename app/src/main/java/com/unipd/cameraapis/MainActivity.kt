@@ -305,9 +305,7 @@ class MainActivity : AppCompatActivity() {
      */
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-
-        if (resultCode == 1)
-        {
+        if (resultCode == 1) {
             permissionDenyAsk = true
             askPermission()
         }
@@ -531,10 +529,7 @@ class MainActivity : AppCompatActivity() {
 
         // listener per il pulsante QR
         btQR.setOnClickListener {
-            //qrScanner = !qrScanner
-            qrCode()
-
-            // ho buttato tutto dentro qrcode
+            qrCode() //todo ho buttato tutto dentro qrcode
         }
 
         btSettings.setOnClickListener {view ->
@@ -550,11 +545,18 @@ class MainActivity : AppCompatActivity() {
     {
         //Todo:  prima di mostrare risultati contollare che il timer sia disattivato, -> "timerOn"
         val scanOptions: ScanOptions = ScanOptions()
-        scanOptions.setPrompt("Scan a QR code")
-        scanOptions.setBeepEnabled(true)
+        scanOptions.setPrompt("Scansiona codice QR")
+        //scanOptions.setBeepEnabled(false) // fastidioso xD
+        scanOptions.setTorchEnabled(currFlashMode == FlashModes.ON)
         scanOptions.setOrientationLocked(false)
         scanOptions.setCaptureActivity(ScannerCaptureActivity::class.java)
         qrCodeLauncher.launch(scanOptions)
+
+        // -> così lo apre in una schermata separata ma non saprei come passargli i dati
+        //val intent = Intent(this, ScannerCaptureActivity::class.java)
+        //intent.putExtra("scanOptions", scanOptions)
+        //startActivity(intent)
+
         /*
         if(status)
             btQR.backgroundTintList = getColorStateList(R.color.aureolin_yellow)
@@ -1221,18 +1223,19 @@ class MainActivity : AppCompatActivity() {
     private val orientationEventListener by lazy {
         object : OrientationEventListener(this) {
             override fun onOrientationChanged(orientation: Int) {
+                val deadZoneAngle = 10
                 if (orientation == ORIENTATION_UNKNOWN) return
                 rotation = when (orientation) {
-                    in 50 .. 130 -> 270
-                    in 140 .. 220 -> 180
-                    in 230 .. 310 -> 90
-                    in 0 .. 40,in 320 .. 360 -> 0
-                    else -> -1 // Angolo morto
+                    in 45 + deadZoneAngle..135 - deadZoneAngle -> 270
+                    in 135 + deadZoneAngle..225 - deadZoneAngle -> 180
+                    in 225 + deadZoneAngle..315 - deadZoneAngle -> 90
+                    in 315 + deadZoneAngle..360, in 0..45 - deadZoneAngle -> 0
+                    else -> return // Angolo morto
                 }
-                // non ho messo valori multipli di 45 in modo da avere un minimo di gioco prima di cambiare rotazione
-                //Log.d(TAG,"[orientation] $rotation" )
+                // e' stato inserito deadZoneAngle per avere un minimo di gioco prima di cambiare rotazione
+                Log.d(TAG,"[orientation] $rotation" )
 
-                if(!isRecording && rotation != -1 ) // gira solo se non sta registrando, per salvare i video nel orientamento iniziale
+                if(!isRecording) // gira solo se non sta registrando, per salvare i video nel orientamento iniziale
                 {
                     rotateButton(rotation.toFloat())
                     // Surface.ROTATION_0 e' = 0, ROTATION_90 = 1, ... ROTATION_270 = 3, quindi = rotation/90
