@@ -22,14 +22,16 @@ class QrCodeRunner : AppCompatActivity() {
         qrCodeLauncher = registerForActivityResult(ScanContract()) { result ->
             if(!result.contents.isNullOrEmpty())
                 url = result.contents
+            else
+                Toast.makeText(this@QrCodeRunner, "Codice QR non valido", Toast.LENGTH_LONG).show()
         }
 
         val scanOptions = ScanOptions()
         scanOptions.setPrompt("Scansiona codice QR")
-        scanOptions.setBeepEnabled(false) // fastidioso xD
+        scanOptions.setBeepEnabled(false)
         scanOptions.setTorchEnabled(intent.getBooleanExtra("flashOn", false))
         scanOptions.setOrientationLocked(false)
-        scanOptions.setCaptureActivity(ScannerCaptureActivity::class.java)
+        scanOptions.captureActivity = ScannerCaptureActivity::class.java
         qrCodeLauncher.launch(scanOptions)
 
     }

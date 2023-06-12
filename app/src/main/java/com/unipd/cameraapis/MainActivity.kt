@@ -522,7 +522,7 @@ class MainActivity : AppCompatActivity() {
 
         // listener per il pulsante QR
         btQR.setOnClickListener {
-            qrCode() //todo ho buttato tutto dentro qrcode
+            qrCode()
         }
 
         btSettings.setOnClickListener {view ->
