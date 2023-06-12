@@ -142,7 +142,7 @@ class MainActivity : AppCompatActivity() {
     private var inPause = false
     private var timerOn = false
     private var qrScanner = true
-    private lateinit var qrCodeLauncher: ActivityResultLauncher<ScanOptions>
+    //private lateinit var qrCodeLauncher: ActivityResultLauncher<ScanOptions>
     private var captureJob: Job? = null
     private var isbtShootLongClicked = false
     private var isVolumeButtonClicked : Boolean = false
@@ -305,7 +305,17 @@ class MainActivity : AppCompatActivity() {
      */
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (resultCode == 1) {
+        if (resultCode == 2) {
+            val url = data?.getStringExtra("URL")
+            // PopUp per il qrCode
+            if(url != "") {
+                var bundle = Bundle()
+                bundle.putString("URL", url) // impostare url qui
+                qrCodePopUp.arguments = bundle
+                qrCodePopUp.show(supportFragmentManager, "showPopUp")
+            }
+        }
+        else if(resultCode == 1){
             permissionDenyAsk = true
             askPermission()
         }
@@ -392,23 +402,6 @@ class MainActivity : AppCompatActivity() {
 
         gestureDetector = GestureDetector(this, MyGestureListener())
         scaleGestureDetector = ScaleGestureDetector(this, ScaleGestureListener())
-
-        qrCodeLauncher = registerForActivityResult(ScanContract()) { result ->
-            if(result.contents.isNullOrEmpty()) {
-                Toast.makeText(this@MainActivity, "Not valid QR code", Toast.LENGTH_SHORT).show()
-                Log.d(TAG, "QR code content: ${result.contents}")
-            }
-            else {
-                Toast.makeText(this@MainActivity, "${result.contents.toString()}", Toast.LENGTH_SHORT).show()
-
-                // PopUp per il qrCode
-                var bundle = Bundle()
-                bundle.putString("URL", result.contents) // impostare url qui
-                qrCodePopUp.arguments = bundle
-                qrCodePopUp.show(supportFragmentManager, "showPopUp")
-            }
-        }
-
     }
 
     /**
@@ -543,35 +536,10 @@ class MainActivity : AppCompatActivity() {
      */
     private fun qrCode()
     {
-        //Todo:  prima di mostrare risultati contollare che il timer sia disattivato, -> "timerOn"
-        val scanOptions: ScanOptions = ScanOptions()
-        scanOptions.setPrompt("Scansiona codice QR")
-        //scanOptions.setBeepEnabled(false) // fastidioso xD
-        scanOptions.setTorchEnabled(currFlashMode == FlashModes.ON)
-        scanOptions.setOrientationLocked(false)
-        scanOptions.setCaptureActivity(ScannerCaptureActivity::class.java)
-        qrCodeLauncher.launch(scanOptions)
-
-        // -> così lo apre in una schermata separata ma non saprei come passargli i dati
-        //val intent = Intent(this, ScannerCaptureActivity::class.java)
-        //intent.putExtra("scanOptions", scanOptions)
+        val intent = Intent(this, QrCodeRunner::class.java)
+        intent.putExtra("flashOn", currFlashMode == FlashModes.ON)
         //startActivity(intent)
-
-        /*
-        if(status)
-            btQR.backgroundTintList = getColorStateList(R.color.aureolin_yellow)
-        else
-            btQR.backgroundTintList = getColorStateList(R.color.white)
-        */
-
-
-        //todo: da eliminare (solo test)
-        /*
-        var bundle = Bundle()
-        bundle.putString("URL", "https://www.google.com/search?q=esim&oq=esim&aqs=chrome..69i57j0i271l2.2031j0j1&sourceid=chrome&ie=UTF-8") // impostare url qui
-        qrCodePopUp.arguments = bundle
-        qrCodePopUp.show(supportFragmentManager, "showPopUp")
-        */
+        startActivityForResult(intent, 1)
     }
 
     /**
