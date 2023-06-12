@@ -43,7 +43,7 @@
 
     <Button
         android:id="@+id/BT_copyQrCodePopUp"
-        android:layout_width="110dp"
+        android:layout_width="130dp"
         android:layout_height="40dp"
         android:background="@drawable/rounded_corner"
         android:backgroundTint="@color/light_gray"
@@ -56,7 +56,7 @@
 
     <Button
         android:id="@+id/BT_openQrCodePopUp"
-        android:layout_width="110dp"
+        android:layout_width="130dp"
         android:layout_height="40dp"
         android:background="@drawable/rounded_corner"
         android:backgroundTint="?attr/colorPrimaryVariant"

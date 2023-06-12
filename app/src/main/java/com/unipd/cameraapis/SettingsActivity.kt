@@ -5,7 +5,6 @@ import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceFragmentCompat
 
-
 class SettingsActivity : AppCompatActivity() {
 
     private lateinit var btBack : Button

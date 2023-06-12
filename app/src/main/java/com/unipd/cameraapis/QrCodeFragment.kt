@@ -35,18 +35,32 @@ class QrCodeFragment : DialogFragment() {
         dialog!!.window?.attributes?.screenOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
 
         url = arguments?.getString("URL")!!
+        val isLink = (url.startsWith("http://") || url.startsWith("https://"))
 
         view.findViewById<TextView>(R.id.TV_linkQR).text = url
 
-        view.findViewById<Button>(R.id.BT_openQrCodePopUp).setOnClickListener{
-            if (!url.startsWith("http://") && !url.startsWith("https://"))
-                url = "http://$url"
+        val btOpen = view.findViewById<Button>(R.id.BT_openQrCodePopUp)
+        val btCopy = view.findViewById<Button>(R.id.BT_copyQrCodePopUp)
+
+        if(!isLink) // cambio la grafica nel caso sia solo testo
+        {
+            btCopy.text = "Copia Testo"
+            btOpen.text = "Apri" // è disattivato ma non mi piace che ci sia scritto link comunque
+            btOpen.isEnabled = false
+            btOpen.backgroundTintList = context?.getColorStateList(R.color.light_gray)
+            btOpen.alpha = 0.25f
+
+            btCopy.backgroundTintList = context?.getColorStateList(R.color.caribbean_Current)
+        }
+
+
+
+        btOpen.setOnClickListener{
             val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
             startActivity(browserIntent)
         }
 
-        view.findViewById<Button>(R.id.BT_copyQrCodePopUp).setOnClickListener {
-
+        btCopy.setOnClickListener {
             val clipboard = context?.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
             val clip = ClipData.newPlainText("URL", url)
             clipboard.setPrimaryClip(clip)

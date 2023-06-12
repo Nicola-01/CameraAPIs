@@ -24,8 +24,9 @@ class QrCodeRunner : AppCompatActivity() { // activity usata slo per avviare la 
 
         val scanOptions = ScanOptions()
         scanOptions.setPrompt("Scansiona codice QR")
-        scanOptions.setBeepEnabled(false) // fastidioso xD
+        scanOptions.setBeepEnabled(false)
         scanOptions.setTorchEnabled(intent.getBooleanExtra("flashOn", false))
+        scanOptions.setOrientationLocked(false)
         scanOptions.setOrientationLocked(false)
         scanOptions.captureActivity = ScannerCaptureActivity::class.java
         qrCodeLauncher.launch(scanOptions)
