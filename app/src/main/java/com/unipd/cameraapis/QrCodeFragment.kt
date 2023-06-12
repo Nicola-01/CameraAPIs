@@ -9,14 +9,12 @@ import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.OrientationEventListener
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.DialogFragment
 
 class QrCodeFragment : DialogFragment() {
@@ -24,11 +22,11 @@ class QrCodeFragment : DialogFragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        rotate() // viene mostrato gia' con l'angolazione corretta
+        rotate() // viene mostrato gia' con l' angolazione corretta in base allo stato del telefono
         return inflater.inflate(R.layout.fragment_qrcode, container, false)
     }
 
-    var url : String = ""
+    private var url : String = ""
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -39,13 +37,11 @@ class QrCodeFragment : DialogFragment() {
         url = arguments?.getString("URL")!!
 
         view.findViewById<TextView>(R.id.TV_linkQR).text = url
-        Log.d("QrCode", "btqrcode load")
 
         view.findViewById<Button>(R.id.BT_openQrCodePopUp).setOnClickListener{
-            if (!url!!.startsWith("http://") && !url!!.startsWith("https://"))
+            if (!url.startsWith("http://") && !url.startsWith("https://"))
                 url = "http://$url"
             val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-            Log.d("QrCode", "btqrcode open")
             startActivity(browserIntent)
         }
 
@@ -54,7 +50,6 @@ class QrCodeFragment : DialogFragment() {
             val clipboard = context?.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
             val clip = ClipData.newPlainText("URL", url)
             clipboard.setPrimaryClip(clip)
-            Log.d("QrCode", "btqrcode copy")
         }
 
         view.findViewById<View>(R.id.view_qrCode).setOnClickListener { } // senza di questo se si preme sopra il popUp si chiude

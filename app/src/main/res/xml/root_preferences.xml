@@ -71,12 +71,6 @@
             app:iconSpaceReserved="false"
             app:summary="@string/swHDR" />
         <SwitchPreference
-            android:defaultValue="false"
-            android:key="SW_GPS"
-            android:title="Tag posizione"
-            app:iconSpaceReserved="false"
-            app:summary="@string/swGPS" />
-        <SwitchPreference
             android:defaultValue="true"
             android:key="SW_feedback"
             android:title="Feedback vibrazione"
