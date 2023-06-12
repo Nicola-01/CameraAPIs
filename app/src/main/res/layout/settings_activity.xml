@@ -42,7 +42,7 @@
         android:id="@+id/textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Impostazioni Fotocamera"
+        android:text="@string/title_activity_settings"
         android:textColor="@color/white"
         android:textSize="20sp"
         android:textStyle="bold"

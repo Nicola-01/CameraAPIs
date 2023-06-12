@@ -1,11 +1,12 @@
 <resources>
-    <string name="app_name">CameraAPIs</string>
+    <string name="app_name">CameraPaw</string>
+
     <string name="zoom_1.0x">1.0x</string>
     <string name="zoom_0.5x">0.5x</string>
     <string name="Video_function">VIDEO</string>
     <string name="Photo_function">FOTO</string>
 
-    <string name="title_activity_settings">SettingsActivity</string>
+    <string name="title_activity_settings">Impostazioni Fotocamera</string>
 
     <!-- PopUpFragment -->
     <string name="PermissionText">Per procedere è necessario l\'accesso alla fotocamera e ai microfono all\'applicazione.</string>
