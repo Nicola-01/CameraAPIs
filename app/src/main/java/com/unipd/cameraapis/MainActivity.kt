@@ -1,7 +1,6 @@
 package com.unipd.cameraapis
 
 import android.Manifest
-import android.app.AlertDialog
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
@@ -32,9 +31,6 @@ import android.widget.Button
 import android.widget.Chronometer
 import android.widget.SeekBar
 import android.widget.TextView
-import android.widget.Toast
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraControl
@@ -57,8 +53,6 @@ import androidx.constraintlayout.widget.Group
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
-import com.journeyapps.barcodescanner.ScanContract
-import com.journeyapps.barcodescanner.ScanOptions
 import com.unipd.cameraapis.databinding.ActivityMainBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -142,7 +136,6 @@ class MainActivity : AppCompatActivity() {
     private var inPause = false
     private var timerOn = false
     private var qrScanner = true
-    //private lateinit var qrCodeLauncher: ActivityResultLauncher<ScanOptions>
     private var captureJob: Job? = null
     private var isbtShootLongClicked = false
     private var isVolumeButtonClicked : Boolean = false
@@ -231,12 +224,12 @@ class MainActivity : AppCompatActivity() {
         when (intent.action) {
             "shortcut.selfie" -> {
                 Log.d(TAG, "selfie_shortcut")
-                rotateCamera(true, false)
+                rotateCamera(override = true, false)
             }
 
             "shortcut.photo" -> {
                 Log.d(TAG, "photo_shortcut")
-                rotateCamera(true, true)
+                rotateCamera(override = true, true)
                 changeMode(false)
             }
 
@@ -309,7 +302,7 @@ class MainActivity : AppCompatActivity() {
             val url = data?.getStringExtra("URL")
             // PopUp per il qrCode
             if(url != "") {
-                var bundle = Bundle()
+                val bundle = Bundle()
                 bundle.putString("URL", url) // impostare url qui
                 qrCodePopUp.arguments = bundle
                 qrCodePopUp.show(supportFragmentManager, "showPopUp")
@@ -341,8 +334,8 @@ class MainActivity : AppCompatActivity() {
             Log.d(TAG, "height bottom $hB")
             Log.d(TAG, "height top $hT")
 
-            var bottomBand = findViewById<View>(R.id.VW_bottomBand)
-            var topBand = findViewById<View>(R.id.VW_topBand)
+            val bottomBand = findViewById<View>(R.id.VW_bottomBand)
+            val topBand = findViewById<View>(R.id.VW_topBand)
             val layoutParamsB = bottomBand.layoutParams
             val layoutParamsT = topBand.layoutParams
 
@@ -474,7 +467,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         btShoot.setOnLongClickListener{
-            if (recordMode) {
+            if (isRecording || recordMode) {
+                // se sono in modalita' registrazione e tengo premuto parte la registrazione
+                // mentre se sto già registrando e passo in modalita' foto e tengo premuto fermo
+                // la registrazione
                 timerShot(true)
                 if(feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
             } else {
@@ -548,7 +544,7 @@ class MainActivity : AppCompatActivity() {
     private fun buildCamera()
     {
         cameraSelector =
-            try { // dato che uso gli id della mia camera allora potrebbe non esistere qulla camera
+            try { // dato che uso gli id della mia camera allora potrebbe non esistere quella camera
                 availableCameraInfos[currentCamera].cameraSelector
             } catch (e : Exception) {
                 if (currentCamera % 2 == 0) // se e' camera 0 o 2 e' back
@@ -559,7 +555,7 @@ class MainActivity : AppCompatActivity() {
         try {
             cameraProvider.unbindAll()            // Unbind use cases before rebinding
             camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture) // devo ricostruire la camera ogni volta, dato che cambio al camera
-            // in quato cambio la camera
+            // in quanto cambio la camera
             cameraControl = camera.cameraControl
         } catch(e: Exception) {
             Log.e(TAG, "Build failed", e)
@@ -593,14 +589,12 @@ class MainActivity : AppCompatActivity() {
 
             // Crea un oggetto CameraSelector per la fotocamera ultra grandangolare
             availableCameraInfos = cameraProvider.availableCameraInfos
-            Log.i(TAG, "[startCamera] available cameras Info:$availableCameraInfos")
+            Log.i(TAG, "[startCamera] available cameras Info:$availableCameraInfos") // lista contenente le fotocamere del dispositivo
             cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
-            val availableCamera : Array<String> = cameraManager.cameraIdList    // lista contenente le fotocamere del dispositivo
-            Log.i(TAG, "[startCamera] available cameras: ${availableCamera}")
 
             // inizializzazione della camera
             createListener()            // crea i Listener
-            createRecorder()            // crea un recorder per modificare la qualità video e l'aspect ratio
+            createRecorder()            // crea un recorder per modificare la qualita' video e l'aspect ratio
             buildCamera()               // crea effettivamente la camera
             loadFromSetting()           // recupera le impostazioni
             loadFromBundle(savedBundle) // carica gli elementi dal Bundle/Preferences
@@ -732,7 +726,7 @@ class MainActivity : AppCompatActivity() {
                 Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
             return false // Controlla che sia presente il permesso per registrare l'audio
         // NB. e' un controllo ridondante, dato che non si può avviare la telecamera se
-        // non si acccettano tutti i permessi,
+        // non si accettano tutti i permessi,
 
         recording = videoCapture!!.output
             .prepareRecording(this, mediaStoreOutputOptions)
@@ -982,10 +976,10 @@ class MainActivity : AppCompatActivity() {
      */
     private fun changeZoom(progress : Int, buildAnyway : Boolean = false)
     {
-        var reBuild = false // evito di costruitr la camera ogni volta
+        var reBuild = false // evito di costruire la camera ogni volta
 
         // sbZoom va da 0 a 150, quindi i primi 50 valori sono per lo zoom con la ultra grand angolare,
-        // gli altri per la camera grand angolare, non sono riuscito a recoperare la telephoto
+        // gli altri per la camera grand angolare, non sono riuscito a recuperare la telephoto
         // valori corrispondenti a quale camara (Samsung S21)
         // 0 -> back default;   grand angolare
         // 1 -> front default;  ultra grand angolare
@@ -1020,7 +1014,7 @@ class MainActivity : AppCompatActivity() {
             {
                 zoomLv = (progress-changeCameraSeekBar)/(sbZoom.max - changeCameraSeekBar).toFloat()
                 // calcolo per ottenere un valore tra 0 e 1 per lo zoom
-                // e' presente - changeCameraSeekBar perche' devo escultere i valori sotto changeCameraSeekBar
+                // e' presente - changeCameraSeekBar perche' devo escludere i valori sotto changeCameraSeekBar
                 // quindi quando progress e' a 50 (=changeCameraSeekBar) allora zoomLv deve essere 0
                 // mentre quando progress e' a 150 (=sbZoom.max) allora zoomLv deve essere 1
 
@@ -1039,7 +1033,7 @@ class MainActivity : AppCompatActivity() {
 
 
         val zoomState = camera.cameraInfo.zoomState
-        val maxzoom : Float = zoomState.value?.maxZoomRatio!!
+        val maxZoom : Float = zoomState.value?.maxZoomRatio!!
 
         btZoom05.text = getString(R.string.zoom_0_5x)
         btZoom10.text = getString(R.string.zoom_1_0x)
@@ -1050,14 +1044,14 @@ class MainActivity : AppCompatActivity() {
 
         if(currentCamera==0 || currentCamera == 3) // camera normale 1 -> 8
         {
-            btZoomRec.text = "${(zoomLv*(maxzoom-1)+1).toString().substring(0,3)}x" // (zoomLv*(maxzoom-1)+1) fa si che visualizzi maxzoom come massimo e 1x come minimo
-            btZoom10.text = "${(zoomLv*(maxzoom-1)+1).toString().substring(0,3)}x"
+            btZoomRec.text = "${(zoomLv*(maxZoom-1)+1).toString().substring(0,3)}x" // (zoomLv*(maxzoom-1)+1) fa si che visualizzi maxzoom come massimo e 1x come minimo
+            btZoom10.text = "${(zoomLv*(maxZoom-1)+1).toString().substring(0,3)}x"
             btZoom10.backgroundTintList = getColorStateList(R.color.white)
             btZoom10.setTextColor(getColor(R.color.black))
         }
         else // camera grand angolare 0.5 -> 8
         {
-            btZoomRec.text = "${(zoomLv*(maxzoom-0.5)+0.5).toString().substring(0,3)}x" // (zoomLv*(maxzoom-0.5)+0.5) fa si che visualizzi maxzoom come massimo e 0.5x come minimo
+            btZoomRec.text = "${(zoomLv*(maxZoom-0.5)+0.5).toString().substring(0,3)}x" // (zoomLv*(maxzoom-0.5)+0.5) fa si che visualizzi maxzoom come massimo e 0.5x come minimo
             btZoom05.text = "${(zoomLv+0.5).toString().substring(0,3)}x"
             btZoom05.backgroundTintList = getColorStateList(R.color.white)
             btZoom05.setTextColor(getColor(R.color.black))
@@ -1097,7 +1091,7 @@ class MainActivity : AppCompatActivity() {
 
                         override fun onFinish() {
                             if(!isRecording) {
-                                var temporaryCountDown = countdown
+                                val temporaryCountDown = countdown
                                 countdown = 0   // faccio partire direttamente il video, senza countdown
                                 timerShot(true)
                                 countdown = temporaryCountDown
@@ -1245,8 +1239,8 @@ class MainActivity : AppCompatActivity() {
          * Gestisce gli swipe orizzontali e verticali.
          * @param e1 Inizio dello swipe.
          * @param e2 Fine dello swipe.
-         * @param velocityX Velocità orizzontale dello swipe.
-         * @param velocityY Velocità verticale dello swipe.
+         * @param velocityX Velocita' orizzontale dello swipe.
+         * @param velocityY Velocita' verticale dello swipe.
          */
         override fun onFling(
             e1: MotionEvent,
@@ -1284,9 +1278,9 @@ class MainActivity : AppCompatActivity() {
             // Aggiorna lo zoom della fotocamera
             Log.d(TAG, "[zoom] $scaleFactor")
 
-            if(scaleFactor>1) // se pinch in allora zoommo
+            if(scaleFactor>1) // se pinch in allora zoomo
                 sbZoom.incrementProgressBy(1) // cambio il valore della SeekBar che a sua volta cambia il valore dello zoom
-            else // altrimienti e' pinch out e allora dezoommo
+            else // altrimienti e' pinch out e allora dezoomo
                 sbZoom.incrementProgressBy(-1)
             return true
         }
@@ -1327,14 +1321,13 @@ class MainActivity : AppCompatActivity() {
             changeMode(recordMode)
             return
         }
-        if(isRecording && record){ // se sto gia' registrando e tengo premuto il pulsante rosso in modalita' foto
-            // o premo il pulsante per fermare in modalita' vidoe
-            captureVideo() // lo richiamo per fermare la registraizone
-            return
-        }
-        if (isRecording && !record){ // se sto gia' registrando e premo il pulsante rosso in moodalita' foto
-            // scatta una foto senza usare il timer
-            takePhoto()
+        if(isRecording) {
+            if(record) // se sto gia' registrando e tengo premuto il pulsante rosso in modalita' foto
+            // o premo il pulsante per fermare la registrazione in modalita' video
+                captureVideo()
+            else // se sto gia' registrando e premo il pulsante rosso in moodalita' foto
+                 // scatta una foto senza usare il timer
+                takePhoto()
             return
         }
 
@@ -1547,7 +1540,7 @@ class MainActivity : AppCompatActivity() {
     {
         super.onResume()
         Log.d(TAG, "onResume")
-        try { // il lifecycle dello zoom viene chiso con la chiusura dell'app,
+        try { // il lifecycle dello zoom viene chiuso con la chiusura dell'app,
             // e non viene ripristinato manualmente, quindi chiamo changeZoom
             // con il valore sbZoom.progress che e' ancora salvato
             // Se invece l'applicazione va in background e viene killata da android

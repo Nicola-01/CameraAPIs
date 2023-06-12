@@ -1,34 +1,28 @@
 package com.unipd.cameraapis
 
-import android.app.Activity
 import android.content.DialogInterface
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.OrientationEventListener
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
-import kotlin.concurrent.thread
 
 
 class PopUpFragment : DialogFragment() {
 
-    var ask = false
+    private var ask = false
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        rotate() // viene mostrato gia' con l'angolazione corretta
+        rotate() // viene mostrato gia' con l' angolazione corretta
         return inflater.inflate(R.layout.fragment_pop_up, container, false)
     }
 
@@ -40,9 +34,7 @@ class PopUpFragment : DialogFragment() {
         val btSettings = view.findViewById<Button>(R.id.BT_settingsPopUp)
         val btClose = view.findViewById<Button>(R.id.BT_closePopUp)
 
-
-
-        btSettings.setOnClickListener { // apre le impostazioni dell'app
+        btSettings.setOnClickListener { // apre le impostazioni dell' app
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
             val uri = Uri.fromParts("package", context?.packageName, null)
             intent.data = uri
@@ -68,7 +60,7 @@ class PopUpFragment : DialogFragment() {
             onDismissListener()
         super.onDismiss(dialog)
     }
-    override fun onResume() {
+    override fun onResume() { // controllo lo stato dei permessi
         super.onResume()
         val mainActivity = requireActivity() as MainActivity
         if(ask) // senza questo controllo continuerebbe a fare richieste
