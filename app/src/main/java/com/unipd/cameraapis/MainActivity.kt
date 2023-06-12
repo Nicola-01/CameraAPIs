@@ -6,7 +6,10 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.Cursor
+import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
+import android.hardware.camera2.CameraMetadata
+import android.hardware.camera2.params.DynamicRangeProfiles
 import android.net.Uri
 import android.os.Bundle
 import android.os.CountDownTimer
@@ -31,6 +34,7 @@ import android.widget.Button
 import android.widget.Chronometer
 import android.widget.SeekBar
 import android.widget.TextView
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraControl
@@ -1374,6 +1378,35 @@ class MainActivity : AppCompatActivity() {
         btRecMode.rotation = angle
         btPhotoMode.rotation = angle
         countDownText.rotation = angle
+    }
+
+    /**
+     * Verifica se il dispositivo supporta profili a 10 bit per l'HDR.
+     * @param cameraId L'id della camera per cui verficare il supporto.
+     */
+    private fun isTenBitProfileSupported(cameraId: String): Boolean {
+        val cameraCharacteristics = cameraManager.getCameraCharacteristics(cameraId)
+        val availableCapabilities = cameraCharacteristics.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES)
+        for(capability in availableCapabilities!!) {
+            if(capability == CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT)
+                return true
+        }
+        return false
+    }
+
+    /**
+     * Verifica che l'HLG10 sia supportato dal dispositivo. La registrazione di un video in HDR richiede Android 13.
+     * @param cameraId L'id della camera per cui verficare il supporto.
+     */
+    @RequiresApi(api = 33)
+    private fun isHgTenSupported(cameraId: String): Boolean {
+        if(isTenBitProfileSupported(cameraId)) {
+            val cameraCharacteristics = cameraManager.getCameraCharacteristics(cameraId)
+            val availableProfiles = cameraCharacteristics.
+            get(CameraCharacteristics.REQUEST_AVAILABLE_DYNAMIC_RANGE_PROFILES)!!.supportedProfiles
+            return availableProfiles.contains(DynamicRangeProfiles.HLG10)
+        }
+        return false
     }
 
     /**
