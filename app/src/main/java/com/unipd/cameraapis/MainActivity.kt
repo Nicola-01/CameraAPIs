@@ -1373,6 +1373,7 @@ class MainActivity : AppCompatActivity() {
         cmRecTimer.rotation = angle
         btRecMode.rotation = angle
         btPhotoMode.rotation = angle
+        countDownText.rotation = angle
     }
 
     /**

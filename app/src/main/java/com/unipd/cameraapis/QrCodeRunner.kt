@@ -3,6 +3,7 @@ package com.unipd.cameraapis
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
@@ -20,6 +21,8 @@ class QrCodeRunner : AppCompatActivity() { // activity usata slo per avviare la 
         qrCodeLauncher = registerForActivityResult(ScanContract()) { result ->
             if(!result.contents.isNullOrEmpty())
                 url = result.contents
+            else
+                Toast.makeText(this@QrCodeRunner, "Codice QR non valido", Toast.LENGTH_LONG).show()
         }
 
         val scanOptions = ScanOptions()
