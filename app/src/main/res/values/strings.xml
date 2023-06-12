@@ -14,13 +14,12 @@
     <string name="QrCodeFrag">https://stem.elearning.unipd.it/</string>
 
     <!-- PermissionDenyActivity -->
-    <string name="permission_denied_message">I permessi sono necessari per utilizzare l\'app. Si prega di concedere i permessi nelle impostazioni dell\'app.</string>
+    <string name="permission_denied_message">I permessi sono necessari per utilizzare l\'app. Si prega di concedere i permessi nelle impostazioni dell\'applicazione.</string>
 
     <!-- Setting -->
     <string name="swMode">Avvia l\'app nell\'ultima modalità usata tra Foto e Video.</string>
     <string name="swGrid">Attiva o disattiva la griglia 3x3 per un allineamento preciso degli elementi</string>
     <string name="swHDR">Cattura più dettagli nelle aree più o meno luminose della foto.</string>
-    <string name="swGPS">Aggiunge tag alle foto e ai video per mostrare dove sono stati realizzati.</string>
     <string name="swFeedback">Se attiva alcuni tasti restituiranno una vibrazione</string>
 
     <!-- ShortCut -->

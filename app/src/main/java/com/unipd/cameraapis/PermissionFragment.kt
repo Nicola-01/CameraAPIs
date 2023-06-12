@@ -14,8 +14,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import androidx.fragment.app.DialogFragment
 
-
-class PopUpFragment : DialogFragment() {
+class PermissionFragment : DialogFragment() {
 
     private var ask = false
     override fun onCreateView(
@@ -23,7 +22,7 @@ class PopUpFragment : DialogFragment() {
         savedInstanceState: Bundle?
     ): View? {
         rotate() // viene mostrato gia' con l' angolazione corretta
-        return inflater.inflate(R.layout.fragment_pop_up, container, false)
+        return inflater.inflate(R.layout.fragment_permission, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

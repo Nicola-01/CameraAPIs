@@ -5,7 +5,7 @@
     android:id="@+id/vw_backQr"
     android:layout_width="320dp"
     android:layout_height="320dp"
-    tools:context=".PopUpFragment">
+    tools:context=".PermissionFragment">
 
 
     <View

@@ -22,7 +22,7 @@ class QrCodeRunner : AppCompatActivity() { // activity usata slo per avviare la 
             if(!result.contents.isNullOrEmpty())
                 url = result.contents
             else
-                Toast.makeText(this@QrCodeRunner, "Codice QR non valido", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Nessun QR code trovato", Toast.LENGTH_LONG).show()
         }
 
         val scanOptions = ScanOptions()

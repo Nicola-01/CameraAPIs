@@ -151,7 +151,7 @@ class MainActivity : AppCompatActivity() {
     private var saveMode = true
 
     private var savedBundle: Bundle? = null
-    private val permissionPopUp = PopUpFragment()
+    private val permissionPopUp = PermissionFragment()
     private var qrCodePopUp = QrCodeFragment()
     private var popUpVisible = false
     private var permissionDenyAsk = false
