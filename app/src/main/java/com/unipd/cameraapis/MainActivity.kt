@@ -6,13 +6,18 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.Cursor
+import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.params.DynamicRangeProfiles
+import android.hardware.camera2.params.OutputConfiguration
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.os.Handler
 import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.DisplayMetrics
@@ -26,6 +31,7 @@ import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.OrientationEventListener
 import android.view.ScaleGestureDetector
+import android.view.Surface
 import android.view.View
 import android.view.WindowManager
 import android.view.animation.Animation
@@ -1407,6 +1413,22 @@ class MainActivity : AppCompatActivity() {
             return availableProfiles.contains(DynamicRangeProfiles.HLG10)
         }
         return false
+    }
+
+    /**
+     *
+     */
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun hdrSetup(device: CameraDevice, targets: List<Surface>, handler: Handler?, callback: CameraCaptureSession.StateCallback) {
+        if(isHgTenSupported(device.id)) {
+            val configurations = mutableListOf<OutputConfiguration>()
+            for(target in targets) {
+                val config = OutputConfiguration(target)
+                config.dynamicRangeProfile = DynamicRangeProfiles.HLG10
+                configurations.add(config)
+            }
+            device.createCaptureSession(targets, callback, handler)
+        }
     }
 
     /**
