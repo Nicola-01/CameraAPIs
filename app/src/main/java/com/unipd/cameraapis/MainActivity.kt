@@ -109,6 +109,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btZoom10 : Button
     private lateinit var btZoomRec : Button
     private lateinit var btQR : Button
+    private lateinit var btBokeh : Button
     private lateinit var btSettings : Button
     private lateinit var focusCircle : View
     private lateinit var focusView : View
@@ -151,6 +152,7 @@ class MainActivity : AppCompatActivity() {
     private var inPause = false
     private var timerOn = false
     private var qrScanner = true
+    private var bokehStatus = false
     private var captureJob: Job? = null
     private var isbtShootLongClicked = false
     private var isVolumeButtonClicked : Boolean = false
@@ -399,6 +401,7 @@ class MainActivity : AppCompatActivity() {
         btZoom10 = viewBinding.BT10
         btZoomRec = viewBinding.BTZoomRec
         btQR = viewBinding.BTQrcode
+        btBokeh = viewBinding.BTBokeh
         btSettings = viewBinding.BTSettings
         cmRecTimer = viewBinding.CMRecTimer
         cmRecTimer.format = "%02d:%02d:%02d"
@@ -539,6 +542,10 @@ class MainActivity : AppCompatActivity() {
             qrCode()
         }
 
+        btBokeh.setOnClickListener {
+            bokeh(!bokehStatus)
+        }
+
         btSettings.setOnClickListener {view ->
             startActivity(Intent(view.context, SettingsActivity::class.java))
         }
@@ -556,10 +563,21 @@ class MainActivity : AppCompatActivity() {
         startActivityForResult(intent, 1)
     }
 
+    private fun bokeh(status: Boolean)
+    {
+        bokehStatus = status
+        btBokeh.backgroundTintList =
+            if(status)
+                getColorStateList(R.color.aureolin_yellow)
+            else
+                getColorStateList(R.color.white)
+        //todo effetto bokeh
+    }
+
     /**
      * Costruisce la camera.
      */
-    private fun buildCamera()
+    private fun bindCamera()
     {
         cameraSelector =
             try { // dato che uso gli id della mia camera allora potrebbe non esistere quella camera
@@ -651,7 +669,7 @@ class MainActivity : AppCompatActivity() {
                 // inizializzazione della camera
                 createListener()            // crea i Listener
                 createRecorder()            // crea un recorder per modificare la qualita' video e l'aspect ratio
-                buildCamera()               // crea effettivamente la camera
+                bindCamera()               // crea effettivamente la camera
                 loadFromSetting()           // recupera le impostazioni
                 loadFromBundle(savedBundle) // carica gli elementi dal Bundle/Preferences
                 openByShortCut()            // controlla come e' stata aperta l'app
@@ -1116,7 +1134,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         if(buildAnyway || (reBuild && !isRecording)) // se sta registrando non cambia fotocamera
-            buildCamera()
+            bindCamera()
         cameraControl.setLinearZoom(zoomLv) // cambia il valore dello zoom
         Log.d(TAG,"Zoom lv: $zoomLv, zoomState: ${zoomState.value}" )
         Log.d(TAG, "[current camera] - zoom: $currentCamera")
@@ -1265,7 +1283,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
+    
     private inner class MyGestureListener : GestureDetector.SimpleOnGestureListener() {
         override fun onSingleTapUp(motionEvent: MotionEvent): Boolean {
             when (motionEvent.action) {
@@ -1358,7 +1376,7 @@ class MainActivity : AppCompatActivity() {
                 currentCamera = 0 // passo in back
             sbZoom.progress = changeCameraSeekBar
 
-            buildCamera()
+            bindCamera()
         }
         Log.d(TAG, "[current camera]  - rotate: $currentCamera")
     }
@@ -1421,16 +1439,18 @@ class MainActivity : AppCompatActivity() {
      */
     private fun rotateButton(angle : Float)
     {
-        btGallery.rotation = angle
-        btRotation.rotation = angle
+        btBokeh.rotation = angle
         btFlash.rotation = angle
+        btGallery.rotation = angle
+        btPhotoMode.rotation = angle
+        btRecMode.rotation = angle
+        btRotation.rotation = angle
+        btSettings.rotation = angle
         btTimer.rotation = angle
         btZoom05.rotation = angle
         btZoom10.rotation = angle
         btZoomRec.rotation = angle
         cmRecTimer.rotation = angle
-        btRecMode.rotation = angle
-        btPhotoMode.rotation = angle
         countDownText.rotation = angle
     }
 

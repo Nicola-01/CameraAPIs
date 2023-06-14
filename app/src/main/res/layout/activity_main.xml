@@ -50,21 +50,28 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.5" />
+        app:layout_constraintGuide_percent="0.40" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/vertical_centerline2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.25" />
+        app:layout_constraintGuide_percent="0.20" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/vertical_centerline3"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.75" />
+        app:layout_constraintGuide_percent="0.80" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/vertical_centerline4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.60" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline"
@@ -214,8 +221,8 @@
         android:background="@drawable/timer_0"
         android:backgroundTint="@color/white"
         app:layout_constraintBottom_toTopOf="@+id/guideline"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="@+id/vertical_centerline3" />
+        app:layout_constraintEnd_toStartOf="@+id/vertical_centerline"
+        app:layout_constraintStart_toStartOf="@+id/vertical_centerline2" />
 
     <Button
         android:id="@+id/BT_qrcode"
@@ -224,10 +231,20 @@
         android:background="@drawable/qrcode"
         android:backgroundTint="@color/aureolin_yellow"
         app:layout_constraintBottom_toTopOf="@+id/guideline"
-        app:layout_constraintEnd_toStartOf="@+id/vertical_centerline3"
+        app:layout_constraintEnd_toStartOf="@+id/vertical_centerline4"
         app:layout_constraintStart_toStartOf="@+id/vertical_centerline" />
 
     <!-- Risultato dello scan -->
+    <Button
+        android:id="@+id/BT_bokeh"
+        android:layout_width="35dp"
+        android:layout_height="35dp"
+        android:background="@drawable/portrait"
+        android:backgroundTint="@color/white"
+        app:layout_constraintBottom_toTopOf="@+id/guideline"
+        app:layout_constraintEnd_toStartOf="@+id/vertical_centerline3"
+        app:layout_constraintStart_toStartOf="@+id/vertical_centerline4" />
+
     <TextView
         android:id="@+id/QR_text"
         android:layout_width="wrap_content"
@@ -248,8 +265,8 @@
         android:background="@drawable/flash_off"
         android:backgroundTint="@color/white"
         app:layout_constraintBottom_toTopOf="@+id/guideline"
-        app:layout_constraintEnd_toStartOf="@+id/vertical_centerline"
-        app:layout_constraintStart_toStartOf="@+id/vertical_centerline2" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/vertical_centerline3" />
 
     <View
         android:id="@+id/FocusCircle"
