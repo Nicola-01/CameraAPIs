@@ -163,7 +163,6 @@ class MainActivity : AppCompatActivity() {
     private var ratioVideo = AspectRatio.RATIO_4_3
     private var videoResolution = QualitySelector.from(Quality.HIGHEST)
     private var hdr = true
-    private var bokeh = true
     private var isHdrAvailable = true
     private var isBokehAvailable = true
     private var gps = false
@@ -571,7 +570,7 @@ class MainActivity : AppCompatActivity() {
                 getColorStateList(R.color.aureolin_yellow)
             else
                 getColorStateList(R.color.white)
-        //todo effetto bokeh
+        startCamera()
     }
 
     /**
@@ -604,14 +603,15 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "HDR non disponibile", Toast.LENGTH_SHORT).show()
                 camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture)
                 }
-            else if(bokeh && isBokehAvailable) {
+            if(bokehStatus && isBokehAvailable) {
                 camera = cameraProvider.bindToLifecycle(this, bokehCameraSelector, preview, imageCapture)
                 camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, videoCapture)
                 }
-            else if (bokeh) {
+            else if (bokehStatus) {
                 Log.d(TAG, "BOKEH is not available")
                 Toast.makeText(this, "BOKEH non disponibile", Toast.LENGTH_SHORT).show()
                 camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture)
+                bokeh(false)
             }
             else
                 camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture)
@@ -1038,7 +1038,6 @@ class MainActivity : AppCompatActivity() {
         findViewById<Group>(R.id.Group_grid).visibility =
             if(pm.getBoolean("SW_grid", true)) View.VISIBLE else View.INVISIBLE // le righe sono al interno di un gruppo, quindi prendo direttamente quello
         hdr = pm.getBoolean("SW_HDR", true)
-        bokeh = pm.getBoolean("SW_bokeh", true)
         gps = pm.getBoolean("SW_GPS", true)
         feedback = pm.getBoolean("SW_feedback", true)
         saveMode = pm.getBoolean("SW_mode", true)

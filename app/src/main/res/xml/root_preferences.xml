@@ -71,12 +71,6 @@
             app:iconSpaceReserved="false"
             app:summary="@string/swHDR" />
         <SwitchPreference
-            android:defaultValue="false"
-            android:key="SW_bokeh"
-            android:title="Bokeh"
-            app:iconSpaceReserved="false"
-            app:summary="@string/swHDR" />
-        <SwitchPreference
             android:defaultValue="true"
             android:key="SW_feedback"
             android:title="Feedback vibrazione"
