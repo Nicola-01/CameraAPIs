@@ -541,7 +541,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         btBokehMode.setOnClickListener {
-            bokeh(!bokehStatus)
+            bokeh()
         }
 
         btSettings.setOnClickListener {view ->
@@ -563,7 +563,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun bokeh()
     {
-        //bindCameraBokeh()
+        bindCameraBokeh()
     }
 
     /**
@@ -583,42 +583,46 @@ class MainActivity : AppCompatActivity() {
         try {
             cameraProvider.unbindAll()            // Unbind use cases before rebinding
 
-            // devo ricostruire la camera ogni volta, dato che cambio la camera
+            camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture) // devo ricostruire la camera ogni volta, dato che cambio al camera
             // in quanto cambio la camera
-
-            // if provvisori per vedere se funzionano le modalità
-            if(hdr && isHdrAvailable) {
-                camera =
-                    if(!recordMode)
-                        cameraProvider.bindToLifecycle(this, hdrCameraSelector, preview, imageCapture)
-                    else
-                        cameraProvider.bindToLifecycle(this, cameraSelector, preview, videoCapture)
-            }
-            else if (hdr) {
-                Log.d(TAG, "HDR is not available")
-                Toast.makeText(this, "HDR non disponibile", Toast.LENGTH_SHORT).show()
-                camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture)
-                }
-            if(bokehStatus && isBokehAvailable) {
-                camera =
-                    if(!recordMode)
-                        cameraProvider.bindToLifecycle(this, bokehCameraSelector, preview, imageCapture)
-                    else
-                        cameraProvider.bindToLifecycle(this, cameraSelector, preview, videoCapture)
-                }
-            else if (bokehStatus) {
-                Log.d(TAG, "BOKEH is not available")
-                Toast.makeText(this, "BOKEH non disponibile", Toast.LENGTH_SHORT).show()
-                camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture)
-                bokeh(false)
-            }
-            else
-                camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture)
 
             cameraControl = camera.cameraControl
         } catch(e: Exception) {
             Log.e(TAG, "Bind failed", e)
         }
+    }
+
+    private fun bindCameraBokeh(){
+        // if provvisori per vedere se funzionano le modalità
+        /*
+        if(hdr && isHdrAvailable) {
+            camera =
+                if(!recordMode)
+                    cameraProvider.bindToLifecycle(this, hdrCameraSelector, preview, imageCapture)
+                else
+                    cameraProvider.bindToLifecycle(this, cameraSelector, preview, videoCapture)
+        }
+        else if (hdr) {
+            Log.d(TAG, "HDR is not available")
+            Toast.makeText(this, "HDR non disponibile", Toast.LENGTH_SHORT).show()
+            camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture)
+            }
+        if(bokehStatus && isBokehAvailable) {
+            camera =
+                if(!recordMode)
+                    cameraProvider.bindToLifecycle(this, bokehCameraSelector, preview, imageCapture)
+                else
+                    cameraProvider.bindToLifecycle(this, cameraSelector, preview, videoCapture)
+            }
+        else if (bokehStatus) {
+            Log.d(TAG, "BOKEH is not available")
+            Toast.makeText(this, "BOKEH non disponibile", Toast.LENGTH_SHORT).show()
+            camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture)
+            bokeh(false)
+        }
+        else
+            camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture)
+        */
     }
 
     /**
@@ -1257,7 +1261,6 @@ class MainActivity : AppCompatActivity() {
                 )
             recOptions()
         }
-        bindCamera()
     }
 
     /**
