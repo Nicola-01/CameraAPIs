@@ -595,20 +595,27 @@ class MainActivity : AppCompatActivity() {
             // in quanto cambio la camera
 
             // if provvisori per vedere se funzionano le modalità
-            if(hdr && isHdrAvailable)
-                camera = cameraProvider.bindToLifecycle(this, hdrCameraSelector, preview, imageCapture, videoCapture)
+            if(hdr && isHdrAvailable) {
+                camera = cameraProvider.bindToLifecycle(this, hdrCameraSelector, preview, imageCapture)
+                camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, videoCapture)
+            }
             else if (hdr) {
                 Log.d(TAG, "HDR is not available")
                 Toast.makeText(this, "HDR non disponibile", Toast.LENGTH_SHORT).show()
                 camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture)
                 }
-            else if(bokeh && isBokehAvailable)
-                camera = cameraProvider.bindToLifecycle(this, bokehCameraSelector, preview, imageCapture, videoCapture)
+            else if(bokeh && isBokehAvailable) {
+                camera = cameraProvider.bindToLifecycle(this, bokehCameraSelector, preview, imageCapture)
+                camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, videoCapture)
+                }
             else if (bokeh) {
                 Log.d(TAG, "BOKEH is not available")
                 Toast.makeText(this, "BOKEH non disponibile", Toast.LENGTH_SHORT).show()
                 camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture)
             }
+            else
+                camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture)
+
             cameraControl = camera.cameraControl
         } catch(e: Exception) {
             Log.e(TAG, "Build failed", e)
@@ -1031,6 +1038,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<Group>(R.id.Group_grid).visibility =
             if(pm.getBoolean("SW_grid", true)) View.VISIBLE else View.INVISIBLE // le righe sono al interno di un gruppo, quindi prendo direttamente quello
         hdr = pm.getBoolean("SW_HDR", true)
+        bokeh = pm.getBoolean("SW_bokeh", true)
         gps = pm.getBoolean("SW_GPS", true)
         feedback = pm.getBoolean("SW_feedback", true)
         saveMode = pm.getBoolean("SW_mode", true)
