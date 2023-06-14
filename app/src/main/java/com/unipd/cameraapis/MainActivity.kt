@@ -151,7 +151,6 @@ class MainActivity : AppCompatActivity() {
     private var isRecording = false
     private var inPause = false
     private var timerOn = false
-    private var qrScanner = true
     private var captureJob: Job? = null
     private var isbtShootLongClicked = false
     private var isVolumeButtonClicked : Boolean = false
@@ -186,7 +185,7 @@ class MainActivity : AppCompatActivity() {
         private const val KEY_TIMER = "TimerMode"
         private const val KEY_ZOOM = "ZoomProgress"
         private const val KEY_REC = "RecordMode"
-        private const val KEY_QRCODE = "qrScanner"
+        private const val KEY_BOKEH = "Bokeh"
 
         /**
          * Velocita' minima per rilevare lo swipe.
@@ -907,13 +906,13 @@ class MainActivity : AppCompatActivity() {
             recording?.resume() // ripristina registrazione
             cmRecTimer.base = SystemClock.elapsedRealtime() - cmPauseAt // calcolo per riesumare il timer correttamente
             cmRecTimer.start()
-            btPause.setBackgroundResource(R.drawable.pause_button) // cambio grafica al pulsante
+            btPause.setBackgroundResource(R.drawable.play_button) // cambio grafica al pulsante
         }
         else {
             recording?.pause() // mette in pausa la registrazione
             cmRecTimer.stop()
             cmPauseAt = SystemClock.elapsedRealtime() - cmRecTimer.base
-            btPause.setBackgroundResource(R.drawable.play_button) // cambio grafica al pulsante
+            btPause.setBackgroundResource(R.drawable.pause_button) // cambio grafica al pulsante
         }
         inPause = !inPause
     }
@@ -963,8 +962,7 @@ class MainActivity : AppCompatActivity() {
         setTimerMode()
         var progress = changeCameraSeekBar
 
-        qrScanner = preferences.getBoolean(KEY_QRCODE, true)
-        //qrCode(qrScanner)
+        bokeh(preferences.getBoolean(KEY_BOKEH, false))
 
         if(saveMode)
             recordMode = preferences.getBoolean(KEY_REC, true)
@@ -1663,7 +1661,7 @@ class MainActivity : AppCompatActivity() {
         }
         editor.putString(KEY_FLASH, currFlashMode.toString())
         editor.putString(KEY_TIMER, currTimerMode.toString())
-        editor.putBoolean(KEY_QRCODE, qrScanner)
+        editor.putBoolean(KEY_BOKEH, bokehStatus)
         editor.putBoolean(KEY_REC, recordMode)
 
         editor.apply()
