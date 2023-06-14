@@ -109,7 +109,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btZoom10 : Button
     private lateinit var btZoomRec : Button
     private lateinit var btQR : Button
-    private lateinit var btBokeh : Button
+    private lateinit var btBokehMode : Button
     private lateinit var btSettings : Button
     private lateinit var focusCircle : View
     private lateinit var focusView : View
@@ -399,7 +399,7 @@ class MainActivity : AppCompatActivity() {
         btZoom10 = viewBinding.BT10
         btZoomRec = viewBinding.BTZoomRec
         btQR = viewBinding.BTQrcode
-        btBokeh = viewBinding.BTBokeh
+        btBokehMode = viewBinding.BTBokehMode
         btSettings = viewBinding.BTSettings
         cmRecTimer = viewBinding.CMRecTimer
         cmRecTimer.format = "%02d:%02d:%02d"
@@ -540,7 +540,7 @@ class MainActivity : AppCompatActivity() {
             qrCode()
         }
 
-        btBokeh.setOnClickListener {
+        btBokehMode.setOnClickListener {
             bokeh(!bokehStatus)
         }
 
@@ -561,15 +561,9 @@ class MainActivity : AppCompatActivity() {
         startActivityForResult(intent, 1)
     }
 
-    private fun bokeh(status: Boolean)
+    private fun bokeh()
     {
-        bokehStatus = status
-        btBokeh.backgroundTintList =
-            if(status)
-                getColorStateList(R.color.aureolin_yellow)
-            else
-                getColorStateList(R.color.white)
-        bindCamera()
+        //bindCameraBokeh()
     }
 
     /**
@@ -623,7 +617,7 @@ class MainActivity : AppCompatActivity() {
 
             cameraControl = camera.cameraControl
         } catch(e: Exception) {
-            Log.e(TAG, "Build failed", e)
+            Log.e(TAG, "Bind failed", e)
         }
     }
 
@@ -962,7 +956,6 @@ class MainActivity : AppCompatActivity() {
         setTimerMode()
         var progress = changeCameraSeekBar
 
-        bokeh(preferences.getBoolean(KEY_BOKEH, false))
 
         if(saveMode)
             recordMode = preferences.getBoolean(KEY_REC, true)
@@ -980,7 +973,7 @@ class MainActivity : AppCompatActivity() {
         }
         changeMode(recordMode)
         // uso changeZoom per cambiare lo zoom e ricostruire la camera
-        changeZoom(progress, true) // cambio zoom e forzo il rebuild
+        changeZoom(progress, true) // cambio zoom e forzo il rebind
     }
 
     /**
@@ -1059,11 +1052,11 @@ class MainActivity : AppCompatActivity() {
      * Metodo usato per cambiare lo zoom della camera.
      *
      * @param progress  valore della SeekBar
-     * @param buildAnyway booleano per forzare il rebuild
+     * @param bindAnyway booleano per forzare il rebind
      */
-    private fun changeZoom(progress : Int, buildAnyway : Boolean = false)
+    private fun changeZoom(progress : Int, bindAnyway : Boolean = false)
     {
-        var reBuild = false // evito di costruire la camera ogni volta
+        var reBind = false // evito di costruire la camera ogni volta
 
         // sbZoom va da 0 a 150, quindi i primi 50 valori sono per lo zoom con la ultra grand angolare,
         // gli altri per la camera grand angolare, non sono riuscito a recuperare la telephoto
@@ -1089,12 +1082,12 @@ class MainActivity : AppCompatActivity() {
                 if(currentCamera==0) // se sono in back default
                 {
                     currentCamera = 2 // passo in back grand angolare
-                    reBuild=true
+                    reBind=true
                 }
                 else if(currentCamera==3) // se sono in front normale
                 {
                     currentCamera = 1 // passo in front grand angolare
-                    reBuild=true
+                    reBind=true
                 }
             }
             else
@@ -1108,12 +1101,12 @@ class MainActivity : AppCompatActivity() {
                 if(currentCamera==2) // se sono in back grand angolare
                 {
                     currentCamera = 0 // passo in back default
-                    reBuild=true
+                    reBind=true
                 }
                 else if(currentCamera==1) // se sono in front grand angolare
                 {
                     currentCamera = 3 // front in normale
-                    reBuild=true
+                    reBind=true
                 }
             }
         }
@@ -1126,25 +1119,25 @@ class MainActivity : AppCompatActivity() {
         btZoom10.text = getString(R.string.zoom_1_0x)
         btZoom05.backgroundTintList = getColorStateList(R.color.gray_onyx)
         btZoom10.backgroundTintList = getColorStateList(R.color.gray_onyx)
-        btZoom05.setTextColor(getColor(R.color.white))
-        btZoom10.setTextColor(getColor(R.color.white))
+        btZoom05.setTextColor(getColor(R.color.floral_white))
+        btZoom10.setTextColor(getColor(R.color.floral_white))
 
         if(currentCamera==0 || currentCamera == 3) // camera normale 1 -> 8
         {
             btZoomRec.text = "${(zoomLv*(maxZoom-1)+1).toString().substring(0,3)}x" // (zoomLv*(maxzoom-1)+1) fa si che visualizzi maxzoom come massimo e 1x come minimo
             btZoom10.text = "${(zoomLv*(maxZoom-1)+1).toString().substring(0,3)}x"
-            btZoom10.backgroundTintList = getColorStateList(R.color.white)
+            btZoom10.backgroundTintList = getColorStateList(R.color.floral_white)
             btZoom10.setTextColor(getColor(R.color.black))
         }
         else // camera grand angolare 0.5 -> 8
         {
             btZoomRec.text = "${(zoomLv*(maxZoom-0.5)+0.5).toString().substring(0,3)}x" // (zoomLv*(maxzoom-0.5)+0.5) fa si che visualizzi maxzoom come massimo e 0.5x come minimo
             btZoom05.text = "${(zoomLv+0.5).toString().substring(0,3)}x"
-            btZoom05.backgroundTintList = getColorStateList(R.color.white)
+            btZoom05.backgroundTintList = getColorStateList(R.color.floral_white)
             btZoom05.setTextColor(getColor(R.color.black))
         }
 
-        if(buildAnyway || (reBuild && !isRecording)) // se sta registrando non cambia fotocamera
+        if(bindAnyway || (reBind && !isRecording)) // se sta registrando non cambia fotocamera
             bindCamera()
         cameraControl.setLinearZoom(zoomLv) // cambia il valore dello zoom
         Log.d(TAG,"Zoom lv: $zoomLv, zoomState: ${zoomState.value}" )
@@ -1243,12 +1236,12 @@ class MainActivity : AppCompatActivity() {
         val bt2 = if(record) btPhotoMode else btRecMode
         val aspect = if(record) aspectRatioVideo else aspectRatioPhoto
 
-        bt1.backgroundTintList = getColorStateList(R.color.white)
+        bt1.backgroundTintList = getColorStateList(R.color.floral_white)
         bt1.setTextColor(getColor(R.color.black))
 
         //bt2.setBackgroundColor(getColor(R.color.gray_onyx))
         bt2.backgroundTintList = getColorStateList(R.color.gray_onyx)
-        bt2.setTextColor(getColor(R.color.white))
+        bt2.setTextColor(getColor(R.color.floral_white))
 
         // cambia rapporto preview
         val layoutParams = viewPreview.layoutParams as ConstraintLayout.LayoutParams
@@ -1451,7 +1444,6 @@ class MainActivity : AppCompatActivity() {
      */
     private fun rotateButton(angle : Float)
     {
-        btBokeh.rotation = angle
         btFlash.rotation = angle
         btGallery.rotation = angle
         btPhotoMode.rotation = angle
@@ -1556,7 +1548,7 @@ class MainActivity : AppCompatActivity() {
         btTimer.setBackgroundResource(
             when(status){
                 "OFF" -> {
-                    btTimer.backgroundTintList = getColorStateList(R.color.white)
+                    btTimer.backgroundTintList = getColorStateList(R.color.floral_white)
                     R.drawable.timer_0
                 }
                 "3" -> R.drawable.timer_3
@@ -1596,7 +1588,7 @@ class MainActivity : AppCompatActivity() {
         when(currFlashMode) {
             FlashModes.OFF -> {
                 btFlash.setBackgroundResource(R.drawable.flash_off)
-                btFlash.backgroundTintList = getColorStateList(R.color.white)
+                btFlash.backgroundTintList = getColorStateList(R.color.floral_white)
                 imageCapture?.flashMode = ImageCapture.FLASH_MODE_OFF
                 //Nel caso in cui si stia registrando disattiva il flash in modalita' OFF
                 if(recording != null) { cameraControl.enableTorch(false) }
@@ -1689,8 +1681,8 @@ class MainActivity : AppCompatActivity() {
         catch (e : Exception) {
             Log.e(TAG, "Exception $e")
         }
-
-        loadFromSetting()
+        if(::camera.isInitialized)
+            loadFromSetting() // todo temporaneo, dovrebbe stare fuori dal try-catch
     }
 
     /**

@@ -5,6 +5,8 @@
     <string name="zoom_0.5x">0.5x</string>
     <string name="Video_function">VIDEO</string>
     <string name="Photo_function">FOTO</string>
+    <string name="Night_function">NIGHT</string>
+    <string name="Bokeh_function">BOKEH</string>
 
     <string name="title_activity_settings">Impostazioni Fotocamera</string>
 

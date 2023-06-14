@@ -50,28 +50,21 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.40" />
+        app:layout_constraintGuide_percent="0.50" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/vertical_centerline2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.20" />
+        app:layout_constraintGuide_percent="0.25" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/vertical_centerline3"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.80" />
-
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/vertical_centerline4"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.60" />
+        app:layout_constraintGuide_percent="0.75" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline"
@@ -92,6 +85,7 @@
         android:layout_width="70dp"
         android:layout_height="70dp"
         android:background="@drawable/rounded_corner"
+        android:backgroundTint="@color/floral_white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.501"
@@ -133,7 +127,7 @@
         android:background="@drawable/rounded_corner"
         android:backgroundTint="@color/gray_onyx"
         android:text="@string/zoom_0.5x"
-        android:textColor="@color/white"
+        android:textColor="@color/floral_white"
         android:textSize="10sp"
         app:layout_constraintBottom_toTopOf="@+id/SB_zoom"
         app:layout_constraintEnd_toStartOf="@+id/space" />
@@ -146,6 +140,7 @@
         android:contextClickable="false"
         android:text="@string/zoom_1.0x"
         android:textColor="@color/black"
+        android:backgroundTint="@color/floral_white"
         android:textSize="10sp"
         app:layout_constraintBottom_toTopOf="@+id/SB_zoom"
         app:layout_constraintStart_toEndOf="@+id/space" />
@@ -221,7 +216,7 @@
         android:layout_width="35dp"
         android:layout_height="35dp"
         android:background="@drawable/timer_0"
-        android:backgroundTint="@color/white"
+        android:backgroundTint="@color/floral_white"
         app:layout_constraintBottom_toTopOf="@+id/guideline"
         app:layout_constraintEnd_toStartOf="@+id/vertical_centerline"
         app:layout_constraintStart_toStartOf="@+id/vertical_centerline2" />
@@ -233,39 +228,17 @@
         android:background="@drawable/qrcode"
         android:backgroundTint="@color/aureolin_yellow"
         app:layout_constraintBottom_toTopOf="@+id/guideline"
-        app:layout_constraintEnd_toStartOf="@+id/vertical_centerline4"
+        app:layout_constraintEnd_toStartOf="@+id/vertical_centerline3"
         app:layout_constraintStart_toStartOf="@+id/vertical_centerline" />
 
     <!-- Risultato dello scan -->
-    <Button
-        android:id="@+id/BT_bokeh"
-        android:layout_width="35dp"
-        android:layout_height="35dp"
-        android:background="@drawable/portrait"
-        android:backgroundTint="@color/white"
-        app:layout_constraintBottom_toTopOf="@+id/guideline"
-        app:layout_constraintEnd_toStartOf="@+id/vertical_centerline3"
-        app:layout_constraintStart_toStartOf="@+id/vertical_centerline4" />
-
-    <TextView
-        android:id="@+id/QR_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:background="@color/white"
-        android:text="prova"
-        android:visibility="invisible"
-        android:textColor="@color/black"
-        android:textSize="24sp"
-        app:layout_constraintBottom_toTopOf="@+id/GR_horiz1"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent" />
 
     <Button
         android:id="@+id/BT_flash"
         android:layout_width="35dp"
         android:layout_height="35dp"
         android:background="@drawable/flash_off"
-        android:backgroundTint="@color/white"
+        android:backgroundTint="@color/floral_white"
         app:layout_constraintBottom_toTopOf="@+id/guideline"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@+id/vertical_centerline3" />
@@ -276,14 +249,16 @@
         android:layout_height="70dp"
         android:background="@drawable/focus_circle"
         android:visibility="invisible"
-        tools:layout_editor_absoluteY="64dp" />
+        tools:layout_editor_absoluteY="64dp"
+        tools:ignore="MissingConstraints,Viene settata la posizione in base a dove viene
+            cliccato il dito,usato per la messa a fuoco" />
 
     <Button
         android:id="@+id/BT_settings"
         android:layout_width="35dp"
         android:layout_height="35dp"
         android:background="@drawable/settings"
-        android:backgroundTint="@color/white"
+        android:backgroundTint="@color/floral_white"
         app:layout_constraintBottom_toTopOf="@+id/guideline"
         app:layout_constraintEnd_toStartOf="@+id/vertical_centerline2"
         app:layout_constraintStart_toStartOf="parent" />
@@ -292,27 +267,26 @@
         android:id="@+id/CM_RecTimer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
         android:background="@drawable/rounded_corner_red"
         android:paddingLeft="5dp"
         android:paddingRight="5dp"
-        android:textColor="@color/white"
+        android:textColor="@color/floral_white"
         android:textSize="18sp"
         android:visibility="invisible"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/view_Preview" />
+        app:layout_constraintTop_toBottomOf="@+id/VW_topBand" />
 
     <TextView
         android:id="@+id/TextTimer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="@color/white"
+        android:textColor="@color/floral_white"
         android:textSize="84sp"
         app:layout_constraintBottom_toTopOf="@+id/GR_horiz1"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/view_Preview" />
+        app:layout_constraintTop_toBottomOf="@+id/VW_topBand" />
 
     <View
         android:id="@+id/GR_vert1"
@@ -366,37 +340,79 @@
         app:layout_constraintTop_toTopOf="@+id/view_Preview"
         app:layout_constraintVertical_bias="0.67" />
 
-    <Button
-        android:id="@+id/BT_photoMode"
-        android:layout_width="80dp"
-        android:layout_height="45dp"
-        android:background="@drawable/rounded_corner"
-        android:backgroundTint="@color/white"
-        android:text="@string/Photo_function"
-        android:textColor="@color/black"
-        app:layout_constraintBottom_toBottomOf="@+id/space2"
-        app:layout_constraintEnd_toStartOf="@+id/space2"
-        app:layout_constraintTop_toTopOf="@+id/space2" />
 
-    <Button
-        android:id="@+id/BT_recordMode"
-        android:layout_width="80dp"
-        android:layout_height="45dp"
-        android:background="@drawable/rounded_corner"
-        android:backgroundTint="@color/gray_onyx"
-        android:text="@string/Video_function"
-        android:textColor="@color/white"
-        app:layout_constraintBottom_toBottomOf="@+id/space2"
-        app:layout_constraintStart_toEndOf="@+id/space2"
-        app:layout_constraintTop_toTopOf="@+id/space2" />
-
-    <Space
-        android:id="@+id/space2"
-        android:layout_width="40dp"
-        android:layout_height="33dp"
-        app:layout_constraintBottom_toTopOf="@+id/BT_shoots"
+    <HorizontalScrollView
+        android:id="@+id/hsv"
+        android:layout_width="300dp"
+        android:layout_height="50dp"
+        android:layout_alignParentTop="true"
+        android:fillViewport="true"
+        android:measureAllChildren="false"
+        android:scrollbars="none"
+        app:layout_constraintBottom_toTopOf="@+id/guideline2"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/VW_bottomBand" />
+        app:layout_constraintStart_toStartOf="@+id/VW_bottomBand"
+        app:layout_constraintTop_toTopOf="@+id/VW_bottomBand">
+
+        <LinearLayout
+            android:id="@+id/innerLay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal" >
+
+            <Button
+                android:id="@+id/BT_nightMode"
+                android:layout_width="80dp"
+                android:layout_height="45dp"
+                android:background="@drawable/rounded_corner"
+                android:backgroundTint="@color/gray_onyx"
+                android:text="@string/Night_function"
+                android:textColor="@color/black"/>
+
+            <Space
+                android:id="@+id/space2"
+                android:layout_width="15dp"
+                android:layout_height="33dp"/>
+
+            <Button
+                android:id="@+id/BT_bokehMode"
+                android:layout_width="80dp"
+                android:layout_height="45dp"
+                android:background="@drawable/rounded_corner"
+                android:backgroundTint="@color/gray_onyx"
+                android:text="@string/Bokeh_function"
+                android:textColor="@color/black"/>
+
+            <Space
+                android:id="@+id/space3"
+                android:layout_width="15dp"
+                android:layout_height="33dp"/>
+            
+            <Button
+                android:id="@+id/BT_photoMode"
+                android:layout_width="80dp"
+                android:layout_height="45dp"
+                android:background="@drawable/rounded_corner"
+                android:backgroundTint="@color/floral_white"
+                android:text="@string/Photo_function"
+                android:textColor="@color/black"/>
+
+            <Space
+                android:id="@+id/space4"
+                android:layout_width="15dp"
+                android:layout_height="33dp"/>
+
+            <Button
+                android:id="@+id/BT_recordMode"
+                android:layout_width="80dp"
+                android:layout_height="45dp"
+                android:background="@drawable/rounded_corner"
+                android:backgroundTint="@color/gray_onyx"
+                android:text="@string/Video_function"
+                android:textColor="@color/floral_white" />
+        </LinearLayout>
+
+    </HorizontalScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
