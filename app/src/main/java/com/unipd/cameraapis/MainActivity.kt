@@ -38,6 +38,7 @@ import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.Button
 import android.widget.Chronometer
+import android.widget.HorizontalScrollView
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
@@ -100,7 +101,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btGallery : Button
     private lateinit var btPause : Button
     private lateinit var btPhotoMode : Button
-    private lateinit var btRecMode : Button
+    private lateinit var btVideoMode : Button
     private lateinit var btRotation : Button
     private lateinit var btShoot : Button
     private lateinit var btStop : Button
@@ -110,6 +111,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btZoomRec : Button
     private lateinit var btQR : Button
     private lateinit var btBokehMode : Button
+    private lateinit var btNightMode : Button
     private lateinit var btSettings : Button
     private lateinit var focusCircle : View
     private lateinit var focusView : View
@@ -117,6 +119,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var sbZoom : SeekBar
     private lateinit var cmRecTimer : Chronometer
     private lateinit var countDownText : TextView
+    private lateinit var scrollViewMode: HorizontalScrollView
 
     // variabili
     private lateinit var availableCameraInfos: MutableList<CameraInfo>
@@ -147,7 +150,7 @@ class MainActivity : AppCompatActivity() {
     private var countMultiShot = 0
     var rotation = 0
 
-    private var recordMode = false
+    private var currentMode = PHOTO_MODE
     private var isRecording = false
     private var inPause = false
     private var timerOn = false
@@ -184,8 +187,13 @@ class MainActivity : AppCompatActivity() {
         private const val KEY_FLASH = "FlashMode"
         private const val KEY_TIMER = "TimerMode"
         private const val KEY_ZOOM = "ZoomProgress"
-        private const val KEY_REC = "RecordMode"
+        private const val KEY_MODE = "CurrentMode"
         private const val KEY_BOKEH = "Bokeh"
+
+        private const val VIDEO_MODE = 0
+        private const val PHOTO_MODE = 1
+        private const val BOKEH_MODE = 2
+        private const val NIGHT_MODE = 3
 
         /**
          * Velocita' minima per rilevare lo swipe.
@@ -248,12 +256,12 @@ class MainActivity : AppCompatActivity() {
             "shortcut.photo" -> {
                 Log.d(TAG, "photo_shortcut")
                 rotateCamera(override = true, true)
-                changeMode(false)
+                changeMode(PHOTO_MODE)
             }
 
             "shortcut.video" -> {
                 Log.d(TAG, "video_shortcut")
-                changeMode(true)
+                changeMode(VIDEO_MODE)
             }
 
             "shortcut.qrcode" -> {
@@ -343,6 +351,13 @@ class MainActivity : AppCompatActivity() {
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) {
+
+            // aggiustamento scrollBar tasto selezionato
+            if(currentMode <= PHOTO_MODE)
+                scrollViewMode.fullScroll(View.FOCUS_RIGHT)
+            else
+                scrollViewMode.fullScroll(View.FOCUS_LEFT)
+
             val preferences = getPreferences(MODE_PRIVATE)
 
             // recupero le variabili dalle preferences
@@ -386,11 +401,13 @@ class MainActivity : AppCompatActivity() {
      */
     private fun createElement()
     {
+        btBokehMode = viewBinding.BTBokehMode
         btFlash = viewBinding.BTFlash
         btGallery = viewBinding.BTGallery
+        btNightMode = viewBinding.BTNightMode
         btPause = viewBinding.BTPause
         btPhotoMode = viewBinding.BTPhotoMode
-        btRecMode = viewBinding.BTRecordMode
+        btVideoMode = viewBinding.BTRecordMode
         btRotation = viewBinding.BTRotation
         btShoot = viewBinding.BTShoots
         btStop = viewBinding.BTStop
@@ -399,7 +416,6 @@ class MainActivity : AppCompatActivity() {
         btZoom10 = viewBinding.BT10
         btZoomRec = viewBinding.BTZoomRec
         btQR = viewBinding.BTQrcode
-        btBokehMode = viewBinding.BTBokehMode
         btSettings = viewBinding.BTSettings
         cmRecTimer = viewBinding.CMRecTimer
         cmRecTimer.format = "%02d:%02d:%02d"
@@ -408,6 +424,8 @@ class MainActivity : AppCompatActivity() {
         countDownText = viewBinding.TextTimer
         focusView = viewBinding.FocusCircle
         viewPreview = viewBinding.viewPreview
+
+        scrollViewMode = viewBinding.scrollMode
 
         scaleDown = AnimationUtils.loadAnimation(this,R.anim.scale_down)
         scaleUp = AnimationUtils.loadAnimation(this,R.anim.scale_up)
@@ -465,8 +483,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         btPause.setOnClickListener{ pauseVideo() }
-        btPhotoMode.setOnClickListener { changeMode(false) }
-        btRecMode.setOnClickListener { changeMode(true) }
+        btVideoMode.setOnClickListener { changeMode(VIDEO_MODE) }
+        btPhotoMode.setOnClickListener { changeMode(PHOTO_MODE) }
+        btBokehMode.setOnClickListener {
+            changeMode(BOKEH_MODE)
+            bokehMode()
+        }
+        btNightMode.setOnClickListener {
+            changeMode(NIGHT_MODE)
+            nightMode()
+        }
+
         btRotation.setOnClickListener {
             rotateCamera()
             if(feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
@@ -481,12 +508,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         btShoot.setOnClickListener {
-            timerShot(recordMode)
+            timerShot(currentMode == VIDEO_MODE)
             if(feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         }
 
         btShoot.setOnLongClickListener{
-            if (isRecording || recordMode) {
+            if (isRecording || (currentMode == VIDEO_MODE)) {
                 // se sono in modalita' registrazione e tengo premuto parte la registrazione
                 // mentre se sto già registrando e passo in modalita' foto e tengo premuto fermo
                 // la registrazione
@@ -499,7 +526,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         btStop.setOnClickListener{
-            timerShot(recordMode)
+            timerShot(currentMode == VIDEO_MODE)
         }
         btTimer.setOnClickListener { switchTimerMode() }
         btTimer.setOnCreateContextMenuListener { menu, _, _ ->
@@ -540,10 +567,6 @@ class MainActivity : AppCompatActivity() {
             qrCode()
         }
 
-        btBokehMode.setOnClickListener {
-            bokeh()
-        }
-
         btSettings.setOnClickListener {view ->
             startActivity(Intent(view.context, SettingsActivity::class.java))
         }
@@ -561,38 +584,9 @@ class MainActivity : AppCompatActivity() {
         startActivityForResult(intent, 1)
     }
 
-    private fun bokeh()
+    //todo fare qui il bind (modifica dopo il vocale)
+    private fun bokehMode()
     {
-        bindCameraBokeh()
-    }
-
-    /**
-     * Costruisce la camera.
-     */
-    private fun bindCamera()
-    {
-        cameraSelector =
-            try { // dato che uso gli id della mia camera allora potrebbe non esistere quella camera
-                availableCameraInfos[currentCamera].cameraSelector
-            } catch (e : Exception) {
-                if (currentCamera % 2 == 0) // se e' camera 0 o 2 e' back
-                    CameraSelector.DEFAULT_BACK_CAMERA
-                else
-                    CameraSelector.DEFAULT_FRONT_CAMERA
-            }
-        try {
-            cameraProvider.unbindAll()            // Unbind use cases before rebinding
-
-            camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture) // devo ricostruire la camera ogni volta, dato che cambio al camera
-            // in quanto cambio la camera
-
-            cameraControl = camera.cameraControl
-        } catch(e: Exception) {
-            Log.e(TAG, "Bind failed", e)
-        }
-    }
-
-    private fun bindCameraBokeh(){
         // if provvisori per vedere se funzionano le modalità
         /*
         if(hdr && isHdrAvailable) {
@@ -624,6 +618,39 @@ class MainActivity : AppCompatActivity() {
             camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture)
         */
     }
+
+    // todo fare qui il bind (modifica dopo il vocale)
+    private fun nightMode()
+    {
+
+    }
+
+    /**
+     * Costruisce la camera.
+     */
+    private fun bindCamera()
+    {
+        cameraSelector =
+            try { // dato che uso gli id della mia camera allora potrebbe non esistere quella camera
+                availableCameraInfos[currentCamera].cameraSelector
+            } catch (e : Exception) {
+                if (currentCamera % 2 == 0) // se e' camera 0 o 2 e' back
+                    CameraSelector.DEFAULT_BACK_CAMERA
+                else
+                    CameraSelector.DEFAULT_FRONT_CAMERA
+            }
+        try {
+            cameraProvider.unbindAll()            // Unbind use cases before rebinding
+
+            camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture) // devo ricostruire la camera ogni volta, dato che cambio al camera
+            // in quanto cambio la camera
+
+            cameraControl = camera.cameraControl
+        } catch(e: Exception) {
+            Log.e(TAG, "Bind failed", e)
+        }
+    }
+
 
     /**
      * Crea la Preview della fotocamera e ne seleziona l'output, l'aspect ratio e la qualita' video.
@@ -822,6 +849,7 @@ class MainActivity : AppCompatActivity() {
                     is VideoRecordEvent.Start -> { // inizia la registrazione
                         inPause = false
                         startRecording(true) // cambio la grafica
+                        scrollViewMode.visibility = View.INVISIBLE
                     }
                     is VideoRecordEvent.Finalize -> { // finisce la registrazione
                         if (recordEvent.hasError()) { // se c'e' un errore
@@ -833,8 +861,9 @@ class MainActivity : AppCompatActivity() {
                         // resetto la grafica..
                         startRecording(false)
                         inPause = false
-                        pauseVideo()
+                        btPause.setBackgroundResource(R.drawable.pause_button) // cambio grafica al pulsante
                         btTimer.visibility = View.VISIBLE   //rendo di nuovo visibile il pulsante del timer dopo la registrazione
+                        scrollViewMode.visibility = View.VISIBLE
                     }
                 }
             }
@@ -898,19 +927,19 @@ class MainActivity : AppCompatActivity() {
     /**
      * Funzione per mettere in pausa o ripristinare la registrazione.
      */
-    private fun pauseVideo() {
+    private fun pauseVideo(set: Boolean? = false) {
         // inPause = true se la registrazione e' in pausa
         if(inPause) {
             recording?.resume() // ripristina registrazione
             cmRecTimer.base = SystemClock.elapsedRealtime() - cmPauseAt // calcolo per riesumare il timer correttamente
             cmRecTimer.start()
-            btPause.setBackgroundResource(R.drawable.play_button) // cambio grafica al pulsante
+            btPause.setBackgroundResource(R.drawable.pause_button) // cambio grafica al pulsante
         }
         else {
             recording?.pause() // mette in pausa la registrazione
             cmRecTimer.stop()
             cmPauseAt = SystemClock.elapsedRealtime() - cmRecTimer.base
-            btPause.setBackgroundResource(R.drawable.pause_button) // cambio grafica al pulsante
+            btPause.setBackgroundResource(R.drawable.play_button) // cambio grafica al pulsante
         }
         inPause = !inPause
     }
@@ -924,13 +953,13 @@ class MainActivity : AppCompatActivity() {
      */
     private fun recOptions()
     {
-        btShoot.visibility = if(recordMode && isRecording) View.INVISIBLE else View.VISIBLE
-        findViewById<Group>(R.id.Group_rec).visibility = if(recordMode && isRecording) View.VISIBLE else View.INVISIBLE
+        btShoot.visibility = if((currentMode == VIDEO_MODE) && isRecording) View.INVISIBLE else View.VISIBLE
+        findViewById<Group>(R.id.Group_rec).visibility = if((currentMode == VIDEO_MODE) && isRecording) View.VISIBLE else View.INVISIBLE
         // R.id.Group_rec e' un gruppo contenente i pulsanti per fermare e riprendere la registrazione video
 
-        if(recordMode && !isRecording) // scelta del pulsante
+        if((currentMode == VIDEO_MODE) && !isRecording) // scelta del pulsante
             btShoot.setBackgroundResource( R.drawable.in_recording_button)
-        else if(!recordMode)  {
+        else if(currentMode != VIDEO_MODE)  {
             if(isRecording)
                 btShoot.setBackgroundResource( R.drawable.rounded_corner_red)
             else
@@ -962,7 +991,7 @@ class MainActivity : AppCompatActivity() {
 
 
         if(saveMode)
-            recordMode = preferences.getBoolean(KEY_REC, true)
+            currentMode = preferences.getInt(KEY_MODE, PHOTO_MODE)
 
         if (savedInstanceState != null) { // controlo che ci sia il bundle
             //recupero variabili dal bundle
@@ -971,11 +1000,11 @@ class MainActivity : AppCompatActivity() {
             // in quanto con preference salvo solo se e' posteriore o anteriore
             // mentre nel bundle salvo effettivamente la camera corretta
             progress = savedInstanceState.getInt(KEY_ZOOM)
-            recordMode = savedInstanceState.getBoolean(KEY_REC)
+            currentMode = savedInstanceState.getInt(KEY_MODE)
 
             sbZoom.progress = progress
         }
-        changeMode(recordMode)
+        changeMode(currentMode)
         // uso changeZoom per cambiare lo zoom e ricostruire la camera
         changeZoom(progress, true) // cambio zoom e forzo il rebind
     }
@@ -1033,7 +1062,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         createRecorder() // costruita un'istanza di Recorder
-        changeMode(recordMode) // richiamo per cambiare la grandezza della preview
+        changeMode(currentMode) // richiamo per cambiare la grandezza della preview
 
         // -- Generali
         findViewById<Group>(R.id.Group_grid).visibility =
@@ -1177,6 +1206,7 @@ class MainActivity : AppCompatActivity() {
                             if(!isRecording) {
                                 val temporaryCountDown = countdown
                                 countdown = 0   // faccio partire direttamente il video, senza countdown
+                                changeMode(VIDEO_MODE)
                                 timerShot(true)
                                 countdown = temporaryCountDown
                             }
@@ -1191,7 +1221,7 @@ class MainActivity : AppCompatActivity() {
                         }
 
                         override fun onFinish() {
-                            changeMode(false)
+                            changeMode(PHOTO_MODE)
                             multishot(true)
                             isVolumeButtonClicked = true
                         }
@@ -1216,9 +1246,9 @@ class MainActivity : AppCompatActivity() {
             }
 
             // scatto da tocco singolo
-            when (volumeKey) {
+            when (volumeKey) { // volume giu -> video
                 "shot" -> {
-                    changeMode(event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)
+                    changeMode( if(event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) VIDEO_MODE else PHOTO_MODE)
                     timerShot(event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) // scatto una foto o inizio la registrazione di un video
                     return true
                 }
@@ -1234,18 +1264,46 @@ class MainActivity : AppCompatActivity() {
      * @param record True se devo passare in modalita' Video;
      *                False se devo passare in modalita' Foto
      */
-    private fun changeMode(record : Boolean) {
-        recordMode = record
-        val bt1 = if(record) btRecMode else btPhotoMode
-        val bt2 = if(record) btPhotoMode else btRecMode
-        val aspect = if(record) aspectRatioVideo else aspectRatioPhoto
+    private fun changeMode(setMode : Int) {
+        if(scrollViewMode.visibility == View.INVISIBLE) // non posso cambiare modalità mentre registro
+            return
 
-        bt1.backgroundTintList = getColorStateList(R.color.floral_white)
-        bt1.setTextColor(getColor(R.color.black))
+        currentMode = setMode
+        Log.d(TAG, "currentMode: $currentMode")
+        val aspect = if(setMode == VIDEO_MODE) aspectRatioVideo else aspectRatioPhoto
 
-        //bt2.setBackgroundColor(getColor(R.color.gray_onyx))
-        bt2.backgroundTintList = getColorStateList(R.color.gray_onyx)
-        bt2.setTextColor(getColor(R.color.floral_white))
+        btVideoMode.backgroundTintList = getColorStateList(R.color.gray_onyx)
+        btVideoMode.setTextColor(getColor(R.color.floral_white))
+        btPhotoMode.backgroundTintList = getColorStateList(R.color.gray_onyx)
+        btPhotoMode.setTextColor(getColor(R.color.floral_white))
+        btBokehMode.backgroundTintList = getColorStateList(R.color.gray_onyx)
+        btBokehMode.setTextColor(getColor(R.color.floral_white))
+        btNightMode.backgroundTintList = getColorStateList(R.color.gray_onyx)
+        btNightMode.setTextColor(getColor(R.color.floral_white))
+
+        when(setMode) {
+            VIDEO_MODE -> {
+                btVideoMode.backgroundTintList = getColorStateList(R.color.floral_white)
+                btVideoMode.setTextColor(getColor(R.color.black))
+            }
+            PHOTO_MODE -> {
+                btPhotoMode.backgroundTintList = getColorStateList(R.color.floral_white)
+                btPhotoMode.setTextColor(getColor(R.color.black))
+            }
+            BOKEH_MODE -> {
+                btBokehMode.backgroundTintList = getColorStateList(R.color.floral_white)
+                btBokehMode.setTextColor(getColor(R.color.black))
+            }
+            NIGHT_MODE -> {
+                btNightMode.backgroundTintList = getColorStateList(R.color.floral_white)
+                btNightMode.setTextColor(getColor(R.color.black))
+            }
+        }
+        if(currentMode <= PHOTO_MODE)
+            scrollViewMode.fullScroll(View.FOCUS_RIGHT)
+        else
+            scrollViewMode.fullScroll(View.FOCUS_LEFT)
+
 
         // cambia rapporto preview
         val layoutParams = viewPreview.layoutParams as ConstraintLayout.LayoutParams
@@ -1257,7 +1315,7 @@ class MainActivity : AppCompatActivity() {
         {
             if(!isRecording) // se non sta registrando
                 btShoot.setBackgroundResource( // cambio la grafica del pulsante in base a se sto registrando o no
-                    if(record) R.drawable.in_recording_button else R.drawable.rounded_corner
+                    if(setMode == VIDEO_MODE) R.drawable.in_recording_button else R.drawable.rounded_corner
                 )
             recOptions()
         }
@@ -1345,12 +1403,15 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             else if(abs(deltaX) > TRESHOLD && abs(velocityX)>TRESHOLD_VELOCITY){
-                if(deltaX>0 && recordMode)    // right swipe: video -> foto
-                {
-                    changeMode(false)
-                }
-                else if(deltaX<0 && !recordMode)    // left swipe: foto -> video
-                    changeMode(true)
+                if(deltaX>0)    // right swipe: video -> foto
+                    currentMode++
+                else if(deltaX<0)    // left swipe: foto -> video
+                    currentMode--
+                if(currentMode > NIGHT_MODE)
+                    currentMode = NIGHT_MODE
+                else if (currentMode < VIDEO_MODE)
+                    currentMode = VIDEO_MODE
+                changeMode(currentMode)
             }
             return super.onFling(e1, e2, velocityX, velocityY)
         }
@@ -1401,8 +1462,9 @@ class MainActivity : AppCompatActivity() {
             timerOn = false
             timer.cancel()
             countDownText.visibility = View.INVISIBLE
+            scrollViewMode.visibility = View.VISIBLE
             findViewById<Group>(R.id.Group_extraFunc).visibility = View.VISIBLE
-            changeMode(recordMode)
+            changeMode(currentMode) // ripristino visuale tasti corretta
             return
         }
         if(isRecording) {
@@ -1423,17 +1485,19 @@ class MainActivity : AppCompatActivity() {
                 btShoot.setBackgroundResource(R.drawable.rounded_stop_button)
                 countDownText.text = "${remainingMillis/1000 + 1}"
                 countDownText.visibility = View.VISIBLE
+                scrollViewMode.visibility = View.INVISIBLE
                 Log.d(TAG, "Secondi rimanenti: "+remainingMillis/1000)
             }
             override fun onFinish() {
                 timerOn = false
                 countDownText.visibility = View.INVISIBLE
+                scrollViewMode.visibility = View.VISIBLE
                 findViewById<Group>(R.id.Group_extraFunc).visibility = View.VISIBLE
                 if(record)
                     captureVideo()
                 else
                     takePhoto()
-                changeMode(recordMode) // richiamo change mode per impostre la grafica corretta
+                changeMode(currentMode) // richiamo change mode per impostre la grafica corretta
             }
 
         }.start()
@@ -1449,8 +1513,6 @@ class MainActivity : AppCompatActivity() {
     {
         btFlash.rotation = angle
         btGallery.rotation = angle
-        btPhotoMode.rotation = angle
-        btRecMode.rotation = angle
         btRotation.rotation = angle
         btSettings.rotation = angle
         btTimer.rotation = angle
@@ -1657,7 +1719,7 @@ class MainActivity : AppCompatActivity() {
         editor.putString(KEY_FLASH, currFlashMode.toString())
         editor.putString(KEY_TIMER, currTimerMode.toString())
         editor.putBoolean(KEY_BOKEH, bokehStatus)
-        editor.putBoolean(KEY_REC, recordMode)
+        editor.putInt(KEY_MODE, currentMode)
 
         editor.apply()
 
@@ -1696,7 +1758,7 @@ class MainActivity : AppCompatActivity() {
         super.onSaveInstanceState(savedInstanceState)
         savedInstanceState.putInt(KEY_CAMERA, currentCamera)
         savedInstanceState.putInt(KEY_ZOOM, sbZoom.progress)
-        savedInstanceState.putBoolean(KEY_REC, recordMode)
+        savedInstanceState.putInt(KEY_BOKEH, currentMode)
     }
 
     /**

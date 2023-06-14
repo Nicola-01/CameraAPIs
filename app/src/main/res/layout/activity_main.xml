@@ -341,7 +341,7 @@
 
 
     <HorizontalScrollView
-        android:id="@+id/hsv"
+        android:id="@+id/scrollMode"
         android:layout_width="300dp"
         android:layout_height="50dp"
         android:layout_alignParentTop="true"
@@ -367,7 +367,7 @@
                 android:background="@drawable/rounded_corner"
                 android:backgroundTint="@color/gray_onyx"
                 android:text="@string/Night_function"
-                android:textColor="@color/black"/>
+                android:textColor="@color/floral_white"/>
 
             <Space
                 android:id="@+id/space2"
@@ -381,7 +381,7 @@
                 android:background="@drawable/rounded_corner"
                 android:backgroundTint="@color/gray_onyx"
                 android:text="@string/Bokeh_function"
-                android:textColor="@color/black"/>
+                android:textColor="@color/floral_white"/>
 
             <Space
                 android:id="@+id/space3"
