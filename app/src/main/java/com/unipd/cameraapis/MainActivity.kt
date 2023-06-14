@@ -40,6 +40,7 @@ import android.widget.Button
 import android.widget.Chronometer
 import android.widget.SeekBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.AspectRatio
@@ -75,6 +76,8 @@ import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.math.abs
+import androidx.camera.extensions.ExtensionMode
+import androidx.camera.extensions.ExtensionsManager
 
 class MainActivity : AppCompatActivity() {
 
@@ -89,6 +92,8 @@ class MainActivity : AppCompatActivity() {
 
     // Select back camera as a default
     private var cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+    private lateinit var hdrCameraSelector: CameraSelector
+    private lateinit var bokehCameraSelector: CameraSelector
 
     // Widget di activity_main.xml
     private lateinit var btFlash : Button
@@ -156,6 +161,9 @@ class MainActivity : AppCompatActivity() {
     private var ratioVideo = AspectRatio.RATIO_4_3
     private var videoResolution = QualitySelector.from(Quality.HIGHEST)
     private var hdr = true
+    private var bokeh = true
+    private var isHdrAvailable = true
+    private var isBokehAvailable = true
     private var gps = false
     private var feedback = true
     private var saveMode = true
@@ -564,8 +572,25 @@ class MainActivity : AppCompatActivity() {
             }
         try {
             cameraProvider.unbindAll()            // Unbind use cases before rebinding
-            camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture) // devo ricostruire la camera ogni volta, dato che cambio al camera
+
+            // devo ricostruire la camera ogni volta, dato che cambio la camera
             // in quanto cambio la camera
+
+            // if provvisori per vedere se funzionano le modalità
+            if(hdr && isHdrAvailable)
+                camera = cameraProvider.bindToLifecycle(this, hdrCameraSelector, preview, imageCapture, videoCapture)
+            else if (hdr) {
+                Log.d(TAG, "HDR is not available")
+                Toast.makeText(this, "HDR non disponibile", Toast.LENGTH_SHORT).show()
+                camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture)
+                }
+            else if(bokeh && isBokehAvailable)
+                camera = cameraProvider.bindToLifecycle(this, bokehCameraSelector, preview, imageCapture, videoCapture)
+            else if (bokeh) {
+                Log.d(TAG, "BOKEH is not available")
+                Toast.makeText(this, "BOKEH non disponibile", Toast.LENGTH_SHORT).show()
+                camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture)
+            }
             cameraControl = camera.cameraControl
         } catch(e: Exception) {
             Log.e(TAG, "Build failed", e)
@@ -584,31 +609,54 @@ class MainActivity : AppCompatActivity() {
             // recupera l'istanza di ProcessCameraProvider
             cameraProvider = cameraProviderFuture.get()
 
-            // crea la Preview
-            preview = Preview.Builder()
-                .build()    // creo l'istanza di Preview
-                .also {
-                    it.setSurfaceProvider(viewBinding.viewPreview.surfaceProvider)  // seleziono dove visualizzare la preview
+            val extensionsManagerFuture = ExtensionsManager.getInstanceAsync(this, cameraProvider)
+            extensionsManagerFuture.addListener({
+                val extensionsManager = extensionsManagerFuture.get()
+
+                // seleziona la fotocamera dorsale di default
+                cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+
+                if(extensionsManager.isExtensionAvailable(cameraSelector, ExtensionMode.HDR)) {
+                    hdrCameraSelector = extensionsManager.getExtensionEnabledCameraSelector(cameraSelector, ExtensionMode.HDR)
+                }
+                else {
+                    isHdrAvailable = false
                 }
 
-            // crea un'istanza di ImageCapture e imposta il flash a OFF
-            imageCapture = ImageCapture.Builder().setFlashMode(ImageCapture.FLASH_MODE_OFF).build()
+                if(extensionsManager.isExtensionAvailable(cameraSelector, ExtensionMode.BOKEH)) {
+                    bokehCameraSelector = extensionsManager.getExtensionEnabledCameraSelector(cameraSelector, ExtensionMode.BOKEH)
+                }
+                else {
+                    isBokehAvailable = false
+                }
 
-            // seleziona la fotocamera dorsale di default
-            cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
-            // Crea un oggetto CameraSelector per la fotocamera ultra grandangolare
-            availableCameraInfos = cameraProvider.availableCameraInfos
-            Log.i(TAG, "[startCamera] available cameras Info:$availableCameraInfos") // lista contenente le fotocamere del dispositivo
-            cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+                // crea la Preview
+                preview = Preview.Builder()
+                    .build()    // creo l'istanza di Preview
+                    .also {
+                        it.setSurfaceProvider(viewBinding.viewPreview.surfaceProvider)  // seleziono dove visualizzare la preview
+                    }
 
-            // inizializzazione della camera
-            createListener()            // crea i Listener
-            createRecorder()            // crea un recorder per modificare la qualita' video e l'aspect ratio
-            buildCamera()               // crea effettivamente la camera
-            loadFromSetting()           // recupera le impostazioni
-            loadFromBundle(savedBundle) // carica gli elementi dal Bundle/Preferences
-            openByShortCut()            // controlla come e' stata aperta l'app
+                // crea un'istanza di ImageCapture e imposta il flash a OFF
+                imageCapture = ImageCapture.Builder().setFlashMode(ImageCapture.FLASH_MODE_OFF).build()
+
+
+
+                // Crea un oggetto CameraSelector per la fotocamera ultra grandangolare
+                availableCameraInfos = cameraProvider.availableCameraInfos
+                Log.i(TAG, "[startCamera] available cameras Info:$availableCameraInfos") // lista contenente le fotocamere del dispositivo
+                cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+
+                // inizializzazione della camera
+                createListener()            // crea i Listener
+                createRecorder()            // crea un recorder per modificare la qualita' video e l'aspect ratio
+                buildCamera()               // crea effettivamente la camera
+                loadFromSetting()           // recupera le impostazioni
+                loadFromBundle(savedBundle) // carica gli elementi dal Bundle/Preferences
+                openByShortCut()            // controlla come e' stata aperta l'app
+
+            }, ContextCompat.getMainExecutor(this))
 
         }, ContextCompat.getMainExecutor(this)) // specifica che le operazioni del listener vengano eseguite nel thread principale
     }
