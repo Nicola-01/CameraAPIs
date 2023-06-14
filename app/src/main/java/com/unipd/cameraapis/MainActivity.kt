@@ -151,7 +151,7 @@ class MainActivity : AppCompatActivity() {
     private var isRecording = false
     private var inPause = false
     private var timerOn = false
-    private var bokehStatus = false
+    private var qrScanner = true
     private var captureJob: Job? = null
     private var isbtShootLongClicked = false
     private var isVolumeButtonClicked : Boolean = false
@@ -161,7 +161,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var aspectRatioVideo : Rational
     private var ratioVideo = AspectRatio.RATIO_4_3
     private var videoResolution = QualitySelector.from(Quality.HIGHEST)
-    private var hdr = true
+    private var hdr = false
+    private var bokehStatus = false
     private var isHdrAvailable = true
     private var isBokehAvailable = true
     private var gps = false
@@ -185,7 +186,7 @@ class MainActivity : AppCompatActivity() {
         private const val KEY_TIMER = "TimerMode"
         private const val KEY_ZOOM = "ZoomProgress"
         private const val KEY_REC = "RecordMode"
-        private const val KEY_BOKEH = "Bokeh"
+        private const val KEY_QRCODE = "qrScanner"
 
         /**
          * Velocita' minima per rilevare lo swipe.
@@ -569,7 +570,7 @@ class MainActivity : AppCompatActivity() {
                 getColorStateList(R.color.aureolin_yellow)
             else
                 getColorStateList(R.color.white)
-        startCamera()
+        bindCamera()
     }
 
     /**
@@ -594,8 +595,11 @@ class MainActivity : AppCompatActivity() {
 
             // if provvisori per vedere se funzionano le modalità
             if(hdr && isHdrAvailable) {
-                camera = cameraProvider.bindToLifecycle(this, hdrCameraSelector, preview, imageCapture)
-                camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, videoCapture)
+                camera =
+                    if(!recordMode)
+                        cameraProvider.bindToLifecycle(this, hdrCameraSelector, preview, imageCapture)
+                    else
+                        cameraProvider.bindToLifecycle(this, cameraSelector, preview, videoCapture)
             }
             else if (hdr) {
                 Log.d(TAG, "HDR is not available")
@@ -603,8 +607,11 @@ class MainActivity : AppCompatActivity() {
                 camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture)
                 }
             if(bokehStatus && isBokehAvailable) {
-                camera = cameraProvider.bindToLifecycle(this, bokehCameraSelector, preview, imageCapture)
-                camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, videoCapture)
+                camera =
+                    if(!recordMode)
+                        cameraProvider.bindToLifecycle(this, bokehCameraSelector, preview, imageCapture)
+                    else
+                        cameraProvider.bindToLifecycle(this, cameraSelector, preview, videoCapture)
                 }
             else if (bokehStatus) {
                 Log.d(TAG, "BOKEH is not available")
@@ -956,7 +963,8 @@ class MainActivity : AppCompatActivity() {
         setTimerMode()
         var progress = changeCameraSeekBar
 
-        bokeh(preferences.getBoolean(KEY_BOKEH, false))
+        qrScanner = preferences.getBoolean(KEY_QRCODE, true)
+        //qrCode(qrScanner)
 
         if(saveMode)
             recordMode = preferences.getBoolean(KEY_REC, true)
@@ -1258,6 +1266,7 @@ class MainActivity : AppCompatActivity() {
                 )
             recOptions()
         }
+        bindCamera()
     }
 
     /**
@@ -1654,7 +1663,7 @@ class MainActivity : AppCompatActivity() {
         }
         editor.putString(KEY_FLASH, currFlashMode.toString())
         editor.putString(KEY_TIMER, currTimerMode.toString())
-        editor.putBoolean(KEY_BOKEH, bokehStatus)
+        editor.putBoolean(KEY_QRCODE, qrScanner)
         editor.putBoolean(KEY_REC, recordMode)
 
         editor.apply()
