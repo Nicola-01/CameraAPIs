@@ -595,7 +595,7 @@ class MainActivity : AppCompatActivity() {
     {
         if(isBokehAvailable) {
             cameraProvider.unbindAll()
-            camera = cameraProvider.bindToLifecycle(this, bokehCameraSelector, preview, imageCapture)
+            camera = cameraProvider.bindToLifecycle(this, bokehCameraSelector, imageCapture, preview)
             }
         else {
             Log.d(TAG, "BOKEH is not available")
@@ -612,7 +612,7 @@ class MainActivity : AppCompatActivity() {
     {
         if(isNightAvailable) {
             cameraProvider.unbindAll()
-            camera = cameraProvider.bindToLifecycle(this, nightCameraSelector, preview, imageCapture)
+            camera = cameraProvider.bindToLifecycle(this, nightCameraSelector, imageCapture, preview)
         }
         else {
             Log.d(TAG, "NIGHT MODE is not available")
