@@ -80,6 +80,7 @@ import kotlin.math.abs
 import androidx.camera.extensions.ExtensionMode
 import androidx.camera.extensions.ExtensionsManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.common.util.concurrent.ListenableFuture
 
 class MainActivity : AppCompatActivity() {
 
@@ -162,8 +163,8 @@ class MainActivity : AppCompatActivity() {
     private var isVolumeButtonClicked : Boolean = false
 
     private lateinit var volumeKey : String
-    private lateinit var aspectRatioPhoto : Rational
-    private lateinit var aspectRatioVideo : Rational
+    private var aspectRatioPhoto = Rational(3, 4)
+    private var aspectRatioVideo = Rational(3, 4)
     private var ratioVideo = AspectRatio.RATIO_4_3
     private var videoResolution = QualitySelector.from(Quality.HIGHEST)
     private var hdr = false
@@ -180,6 +181,7 @@ class MainActivity : AppCompatActivity() {
     private var popUpVisible = false
     private var permissionDenyAsk = false
 
+    private lateinit var extensionsManagerFuture : ListenableFuture<ExtensionsManager>
     companion object {
 
         private const val TAG = "CameraXApp"
@@ -597,6 +599,23 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
+     * Costruisce la camera.
+     */
+    private fun bindCamera()
+    {
+        try {
+            cameraProvider.unbindAll()            // Unbind use cases before rebinding
+
+            camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture) // devo ricostruire la camera ogni volta, dato che cambio al camera
+            // in quanto cambio la camera
+
+            cameraControl = camera.cameraControl
+        } catch(e: Exception) {
+            Log.e(TAG, "Bind failed", e)
+        }
+    }
+
+    /**
      * Passa alla modalità Foto.
      */
     private fun hdrMode()
@@ -604,6 +623,7 @@ class MainActivity : AppCompatActivity() {
         if(isHdrAvailable) {
             cameraProvider.unbindAll()
             camera = cameraProvider.bindToLifecycle(this, hdrCameraSelector, preview, imageCapture)
+            cameraControl = camera.cameraControl
         }
         else {
             Log.d(TAG, "BOKEH is not available")
@@ -621,6 +641,7 @@ class MainActivity : AppCompatActivity() {
         if(isBokehAvailable) {
             cameraProvider.unbindAll()
             camera = cameraProvider.bindToLifecycle(this, bokehCameraSelector, imageCapture, preview)
+            cameraControl = camera.cameraControl
             }
         else {
             Log.d(TAG, "BOKEH is not available")
@@ -647,33 +668,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Costruisce la camera.
-     */
-    private fun bindCamera()
-    {
-        cameraSelector =
-            try { // dato che uso gli id della mia camera allora potrebbe non esistere quella camera
-                availableCameraInfos[currentCamera].cameraSelector
-            } catch (e : Exception) {
-                if (currentCamera % 2 == 0) // se e' camera 0 o 2 e' back
-                    CameraSelector.DEFAULT_BACK_CAMERA
-                else
-                    CameraSelector.DEFAULT_FRONT_CAMERA
-            }
-        try {
-            cameraProvider.unbindAll()            // Unbind use cases before rebinding
-
-            camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture) // devo ricostruire la camera ogni volta, dato che cambio al camera
-            // in quanto cambio la camera
-
-            cameraControl = camera.cameraControl
-        } catch(e: Exception) {
-            Log.e(TAG, "Bind failed", e)
-        }
-    }
-
-
-    /**
      * Crea la Preview della fotocamera e ne seleziona l'output, l'aspect ratio e la qualita' video.
      */
     private fun startCamera() {
@@ -685,30 +679,13 @@ class MainActivity : AppCompatActivity() {
             // recupera l'istanza di ProcessCameraProvider
             cameraProvider = cameraProviderFuture.get()
 
-            val extensionsManagerFuture = ExtensionsManager.getInstanceAsync(this, cameraProvider)
+            extensionsManagerFuture = ExtensionsManager.getInstanceAsync(this, cameraProvider)
             extensionsManagerFuture.addListener({
-                val extensionsManager = extensionsManagerFuture.get()
 
                 // seleziona la fotocamera dorsale di default
                 cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
-                //Use cases
-
-                if(extensionsManager.isExtensionAvailable(cameraSelector, ExtensionMode.HDR))
-                    hdrCameraSelector = extensionsManager.getExtensionEnabledCameraSelector(cameraSelector, ExtensionMode.HDR)
-                else
-                    isHdrAvailable = false
-
-                if(extensionsManager.isExtensionAvailable(cameraSelector, ExtensionMode.BOKEH))
-                    bokehCameraSelector = extensionsManager.getExtensionEnabledCameraSelector(cameraSelector, ExtensionMode.BOKEH)
-                else
-                    isBokehAvailable = false
-
-                if(extensionsManager.isExtensionAvailable(cameraSelector, ExtensionMode.NIGHT))
-                    nightCameraSelector = extensionsManager.getExtensionEnabledCameraSelector(cameraSelector, ExtensionMode.NIGHT)
-                else
-                    isNightAvailable = false
-
+                changeSelectCamera()
 
                 // crea la Preview
                 preview = Preview.Builder()
@@ -730,9 +707,9 @@ class MainActivity : AppCompatActivity() {
                 // inizializzazione della camera
                 createListener()            // crea i Listener
                 createRecorder()            // crea un recorder per modificare la qualita' video e l'aspect ratio
+                changeMode(currentMode, true)// forzo il bind
                 loadFromSetting()           // recupera le impostazioni
                 loadFromBundle(savedBundle) // carica gli elementi dal Bundle/Preferences
-                // non chiamo changeMode, e quindi il binde, perchè viene già richiamato dai load
                 openByShortCut()            // controlla come e' stata aperta l'app
 
             }, ContextCompat.getMainExecutor(this))
@@ -1197,7 +1174,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         if(bindAnyway || (reBind && !isRecording)) // se sta registrando non cambia fotocamera
+        {
+            changeSelectCamera()
             bindCamera()
+        }
+
         cameraControl.setLinearZoom(zoomLv) // cambia il valore dello zoom
         Log.d(TAG,"Zoom lv: $zoomLv, zoomState: ${zoomState.value}" )
         Log.d(TAG, "[current camera] - zoom: $currentCamera")
@@ -1373,7 +1354,13 @@ class MainActivity : AppCompatActivity() {
         Log.d(TAG, "currentMode: $currentMode")
         val aspect = if(setMode == VIDEO_MODE) aspectRatioVideo else aspectRatioPhoto
 
-        setFlashMode() // se sono in modalità video con flash ON accende il flash, altrimenti lo spegne
+        try {
+            setFlashMode() // se sono in modalità video con flash ON accende il flash, altrimenti lo spegne
+        }
+        catch (e: Exception)
+        {
+            Log.e(TAG, "errore in changeMode $e", e)
+        }
 
         // cambia rapporto preview
         val layoutParams = viewPreview.layoutParams as ConstraintLayout.LayoutParams
@@ -1516,11 +1503,56 @@ class MainActivity : AppCompatActivity() {
                 currentCamera = 0 // passo in back
             sbZoom.progress = changeCameraSeekBar
 
-            bindCamera()
+            changeSelectCamera()
+            changeMode(currentCamera, true) // per eseguire il bind
         }
         Log.d(TAG, "[current camera]  - rotate: $currentCamera")
     }
-        
+
+    /**
+     * cambio la camera in base a quella selezionata
+     */
+    private fun changeSelectCamera()
+    {
+        cameraSelector =
+            try { // dato che uso gli id della mia camera allora potrebbe non esistere quella camera
+                availableCameraInfos[currentCamera].cameraSelector
+            } catch (e : Exception) {
+                if (currentCamera % 2 == 0) // se e' camera 0 o 2 e' back
+                    CameraSelector.DEFAULT_BACK_CAMERA
+                else
+                    CameraSelector.DEFAULT_FRONT_CAMERA
+            }
+
+        val extensionsManager = extensionsManagerFuture.get()
+
+        //Use cases
+        isHdrAvailable = false
+        isBokehAvailable = false
+        isNightAvailable = false
+
+        if(extensionsManager.isExtensionAvailable(cameraSelector, ExtensionMode.HDR)) {
+            hdrCameraSelector = extensionsManager.getExtensionEnabledCameraSelector(
+                cameraSelector, ExtensionMode.HDR)
+            isHdrAvailable = true
+        }
+
+        if(extensionsManager.isExtensionAvailable(cameraSelector, ExtensionMode.BOKEH)){
+            bokehCameraSelector = extensionsManager.getExtensionEnabledCameraSelector(
+                cameraSelector, ExtensionMode.BOKEH)
+            isBokehAvailable = true
+        }
+
+
+        if(extensionsManager.isExtensionAvailable(cameraSelector, ExtensionMode.NIGHT)) {
+            nightCameraSelector = extensionsManager.getExtensionEnabledCameraSelector(
+                cameraSelector, ExtensionMode.NIGHT)
+            isNightAvailable = true
+        }
+
+        Log.d(TAG, "change Camera, currente [$currentCamera], status: hdr: [$isHdrAvailable]; bokeh: [$isBokehAvailable]; Night: [$isNightAvailable]")
+    }
+
     /**
      * Metodo che permette di scattare una foto o di registrare un video tenendo conto dei secondi di countdown per l'autoscatto.
      *
@@ -1775,7 +1807,7 @@ class MainActivity : AppCompatActivity() {
             Log.e(TAG, "Exception $e")
         }
         if(::camera.isInitialized)
-            loadFromSetting() // todo temporaneo, dovrebbe stare fuori dal try-catch
+            loadFromSetting()
     }
 
     /**
