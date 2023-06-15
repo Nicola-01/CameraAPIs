@@ -95,6 +95,7 @@ class MainActivity : AppCompatActivity() {
     private var cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
     private lateinit var hdrCameraSelector: CameraSelector
     private lateinit var bokehCameraSelector: CameraSelector
+    private lateinit var nightCameraSelector: CameraSelector
 
     // Widget di activity_main.xml
     private lateinit var btFlash : Button
@@ -167,6 +168,7 @@ class MainActivity : AppCompatActivity() {
     private var bokehStatus = false
     private var isHdrAvailable = true
     private var isBokehAvailable = true
+    private var isNightAvailable = true
     private var gps = false
     private var feedback = true
     private var saveMode = true
@@ -585,44 +587,35 @@ class MainActivity : AppCompatActivity() {
     }
 
     //todo fare qui il bind (modifica dopo il vocale)
+    /**
+     * Passa alla modalità Bokeh (Ritratto).
+     */
     private fun bokehMode()
     {
-        // if provvisori per vedere se funzionano le modalità
-        /*
-        if(hdr && isHdrAvailable) {
-            camera =
-                if(!recordMode)
-                    cameraProvider.bindToLifecycle(this, hdrCameraSelector, preview, imageCapture)
-                else
-                    cameraProvider.bindToLifecycle(this, cameraSelector, preview, videoCapture)
-        }
-        else if (hdr) {
-            Log.d(TAG, "HDR is not available")
-            Toast.makeText(this, "HDR non disponibile", Toast.LENGTH_SHORT).show()
-            camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture)
+        if(isBokehAvailable) {
+            camera = cameraProvider.bindToLifecycle(this, bokehCameraSelector, preview, imageCapture)
             }
-        if(bokehStatus && isBokehAvailable) {
-            camera =
-                if(!recordMode)
-                    cameraProvider.bindToLifecycle(this, bokehCameraSelector, preview, imageCapture)
-                else
-                    cameraProvider.bindToLifecycle(this, cameraSelector, preview, videoCapture)
-            }
-        else if (bokehStatus) {
+        else {
             Log.d(TAG, "BOKEH is not available")
             Toast.makeText(this, "BOKEH non disponibile", Toast.LENGTH_SHORT).show()
-            camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture)
-            bokeh(false)
+            changeMode(PHOTO_MODE)
         }
-        else
-            camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture)
-        */
     }
 
     // todo fare qui il bind (modifica dopo il vocale)
+    /**
+     * Passa alla modalità Night.
+     */
     private fun nightMode()
     {
-
+        if(isNightAvailable) {
+            camera = cameraProvider.bindToLifecycle(this, nightCameraSelector, preview, imageCapture)
+        }
+        else {
+            Log.d(TAG, "NIGHT MODE is not available")
+            Toast.makeText(this, "NIGHT MODE non disponibile", Toast.LENGTH_SHORT).show()
+            changeMode(PHOTO_MODE)
+        }
     }
 
     /**
@@ -671,19 +664,22 @@ class MainActivity : AppCompatActivity() {
                 // seleziona la fotocamera dorsale di default
                 cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
-                if(extensionsManager.isExtensionAvailable(cameraSelector, ExtensionMode.HDR)) {
-                    hdrCameraSelector = extensionsManager.getExtensionEnabledCameraSelector(cameraSelector, ExtensionMode.HDR)
-                }
-                else {
-                    isHdrAvailable = false
-                }
+                //Use cases
 
-                if(extensionsManager.isExtensionAvailable(cameraSelector, ExtensionMode.BOKEH)) {
+                if(extensionsManager.isExtensionAvailable(cameraSelector, ExtensionMode.HDR))
+                    hdrCameraSelector = extensionsManager.getExtensionEnabledCameraSelector(cameraSelector, ExtensionMode.HDR)
+                else
+                    isHdrAvailable = false
+
+                if(extensionsManager.isExtensionAvailable(cameraSelector, ExtensionMode.BOKEH))
                     bokehCameraSelector = extensionsManager.getExtensionEnabledCameraSelector(cameraSelector, ExtensionMode.BOKEH)
-                }
-                else {
+                else
                     isBokehAvailable = false
-                }
+
+                if(extensionsManager.isExtensionAvailable(cameraSelector, ExtensionMode.NIGHT))
+                    nightCameraSelector = extensionsManager.getExtensionEnabledCameraSelector(cameraSelector, ExtensionMode.NIGHT)
+                else
+                    isNightAvailable = false
 
 
                 // crea la Preview
@@ -1293,10 +1289,12 @@ class MainActivity : AppCompatActivity() {
             BOKEH_MODE -> {
                 btBokehMode.backgroundTintList = getColorStateList(R.color.floral_white)
                 btBokehMode.setTextColor(getColor(R.color.black))
+                bokehMode()
             }
             NIGHT_MODE -> {
                 btNightMode.backgroundTintList = getColorStateList(R.color.floral_white)
                 btNightMode.setTextColor(getColor(R.color.black))
+                nightMode()
             }
         }
         if(currentMode <= PHOTO_MODE)
