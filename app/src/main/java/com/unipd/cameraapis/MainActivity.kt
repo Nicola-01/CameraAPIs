@@ -359,6 +359,7 @@ class MainActivity : AppCompatActivity() {
                 scrollViewMode.fullScroll(View.FOCUS_RIGHT)
             else
                 scrollViewMode.fullScroll(View.FOCUS_LEFT)
+            setFlashMode() // attivo il flash se sono in modalità video
 
             val preferences = getPreferences(MODE_PRIVATE)
 
@@ -593,6 +594,7 @@ class MainActivity : AppCompatActivity() {
     private fun bokehMode()
     {
         if(isBokehAvailable) {
+            cameraProvider.unbindAll()
             camera = cameraProvider.bindToLifecycle(this, bokehCameraSelector, preview, imageCapture)
             }
         else {
@@ -609,6 +611,7 @@ class MainActivity : AppCompatActivity() {
     private fun nightMode()
     {
         if(isNightAvailable) {
+            cameraProvider.unbindAll()
             camera = cameraProvider.bindToLifecycle(this, nightCameraSelector, preview, imageCapture)
         }
         else {
@@ -702,7 +705,7 @@ class MainActivity : AppCompatActivity() {
                 // inizializzazione della camera
                 createListener()            // crea i Listener
                 createRecorder()            // crea un recorder per modificare la qualita' video e l'aspect ratio
-                bindCamera()               // crea effettivamente la camera
+                bindCamera()                // crea effettivamente la camera
                 loadFromSetting()           // recupera le impostazioni
                 loadFromBundle(savedBundle) // carica gli elementi dal Bundle/Preferences
                 openByShortCut()            // controlla come e' stata aperta l'app
@@ -829,7 +832,7 @@ class MainActivity : AppCompatActivity() {
             .setContentValues(contentValues)
             .build()
 
-        if(currFlashMode == FlashModes.ON) cameraControl.enableTorch(true)  // se si e' impostato il flash su on questo viene acceso
+        //if(currFlashMode == FlashModes.ON) cameraControl.enableTorch(true)  // se si e' impostato il flash su on questo viene acceso
 
         if (ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
@@ -853,7 +856,7 @@ class MainActivity : AppCompatActivity() {
                             recording = null
                             Log.e(TAG, "Errore nella registrazione: " + "${recordEvent.error}")
                         }
-                        if(currFlashMode == FlashModes.ON) cameraControl.enableTorch(false)
+                        //if(currFlashMode == FlashModes.ON) cameraControl.enableTorch(false)
                         // resetto la grafica..
                         startRecording(false)
                         inPause = false
@@ -1277,14 +1280,21 @@ class MainActivity : AppCompatActivity() {
         btNightMode.backgroundTintList = getColorStateList(R.color.gray_onyx)
         btNightMode.setTextColor(getColor(R.color.floral_white))
 
+        viewPreview.visibility = View.INVISIBLE // nascondo la preview mentre ambio modalità
+        countDownText.postDelayed(Runnable {
+            viewPreview.visibility = View.VISIBLE
+        }, 900)
+
         when(setMode) {
             VIDEO_MODE -> {
                 btVideoMode.backgroundTintList = getColorStateList(R.color.floral_white)
                 btVideoMode.setTextColor(getColor(R.color.black))
+                bindCamera()
             }
             PHOTO_MODE -> {
                 btPhotoMode.backgroundTintList = getColorStateList(R.color.floral_white)
                 btPhotoMode.setTextColor(getColor(R.color.black))
+                bindCamera()
             }
             BOKEH_MODE -> {
                 btBokehMode.backgroundTintList = getColorStateList(R.color.floral_white)
@@ -1302,6 +1312,7 @@ class MainActivity : AppCompatActivity() {
         else
             scrollViewMode.fullScroll(View.FOCUS_LEFT)
 
+        setFlashMode() // se sono in modalità video con flash ON accende il flash, altrimenti lo spegne
 
         // cambia rapporto preview
         val layoutParams = viewPreview.layoutParams as ConstraintLayout.LayoutParams
@@ -1511,6 +1522,7 @@ class MainActivity : AppCompatActivity() {
     {
         btFlash.rotation = angle
         btGallery.rotation = angle
+        btQR.rotation = angle
         btRotation.rotation = angle
         btSettings.rotation = angle
         btTimer.rotation = angle
@@ -1648,27 +1660,28 @@ class MainActivity : AppCompatActivity() {
      * Metodo che permette di impostare la modalita' del flash specificata da [currFlashMode]
      */
     private fun setFlashMode() {
+        cameraControl.enableTorch(false)
         when(currFlashMode) {
             FlashModes.OFF -> {
                 btFlash.setBackgroundResource(R.drawable.flash_off)
                 btFlash.backgroundTintList = getColorStateList(R.color.floral_white)
                 imageCapture?.flashMode = ImageCapture.FLASH_MODE_OFF
                 //Nel caso in cui si stia registrando disattiva il flash in modalita' OFF
-                if(recording != null) { cameraControl.enableTorch(false) }
+                //if(currentMode == VIDEO_MODE) cameraControl.enableTorch(false)
             }
             FlashModes.ON -> {
                 btFlash.setBackgroundResource(R.drawable.flash_on)
                 btFlash.backgroundTintList = getColorStateList(R.color.aureolin_yellow)
                 imageCapture?.flashMode = ImageCapture.FLASH_MODE_ON
                 //Nel caso in cui si stia registrando attiva il flash in modalita' ON
-                if(recording != null) { cameraControl.enableTorch(true) }
+                if(currentMode == VIDEO_MODE) cameraControl.enableTorch(true)
             }
             FlashModes.AUTO -> {
                 btFlash.setBackgroundResource(R.drawable.flash_auto)
                 btFlash.backgroundTintList = getColorStateList(R.color.aureolin_yellow)
                 imageCapture?.flashMode = ImageCapture.FLASH_MODE_AUTO
                 //Nel caso in cui si stia registrando disattiva il flash in modalita' AUTO
-                if(recording != null) { cameraControl.enableTorch(false) }
+                //if(currentMode == VIDEO_MODE) cameraControl.enableTorch(false)
             }
         }
     }
