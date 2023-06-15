@@ -159,7 +159,6 @@ class MainActivity : AppCompatActivity() {
     private var inPause = false
     private var timerOn = false
     private var captureJob: Job? = null
-    private var isbtShootLongClicked = false
     private var isVolumeButtonClicked : Boolean = false
 
     private lateinit var volumeKey : String
@@ -195,7 +194,6 @@ class MainActivity : AppCompatActivity() {
         private const val KEY_TIMER = "TimerMode"
         private const val KEY_ZOOM = "ZoomProgress"
         private const val KEY_MODE = "CurrentMode"
-        private const val KEY_BOKEH = "Bokeh"
 
         private const val VIDEO_MODE = 0
         private const val PHOTO_MODE = 1
@@ -367,7 +365,9 @@ class MainActivity : AppCompatActivity() {
             else
                 scrollViewMode.fullScroll(View.FOCUS_LEFT)
             setFlashMode() // attivo il flash se sono in modalità video
+            //aggiustamenti grafici
             changeMode(currentMode, true)
+            changeZoom(sbZoom.progress)
 
             val preferences = getPreferences(MODE_PRIVATE)
 
@@ -1018,6 +1018,7 @@ class MainActivity : AppCompatActivity() {
 
             sbZoom.progress = progress
         }
+
         changeMode(currentMode)
         // uso changeZoom per cambiare lo zoom e ricostruire la camera
         changeZoom(progress, true) // cambio zoom e forzo il rebind
@@ -1103,8 +1104,6 @@ class MainActivity : AppCompatActivity() {
      */
     private fun changeZoom(progress : Int, bindAnyway : Boolean = false)
     {
-        //if(currentMode == BOKEH_MODE || currentMode == NIGHT_MODE) return
-
         var reBind = false // evito di costruire la camera ogni volta
 
         // sbZoom va da 0 a 150, quindi i primi 50 valori sono per lo zoom con la ultra grand angolare,
@@ -1287,10 +1286,6 @@ class MainActivity : AppCompatActivity() {
     private fun changeMode(setMode : Int, force : Boolean = false) {
         if(scrollViewMode.visibility == View.INVISIBLE) // non posso cambiare modalità mentre registro
             return
-
-
-        Log.d(TAG, "currentMode, setMode: $setMode")
-        Log.d(TAG, "currentMode, prima: $currentMode")
 
         if(force || currentMode != setMode){
             viewPreview.visibility = View.INVISIBLE // nascondo la preview mentre ambio modalità
@@ -1775,7 +1770,6 @@ class MainActivity : AppCompatActivity() {
         }
         editor.putString(KEY_FLASH, currFlashMode.toString())
         editor.putString(KEY_TIMER, currTimerMode.toString())
-        editor.putBoolean(KEY_BOKEH, bokehStatus)
         editor.putInt(KEY_MODE, currentMode)
 
         editor.apply()
@@ -1815,7 +1809,7 @@ class MainActivity : AppCompatActivity() {
         super.onSaveInstanceState(savedInstanceState)
         savedInstanceState.putInt(KEY_CAMERA, currentCamera)
         savedInstanceState.putInt(KEY_ZOOM, sbZoom.progress)
-        savedInstanceState.putInt(KEY_BOKEH, currentMode)
+        savedInstanceState.putInt(KEY_MODE, currentMode)
     }
 
     /**  todo forse si può eliminare
