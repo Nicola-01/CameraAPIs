@@ -21,9 +21,10 @@
 
     <!-- Setting -->
     <string name="swMode">Avvia l\'app nell\'ultima modalità usata tra le quattro disponibili.</string>
-    <string name="swGrid">Attiva o disattiva la griglia 3x3 per un allineamento preciso degli elementi</string>
+    <string name="swMirror">Salva le foto selfie come visualizzato nell\'anteprima, senza capovolgerli.</string>
+    <string name="swGrid">Attiva o disattiva la griglia 3x3 per un allineamento preciso degli elementi.</string>
     <string name="swHDR">Cattura più dettagli nelle aree più o meno luminose della foto.</string>
-    <string name="swFeedback">Se attiva alcuni tasti restituiranno una vibrazione</string>
+    <string name="swFeedback">Se attiva alcuni tasti restituiranno una vibrazione.</string>
 
     <!-- ShortCut -->
     <string name="ScSelfie">Scatta Selfie</string>

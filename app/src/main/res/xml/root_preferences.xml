@@ -60,12 +60,18 @@
             app:summary="@string/swMode" />
         <SwitchPreference
             android:defaultValue="true"
+            android:key="SW_mirror"
+            android:title="Salva selfie come mostrati"
+            app:iconSpaceReserved="false"
+            app:summary="@string/swMirror" />
+        <SwitchPreference
+            android:defaultValue="true"
             android:key="SW_grid"
             android:title="Griglia"
             app:iconSpaceReserved="false"
             app:summary="@string/swGrid" />
         <SwitchPreference
-            android:defaultValue="true"
+            android:defaultValue="false"
             android:key="SW_HDR"
             android:title="HDR"
             app:iconSpaceReserved="false"

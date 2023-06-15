@@ -167,6 +167,8 @@ class MainActivity : AppCompatActivity() {
     private var aspectRatioVideo = Rational(3, 4)
     private var ratioVideo = AspectRatio.RATIO_4_3
     private var videoResolution = QualitySelector.from(Quality.HIGHEST)
+    private var mirror = true
+    private var frontCamera = false
     private var hdr = false
     private var bokehStatus = false
     private var isHdrAvailable = true
@@ -761,6 +763,10 @@ class MainActivity : AppCompatActivity() {
             .Builder(contentResolver,
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 contentValues)
+            .setMetadata(ImageCapture.Metadata().apply {
+                // salva le immagini specchiate (se attiva l'impostazione e se in fotocamera anteriore)
+                isReversedHorizontal = (mirror && frontCamera)
+            })
             .build()
 
         // Set up image capture listener, which is triggered after photo has been taken
@@ -1075,7 +1081,8 @@ class MainActivity : AppCompatActivity() {
         // -- Generali
         findViewById<Group>(R.id.Group_grid).visibility =
             if(pm.getBoolean("SW_grid", true)) View.VISIBLE else View.INVISIBLE // le righe sono al interno di un gruppo, quindi prendo direttamente quello
-        hdr = pm.getBoolean("SW_HDR", true)
+        mirror = pm.getBoolean("SW_mirror", true)
+        hdr = pm.getBoolean("SW_HDR", false)
         feedback = pm.getBoolean("SW_feedback", true)
         saveMode = pm.getBoolean("SW_mode", true)
 
@@ -1501,14 +1508,17 @@ class MainActivity : AppCompatActivity() {
      */
     private fun changeSelectCamera()
     {
+        frontCamera = currentCamera % 2 != 0
+
         cameraSelector =
             try { // dato che uso gli id della mia camera allora potrebbe non esistere quella camera
                 availableCameraInfos[currentCamera].cameraSelector
             } catch (e : Exception) {
-                if (currentCamera % 2 == 0) // se e' camera 0 o 2 e' back
-                    CameraSelector.DEFAULT_BACK_CAMERA
-                else
+                frontCamera = currentCamera % 2 != 0
+                if (frontCamera) // se e' camera 0 o 2 e' back
                     CameraSelector.DEFAULT_FRONT_CAMERA
+                else
+                    CameraSelector.DEFAULT_BACK_CAMERA
             }
 
         val extensionsManager = extensionsManagerFuture.get()
