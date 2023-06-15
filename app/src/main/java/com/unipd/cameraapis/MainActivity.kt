@@ -557,8 +557,7 @@ class MainActivity : AppCompatActivity() {
         btZoom05.setOnClickListener{ sbZoom.progress = 0 }
         sbZoom.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                if(currentMode == VIDEO_MODE || currentMode == PHOTO_MODE)
-                    changeZoom(progress) // posso cambiare zoom solo in photo e video
+                changeZoom(progress) // posso cambiare zoom solo in photo e video
                 if(feedback && progress%5 == 0 && fromUser) // ogni 5 do un feedback, e solo se muovo manualmente la SB
                     sbZoom.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
             }
@@ -1092,8 +1091,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun changeZoom(progress : Int, bindAnyway : Boolean = false)
     {
-        if(currentMode == BOKEH_MODE || currentMode == NIGHT_MODE)
-            return
+        //if(currentMode == BOKEH_MODE || currentMode == NIGHT_MODE) return
 
         var reBind = false // evito di costruire la camera ogni volta
 
@@ -1179,7 +1177,7 @@ class MainActivity : AppCompatActivity() {
         if(bindAnyway || (reBind && !isRecording)) // se sta registrando non cambia fotocamera
         {
             changeSelectCamera()
-            bindCamera()
+            changeMode(currentMode, true) // per eseguire il bind
         }
 
         cameraControl.setLinearZoom(zoomLv) // cambia il valore dello zoom
@@ -1303,9 +1301,11 @@ class MainActivity : AppCompatActivity() {
                     btVideoMode.backgroundTintList = getColorStateList(R.color.floral_white)
                     btVideoMode.setTextColor(getColor(R.color.black))
 
+                    /*
                     sbZoom.visibility = View.VISIBLE
                     btZoom10.visibility = View.VISIBLE
                     btZoom05.visibility = View.VISIBLE
+                     */
 
                     bindCamera()
                 }
@@ -1313,9 +1313,9 @@ class MainActivity : AppCompatActivity() {
                     btPhotoMode.backgroundTintList = getColorStateList(R.color.floral_white)
                     btPhotoMode.setTextColor(getColor(R.color.black))
 
-                    sbZoom.visibility = View.VISIBLE
+                    /*sbZoom.visibility = View.VISIBLE
                     btZoom10.visibility = View.VISIBLE
-                    btZoom05.visibility = View.VISIBLE
+                    btZoom05.visibility = View.VISIBLE*/
 
                     if(hdr) // se è attiva l'impostazione del hdr
                         hdrMode()
@@ -1325,10 +1325,11 @@ class MainActivity : AppCompatActivity() {
                 BOKEH_MODE -> {
                     btBokehMode.backgroundTintList = getColorStateList(R.color.floral_white)
                     btBokehMode.setTextColor(getColor(R.color.black))
-                    sbZoom.progress = changeCameraSeekBar // non ho ancora cambiato la modalità, quindi posso modificare lo zoom
+
+                    /*sbZoom.progress = changeCameraSeekBar // non ho ancora cambiato la modalità, quindi posso modificare lo zoom
                     sbZoom.visibility = View.INVISIBLE // non posso cambiare lo zoom
                     btZoom10.visibility = View.INVISIBLE
-                    btZoom05.visibility = View.INVISIBLE
+                    btZoom05.visibility = View.INVISIBLE*/
 
                     bokehMode()
                 }
@@ -1337,10 +1338,11 @@ class MainActivity : AppCompatActivity() {
                     btNightMode.backgroundTintList = getColorStateList(R.color.floral_white)
                     btNightMode.setTextColor(getColor(R.color.black))
 
-                    sbZoom.progress = changeCameraSeekBar // non ho ancora cambiato la modalità, quindi posso modificare lo zoom
+/*                    sbZoom.progress = changeCameraSeekBar // non ho ancora cambiato la modalità, quindi posso modificare lo zoom
                     sbZoom.visibility = View.INVISIBLE // non posso cambiare lo zoom
                     btZoom10.visibility = View.INVISIBLE
-                    btZoom05.visibility = View.INVISIBLE
+                    btZoom05.visibility = View.INVISIBLE*/
+
                     nightMode()
                 }
             }
