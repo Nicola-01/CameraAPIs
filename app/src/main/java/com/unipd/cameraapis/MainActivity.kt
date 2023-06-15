@@ -1092,6 +1092,9 @@ class MainActivity : AppCompatActivity() {
      */
     private fun changeZoom(progress : Int, bindAnyway : Boolean = false)
     {
+        if(currentMode == BOKEH_MODE || currentMode == NIGHT_MODE)
+            return
+
         var reBind = false // evito di costruire la camera ogni volta
 
         // sbZoom va da 0 a 150, quindi i primi 50 valori sono per lo zoom con la ultra grand angolare,
@@ -1297,50 +1300,48 @@ class MainActivity : AppCompatActivity() {
             // modifiche grafiche
             when(setMode) {
                 VIDEO_MODE -> {
-                    //videoMode()
-                    bindCamera()
-
                     btVideoMode.backgroundTintList = getColorStateList(R.color.floral_white)
                     btVideoMode.setTextColor(getColor(R.color.black))
 
                     sbZoom.visibility = View.VISIBLE
                     btZoom10.visibility = View.VISIBLE
                     btZoom05.visibility = View.VISIBLE
+
+                    bindCamera()
                 }
                 PHOTO_MODE -> {
-                    if(hdr) // se è attiva l'impostazione del hdr
-                        hdrMode()
-                    else
-                        bindCamera()
-
                     btPhotoMode.backgroundTintList = getColorStateList(R.color.floral_white)
                     btPhotoMode.setTextColor(getColor(R.color.black))
 
                     sbZoom.visibility = View.VISIBLE
                     btZoom10.visibility = View.VISIBLE
                     btZoom05.visibility = View.VISIBLE
+
+                    if(hdr) // se è attiva l'impostazione del hdr
+                        hdrMode()
+                    else
+                        bindCamera()
                 }
                 BOKEH_MODE -> {
-                    bokehMode()
-
                     btBokehMode.backgroundTintList = getColorStateList(R.color.floral_white)
                     btBokehMode.setTextColor(getColor(R.color.black))
-
-                    changeZoom(changeCameraSeekBar)
+                    sbZoom.progress = changeCameraSeekBar // non ho ancora cambiato la modalità, quindi posso modificare lo zoom
                     sbZoom.visibility = View.INVISIBLE // non posso cambiare lo zoom
                     btZoom10.visibility = View.INVISIBLE
                     btZoom05.visibility = View.INVISIBLE
+
+                    bokehMode()
                 }
                 NIGHT_MODE -> {
-                    nightMode()
 
                     btNightMode.backgroundTintList = getColorStateList(R.color.floral_white)
                     btNightMode.setTextColor(getColor(R.color.black))
 
-                    changeZoom(changeCameraSeekBar)
+                    sbZoom.progress = changeCameraSeekBar // non ho ancora cambiato la modalità, quindi posso modificare lo zoom
                     sbZoom.visibility = View.INVISIBLE // non posso cambiare lo zoom
                     btZoom10.visibility = View.INVISIBLE
                     btZoom05.visibility = View.INVISIBLE
+                    nightMode()
                 }
             }
             if(setMode <= PHOTO_MODE)
@@ -1495,17 +1496,16 @@ class MainActivity : AppCompatActivity() {
      * @param back se true mette seleziona la camera back
      */
     private fun rotateCamera(override:Boolean = false, back: Boolean = true) { // id = 0 default back, id = 1 front default
-        if(!isRecording) // se sta registrando non cambia fotocamera
-        {
-            if((override && !back) || (currentCamera== 0 || currentCamera == 2))
-                currentCamera = 3 // passo in front
-            else if((override && back) || (currentCamera==1 || currentCamera==3))
-                currentCamera = 0 // passo in back
-            sbZoom.progress = changeCameraSeekBar
 
-            changeSelectCamera()
-            changeMode(currentCamera, true) // per eseguire il bind
-        }
+        if((override && !back) || (currentCamera== 0 || currentCamera == 2))
+            currentCamera = 3 // passo in front
+        else if((override && back) || (currentCamera==1 || currentCamera==3))
+            currentCamera = 0 // passo in back
+        sbZoom.progress = changeCameraSeekBar
+
+        changeSelectCamera()
+        changeMode(currentMode, true) // per eseguire il bind
+
         Log.d(TAG, "[current camera]  - rotate: $currentCamera")
     }
 
