@@ -160,6 +160,7 @@ class MainActivity : AppCompatActivity() {
     private var timerOn = false
     private var captureJob: Job? = null
     private var isVolumeButtonClicked : Boolean = false
+    private var isVolumeButtonLongPressed = false
 
     private lateinit var volumeKey : String
     private var aspectRatioPhoto = Rational(3, 4)
@@ -1228,6 +1229,7 @@ class MainActivity : AppCompatActivity() {
                                 changeMode(VIDEO_MODE)
                                 timerShot(true)
                                 countdown = temporaryCountDown
+                                isVolumeButtonLongPressed = true
                             }
                         }
                     }
@@ -1254,7 +1256,7 @@ class MainActivity : AppCompatActivity() {
             (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP || event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
             volumeTimer?.cancel()   // fermo il timer quando sollevo il dito dal pulsante
             volumeTimer = null
-            if(isRecording) {       // se sto registrando interrompo la registrazione
+            if(isVolumeButtonLongPressed) {       // se sto registrando tenendo premuto il tasto interrompo la registrazione
                 timerShot(true)
                 return true
             }
@@ -1264,11 +1266,15 @@ class MainActivity : AppCompatActivity() {
                 return true
             }
 
+
             // scatto da tocco singolo
             when (volumeKey) { // volume giu -> video
                 "shot" -> {
                     changeMode( if(event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) VIDEO_MODE else PHOTO_MODE)
-                    timerShot(event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) // scatto una foto o inizio la registrazione di un video
+                    if(!isRecording)
+                        timerShot(event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) // scatto una foto o inizio la registrazione di un video
+                    else
+                        timerShot(event.keyCode != KeyEvent.KEYCODE_VOLUME_UP) // scatta una foto quando sto registrando un video con il pulsante per alzare il volume altrimenti stoppa il video
                     return true
                 }
             }
