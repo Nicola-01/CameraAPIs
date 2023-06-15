@@ -171,6 +171,7 @@ class MainActivity : AppCompatActivity() {
     private var frontCamera = false
     private var hdr = false
     private var bokehStatus = false
+    private var nightStatus = false
     private var isHdrAvailable = true
     private var isBokehAvailable = true
     private var isNightAvailable = true
@@ -625,7 +626,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Passa alla modalità Foto.
+     * Consente di scattare foto in HDR (High Dynamic Range), ampliando la gamma di colori e i livelli di luminosità.
      */
     private fun hdrMode()
     {
@@ -650,7 +651,9 @@ class MainActivity : AppCompatActivity() {
             cameraProvider.unbindAll()
             camera = cameraProvider.bindToLifecycle(this, bokehCameraSelector, imageCapture, preview)
             cameraControl = camera.cameraControl
-            }
+            bokehStatus = true
+            nightStatus = false
+        }
         else {
             Log.d(TAG, "BOKEH is not available")
             Toast.makeText(this, "BOKEH non disponibile", Toast.LENGTH_SHORT).show()
@@ -666,6 +669,8 @@ class MainActivity : AppCompatActivity() {
         if(isNightAvailable) {
             cameraProvider.unbindAll()
             camera = cameraProvider.bindToLifecycle(this, nightCameraSelector, imageCapture, preview)
+            bokehStatus = false
+            nightStatus = true
         }
         else {
             Log.d(TAG, "NIGHT MODE is not available")
@@ -795,26 +800,28 @@ class MainActivity : AppCompatActivity() {
      * Metodo per iniziare o fermare il multishot.
      */
     private fun multishot(on_off: Boolean) {
-        if(on_off) {
-            if(captureJob == null) {
-                countMultiShot = 0
-                countDownText.visibility = View.VISIBLE
-                captureJob = CoroutineScope(Dispatchers.Main).launch {
-                    while (isActive) {
-                        takePhoto()
-                        countDownText.text = "${++countMultiShot}"
-                        delay(300) // Intervallo tra i singoli scatti
-                        if (feedback) viewPreview.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+        if(!bokehStatus && !nightStatus) {  // se sono in modalità bokeh o night non fa niente
+            if(on_off) {
+                if(captureJob == null) {
+                    countMultiShot = 0
+                    countDownText.visibility = View.VISIBLE
+                    captureJob = CoroutineScope(Dispatchers.Main).launch {
+                        while (isActive) {
+                            takePhoto()
+                            countDownText.text = "${++countMultiShot}"
+                            delay(300) // Intervallo tra i singoli scatti
+                            if (feedback) viewPreview.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                        }
                     }
                 }
             }
-        }
-        else {
-            captureJob?.cancel()
-            captureJob = null
-            countDownText.postDelayed(Runnable {
-                countDownText.visibility = View.INVISIBLE
-            }, 1000)
+            else {
+                captureJob?.cancel()
+                captureJob = null
+                countDownText.postDelayed(Runnable {
+                    countDownText.visibility = View.INVISIBLE
+                }, 1000)
+            }
         }
     }
     /**
