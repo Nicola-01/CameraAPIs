@@ -625,9 +625,9 @@ class MainActivity : AppCompatActivity() {
             cameraControl = camera.cameraControl
         }
         else {
-            Log.d(TAG, "BOKEH is not available")
-            Toast.makeText(this, "BOKEH non disponibile", Toast.LENGTH_SHORT).show()
-            changeMode(PHOTO_MODE)
+            Log.d(TAG, "HDR is not available")
+            Toast.makeText(this, "HDR non disponibile", Toast.LENGTH_SHORT).show()
+            bindCamera()
         }
     }
 
