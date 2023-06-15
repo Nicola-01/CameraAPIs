@@ -79,6 +79,7 @@ import java.util.concurrent.Executors
 import kotlin.math.abs
 import androidx.camera.extensions.ExtensionMode
 import androidx.camera.extensions.ExtensionsManager
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class MainActivity : AppCompatActivity() {
 
@@ -121,6 +122,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var cmRecTimer : Chronometer
     private lateinit var countDownText : TextView
     private lateinit var scrollViewMode: HorizontalScrollView
+    private lateinit var floatingPhoto : FloatingActionButton
 
     // variabili
     private lateinit var availableCameraInfos: MutableList<CameraInfo>
@@ -169,7 +171,6 @@ class MainActivity : AppCompatActivity() {
     private var isHdrAvailable = true
     private var isBokehAvailable = true
     private var isNightAvailable = true
-    private var gps = false
     private var feedback = true
     private var saveMode = true
 
@@ -360,6 +361,7 @@ class MainActivity : AppCompatActivity() {
             else
                 scrollViewMode.fullScroll(View.FOCUS_LEFT)
             setFlashMode() // attivo il flash se sono in modalità video
+            changeMode(currentMode, true)
 
             val preferences = getPreferences(MODE_PRIVATE)
 
@@ -427,6 +429,7 @@ class MainActivity : AppCompatActivity() {
         countDownText = viewBinding.TextTimer
         focusView = viewBinding.FocusCircle
         viewPreview = viewBinding.viewPreview
+        floatingPhoto = viewBinding.floatingPhoto
 
         scrollViewMode = viewBinding.scrollMode
 
@@ -515,6 +518,11 @@ class MainActivity : AppCompatActivity() {
             if(feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         }
 
+        floatingPhoto.setOnClickListener{
+            takePhoto()
+            if(feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+        }
+
         btShoot.setOnLongClickListener{
             if (isRecording || (currentMode == VIDEO_MODE)) {
                 // se sono in modalita' registrazione e tengo premuto parte la registrazione
@@ -547,7 +555,8 @@ class MainActivity : AppCompatActivity() {
         btZoom05.setOnClickListener{ sbZoom.progress = 0 }
         sbZoom.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                changeZoom(progress)
+                if(currentMode == VIDEO_MODE || currentMode == PHOTO_MODE)
+                    changeZoom(progress) // posso cambiare zoom solo in photo e video
                 if(feedback && progress%5 == 0 && fromUser) // ogni 5 do un feedback, e solo se muovo manualmente la SB
                     sbZoom.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
             }
@@ -585,6 +594,22 @@ class MainActivity : AppCompatActivity() {
         intent.putExtra("flashOn", currFlashMode == FlashModes.ON)
         //startActivity(intent)
         startActivityForResult(intent, 1)
+    }
+
+    /**
+     * Passa alla modalità Foto.
+     */
+    private fun hdrMode()
+    {
+        if(isHdrAvailable) {
+            cameraProvider.unbindAll()
+            camera = cameraProvider.bindToLifecycle(this, hdrCameraSelector, preview, imageCapture)
+        }
+        else {
+            Log.d(TAG, "BOKEH is not available")
+            Toast.makeText(this, "BOKEH non disponibile", Toast.LENGTH_SHORT).show()
+            changeMode(PHOTO_MODE)
+        }
     }
 
     //todo fare qui il bind (modifica dopo il vocale)
@@ -705,9 +730,9 @@ class MainActivity : AppCompatActivity() {
                 // inizializzazione della camera
                 createListener()            // crea i Listener
                 createRecorder()            // crea un recorder per modificare la qualita' video e l'aspect ratio
-                bindCamera()                // crea effettivamente la camera
                 loadFromSetting()           // recupera le impostazioni
                 loadFromBundle(savedBundle) // carica gli elementi dal Bundle/Preferences
+                // non chiamo changeMode, e quindi il binde, perchè viene già richiamato dai load
                 openByShortCut()            // controlla come e' stata aperta l'app
 
             }, ContextCompat.getMainExecutor(this))
@@ -760,7 +785,8 @@ class MainActivity : AppCompatActivity() {
         // Set up image capture listener, which is triggered after photo has been taken
 
         // imposto le animazioni per lo scatto
-        btShoot.startAnimation(scaleDown)
+        if(currentMode != VIDEO_MODE)
+            btShoot.startAnimation(scaleDown)
         viewPreview.startAnimation(scaleUp)
 
         imageCapture!!.takePicture( // caso d'uso
@@ -888,6 +914,7 @@ class MainActivity : AppCompatActivity() {
             cmRecTimer.start()
 
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) // mantiene lo schermo attivo durante la registrazione
+            floatingPhoto.visibility = View.VISIBLE
         }
         else
         {
@@ -895,6 +922,7 @@ class MainActivity : AppCompatActivity() {
             viewVI = View.INVISIBLE
             cmRecTimer.stop()
 
+            floatingPhoto.visibility = View.INVISIBLE
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) // permette allo schermo di spegnersi
         }
         recOptions() // cambio la grafica del pulsante
@@ -1067,7 +1095,6 @@ class MainActivity : AppCompatActivity() {
         findViewById<Group>(R.id.Group_grid).visibility =
             if(pm.getBoolean("SW_grid", true)) View.VISIBLE else View.INVISIBLE // le righe sono al interno di un gruppo, quindi prendo direttamente quello
         hdr = pm.getBoolean("SW_HDR", true)
-        gps = pm.getBoolean("SW_GPS", true)
         feedback = pm.getBoolean("SW_feedback", true)
         saveMode = pm.getBoolean("SW_mode", true)
 
@@ -1257,60 +1284,94 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Funzione per switchare tra modalita' Foto e Video;
+     * Funzione per switchare tra le modalita';
      * quindi cambia i pulsanti visualizzati
      *
-     * @param record True se devo passare in modalita' Video;
-     *                False se devo passare in modalita' Foto
+     * @param changeMode è un intero che corrisponde alla modalità
+     * @param force booleano per cambiare comunque la grafica
      */
-    private fun changeMode(setMode : Int) {
+    private fun changeMode(setMode : Int, force : Boolean = false) {
         if(scrollViewMode.visibility == View.INVISIBLE) // non posso cambiare modalità mentre registro
             return
+
+
+        Log.d(TAG, "currentMode, setMode: $setMode")
+        Log.d(TAG, "currentMode, prima: $currentMode")
+
+        if(force || currentMode != setMode){
+            viewPreview.visibility = View.INVISIBLE // nascondo la preview mentre ambio modalità
+            countDownText.postDelayed(Runnable {
+                viewPreview.visibility = View.VISIBLE
+            }, 900)
+
+            btVideoMode.backgroundTintList = getColorStateList(R.color.gray_onyx)
+            btVideoMode.setTextColor(getColor(R.color.floral_white))
+            btPhotoMode.backgroundTintList = getColorStateList(R.color.gray_onyx)
+            btPhotoMode.setTextColor(getColor(R.color.floral_white))
+            btBokehMode.backgroundTintList = getColorStateList(R.color.gray_onyx)
+            btBokehMode.setTextColor(getColor(R.color.floral_white))
+            btNightMode.backgroundTintList = getColorStateList(R.color.gray_onyx)
+            btNightMode.setTextColor(getColor(R.color.floral_white))
+
+            // modifiche grafiche
+            when(setMode) {
+                VIDEO_MODE -> {
+                    //videoMode()
+                    bindCamera()
+
+                    btVideoMode.backgroundTintList = getColorStateList(R.color.floral_white)
+                    btVideoMode.setTextColor(getColor(R.color.black))
+
+                    sbZoom.visibility = View.VISIBLE
+                    btZoom10.visibility = View.VISIBLE
+                    btZoom05.visibility = View.VISIBLE
+                }
+                PHOTO_MODE -> {
+                    if(hdr) // se è attiva l'impostazione del hdr
+                        hdrMode()
+                    else
+                        bindCamera()
+
+                    btPhotoMode.backgroundTintList = getColorStateList(R.color.floral_white)
+                    btPhotoMode.setTextColor(getColor(R.color.black))
+
+                    sbZoom.visibility = View.VISIBLE
+                    btZoom10.visibility = View.VISIBLE
+                    btZoom05.visibility = View.VISIBLE
+                }
+                BOKEH_MODE -> {
+                    bokehMode()
+
+                    btBokehMode.backgroundTintList = getColorStateList(R.color.floral_white)
+                    btBokehMode.setTextColor(getColor(R.color.black))
+
+                    changeZoom(changeCameraSeekBar)
+                    sbZoom.visibility = View.INVISIBLE // non posso cambiare lo zoom
+                    btZoom10.visibility = View.INVISIBLE
+                    btZoom05.visibility = View.INVISIBLE
+                }
+                NIGHT_MODE -> {
+                    nightMode()
+
+                    btNightMode.backgroundTintList = getColorStateList(R.color.floral_white)
+                    btNightMode.setTextColor(getColor(R.color.black))
+
+                    changeZoom(changeCameraSeekBar)
+                    sbZoom.visibility = View.INVISIBLE // non posso cambiare lo zoom
+                    btZoom10.visibility = View.INVISIBLE
+                    btZoom05.visibility = View.INVISIBLE
+                }
+            }
+            if(setMode <= PHOTO_MODE)
+                scrollViewMode.fullScroll(View.FOCUS_RIGHT)
+            else
+                scrollViewMode.fullScroll(View.FOCUS_LEFT)
+        }
+
 
         currentMode = setMode
         Log.d(TAG, "currentMode: $currentMode")
         val aspect = if(setMode == VIDEO_MODE) aspectRatioVideo else aspectRatioPhoto
-
-        btVideoMode.backgroundTintList = getColorStateList(R.color.gray_onyx)
-        btVideoMode.setTextColor(getColor(R.color.floral_white))
-        btPhotoMode.backgroundTintList = getColorStateList(R.color.gray_onyx)
-        btPhotoMode.setTextColor(getColor(R.color.floral_white))
-        btBokehMode.backgroundTintList = getColorStateList(R.color.gray_onyx)
-        btBokehMode.setTextColor(getColor(R.color.floral_white))
-        btNightMode.backgroundTintList = getColorStateList(R.color.gray_onyx)
-        btNightMode.setTextColor(getColor(R.color.floral_white))
-
-        viewPreview.visibility = View.INVISIBLE // nascondo la preview mentre ambio modalità
-        countDownText.postDelayed(Runnable {
-            viewPreview.visibility = View.VISIBLE
-        }, 900)
-
-        when(setMode) {
-            VIDEO_MODE -> {
-                btVideoMode.backgroundTintList = getColorStateList(R.color.floral_white)
-                btVideoMode.setTextColor(getColor(R.color.black))
-                bindCamera()
-            }
-            PHOTO_MODE -> {
-                btPhotoMode.backgroundTintList = getColorStateList(R.color.floral_white)
-                btPhotoMode.setTextColor(getColor(R.color.black))
-                bindCamera()
-            }
-            BOKEH_MODE -> {
-                btBokehMode.backgroundTintList = getColorStateList(R.color.floral_white)
-                btBokehMode.setTextColor(getColor(R.color.black))
-                bokehMode()
-            }
-            NIGHT_MODE -> {
-                btNightMode.backgroundTintList = getColorStateList(R.color.floral_white)
-                btNightMode.setTextColor(getColor(R.color.black))
-                nightMode()
-            }
-        }
-        if(currentMode <= PHOTO_MODE)
-            scrollViewMode.fullScroll(View.FOCUS_RIGHT)
-        else
-            scrollViewMode.fullScroll(View.FOCUS_LEFT)
 
         setFlashMode() // se sono in modalità video con flash ON accende il flash, altrimenti lo spegne
 
@@ -1412,15 +1473,16 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             else if(abs(deltaX) > TRESHOLD && abs(velocityX)>TRESHOLD_VELOCITY){
+                var setMode = currentMode
                 if(deltaX>0)    // right swipe: video -> foto
-                    currentMode++
+                    setMode++
                 else if(deltaX<0)    // left swipe: foto -> video
-                    currentMode--
-                if(currentMode > NIGHT_MODE)
-                    currentMode = NIGHT_MODE
-                else if (currentMode < VIDEO_MODE)
-                    currentMode = VIDEO_MODE
-                changeMode(currentMode)
+                    setMode--
+                if(setMode > NIGHT_MODE)
+                    setMode = NIGHT_MODE
+                else if (setMode < VIDEO_MODE)
+                    setMode = VIDEO_MODE
+                changeMode(setMode)
             }
             return super.onFling(e1, e2, velocityX, velocityY)
         }
@@ -1458,7 +1520,7 @@ class MainActivity : AppCompatActivity() {
         }
         Log.d(TAG, "[current camera]  - rotate: $currentCamera")
     }
-
+        
     /**
      * Metodo che permette di scattare una foto o di registrare un video tenendo conto dei secondi di countdown per l'autoscatto.
      *
@@ -1531,51 +1593,6 @@ class MainActivity : AppCompatActivity() {
         btZoomRec.rotation = angle
         cmRecTimer.rotation = angle
         countDownText.rotation = angle
-    }
-
-    /**
-     * Verifica se il dispositivo supporta profili a 10 bit per l'HDR.
-     * @param cameraId L'id della camera per cui verficare il supporto.
-     */
-    private fun isTenBitProfileSupported(cameraId: String): Boolean {
-        val cameraCharacteristics = cameraManager.getCameraCharacteristics(cameraId)
-        val availableCapabilities = cameraCharacteristics.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES)
-        for(capability in availableCapabilities!!) {
-            if(capability == CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT)
-                return true
-        }
-        return false
-    }
-
-    /**
-     * Verifica che l'HLG10 sia supportato dal dispositivo. La registrazione di un video in HDR richiede Android 13.
-     * @param cameraId L'id della camera per cui verficare il supporto.
-     */
-    @RequiresApi(api = 33)
-    private fun isHgTenSupported(cameraId: String): Boolean {
-        if(isTenBitProfileSupported(cameraId)) {
-            val cameraCharacteristics = cameraManager.getCameraCharacteristics(cameraId)
-            val availableProfiles = cameraCharacteristics.
-            get(CameraCharacteristics.REQUEST_AVAILABLE_DYNAMIC_RANGE_PROFILES)!!.supportedProfiles
-            return availableProfiles.contains(DynamicRangeProfiles.HLG10)
-        }
-        return false
-    }
-
-    /**
-     *
-     */
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun hdrSetup(device: CameraDevice, targets: List<Surface>, handler: Handler?, callback: CameraCaptureSession.StateCallback) {
-        if(isHgTenSupported(device.id)) {
-            val configurations = mutableListOf<OutputConfiguration>()
-            for(target in targets) {
-                val config = OutputConfiguration(target)
-                config.dynamicRangeProfile = DynamicRangeProfiles.HLG10
-                configurations.add(config)
-            }
-            device.createCaptureSession(targets, callback, handler)
-        }
     }
 
     /**
