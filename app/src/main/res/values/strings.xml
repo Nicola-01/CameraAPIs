@@ -20,7 +20,7 @@
     <string name="permission_denied_message">I permessi sono necessari per utilizzare l\'app. Si prega di concedere i permessi nelle impostazioni dell\'applicazione.</string>
 
     <!-- Setting -->
-    <string name="swMode">Avvia l\'app nell\'ultima modalità usata tra Foto e Video.</string>
+    <string name="swMode">Avvia l\'app nell\'ultima modalità usata tra le quattro disponibili.</string>
     <string name="swGrid">Attiva o disattiva la griglia 3x3 per un allineamento preciso degli elementi</string>
     <string name="swHDR">Cattura più dettagli nelle aree più o meno luminose della foto.</string>
     <string name="swFeedback">Se attiva alcuni tasti restituiranno una vibrazione</string>

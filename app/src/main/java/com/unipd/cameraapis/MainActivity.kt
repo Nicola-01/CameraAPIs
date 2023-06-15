@@ -91,7 +91,7 @@ class MainActivity : AppCompatActivity() {
     private var videoCapture: VideoCapture<Recorder>? = null
     private var recording: Recording? = null
 
-    private lateinit var cameraExecutor: ExecutorService
+    private lateinit var cameraExecutor: ExecutorService // todo forse si può eliminare
 
     // Select back camera as a default
     private var cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
@@ -225,7 +225,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Todo commento
+     * Ciamato al avvio del app, si occupa del inizializzazione
+     * degli elementi e del avvio della camera
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -242,8 +243,9 @@ class MainActivity : AppCompatActivity() {
         else
             askPermission()
 
-        //Todo ???? che fa?
-        cameraExecutor = Executors.newSingleThreadExecutor()
+        // todo forse si può eliminare
+        //cameraExecutor = Executors.newSingleThreadExecutor() //si assicura che tutte le attivita'
+        // in cameraExecutor vengano eseguite in modo sequenziale su un singolo thread
     }
 
     /**
@@ -490,16 +492,17 @@ class MainActivity : AppCompatActivity() {
             cursor.close()
         }
 
-        btPause.setOnClickListener{ pauseVideo() }
-        btVideoMode.setOnClickListener { changeMode(VIDEO_MODE) }
-        btPhotoMode.setOnClickListener { changeMode(PHOTO_MODE) }
-        btBokehMode.setOnClickListener {
-            changeMode(BOKEH_MODE)
-            bokehMode()
-        }
-        btNightMode.setOnClickListener {
-            changeMode(NIGHT_MODE)
-            nightMode()
+        btVideoMode.setOnClickListener { changeMode(VIDEO_MODE)
+            if (feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM) }
+        btPhotoMode.setOnClickListener { changeMode(PHOTO_MODE)
+            if (feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM) }
+        btBokehMode.setOnClickListener { changeMode(BOKEH_MODE)
+            if (feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM) }
+        btNightMode.setOnClickListener { changeMode(NIGHT_MODE)
+            if (feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM) }
+
+        btPause.setOnClickListener{ pauseVideo()
+            if (feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         }
 
         btRotation.setOnClickListener {
@@ -507,6 +510,7 @@ class MainActivity : AppCompatActivity() {
             if(feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         }
 
+        // todo commentare, a cosa serve, e poi perchè è evidenziato giallo? xD
         btShoot.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_UP) {
                 multishot(false)
@@ -515,32 +519,35 @@ class MainActivity : AppCompatActivity() {
             false
         }
 
+        // pulsante per scattare
         btShoot.setOnClickListener {
             timerShot(currentMode == VIDEO_MODE)
             if(feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         }
 
+        // pulsante per scattare in modalita' video
         floatingPhoto.setOnClickListener{
             takePhoto()
             if(feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         }
 
+        // gestione long clock
         btShoot.setOnLongClickListener{
-            if (isRecording || (currentMode == VIDEO_MODE)) {
-                // se sono in modalita' registrazione e tengo premuto parte la registrazione
-                // mentre se sto già registrando e passo in modalita' foto e tengo premuto fermo
-                // la registrazione
-                timerShot(true)
-                if(feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
-            } else {
+            if (currentMode == PHOTO_MODE || currentMode == BOKEH_MODE)
+            {
                 multishot(true)
+                if(feedback) it.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
             }
+            else
+                timerShot(currentMode == VIDEO_MODE)
             true // Restituisce true per indicare che l'evento di click lungo e' stato gestito correttamente
         }
 
         btStop.setOnClickListener{
-            timerShot(currentMode == VIDEO_MODE)
+            timerShot(true) // terma la registrazione
         }
+
+        //todo commentare
         btTimer.setOnClickListener { switchTimerMode() }
         btTimer.setOnCreateContextMenuListener { menu, _, _ ->
             menu.setHeaderTitle("Timer")
@@ -553,9 +560,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // elementi per cambiare lo zoom
         btZoom10.setOnClickListener { sbZoom.progress = changeCameraSeekBar }
         btZoom05.setOnClickListener{ sbZoom.progress = 0 }
         sbZoom.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            //listenere per quando cambia la progressione della seekbar
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 changeZoom(progress) // posso cambiare zoom solo in photo e video
                 if(feedback && progress%5 == 0 && fromUser) // ogni 5 do un feedback, e solo se muovo manualmente la SB
@@ -565,25 +574,23 @@ class MainActivity : AppCompatActivity() {
             override fun onStopTrackingTouch(seek: SeekBar) = Unit
         })
 
-        /*Con un click sulla view che contiene la preview della camera si può spostare il focus su
-          una specifica zona*/
-
+        // Con un click sulla view che contiene la preview della camera si può spostare il focus su
+        // una specifica zona
         viewPreview.setOnTouchListener(View.OnTouchListener setOnTouchListener@{ _, event ->
             gestureDetector.onTouchEvent(event)
             scaleGestureDetector.onTouchEvent(event)
             true
         })
 
-
-        // listener per il pulsante QR
+        // listener per il avviare la lettura del QR
         btQR.setOnClickListener {
             qrCode()
         }
 
+        // appertura delle impostazioni
         btSettings.setOnClickListener {view ->
             startActivity(Intent(view.context, SettingsActivity::class.java))
         }
-
     }
 
     /**
@@ -631,7 +638,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    //todo fare qui il bind (modifica dopo il vocale)
     /**
      * Passa alla modalità Bokeh (Ritratto).
      */
@@ -649,7 +655,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // todo fare qui il bind (modifica dopo il vocale)
     /**
      * Passa alla modalità Night.
      */
@@ -1301,21 +1306,11 @@ class MainActivity : AppCompatActivity() {
                     btVideoMode.backgroundTintList = getColorStateList(R.color.floral_white)
                     btVideoMode.setTextColor(getColor(R.color.black))
 
-                    /*
-                    sbZoom.visibility = View.VISIBLE
-                    btZoom10.visibility = View.VISIBLE
-                    btZoom05.visibility = View.VISIBLE
-                     */
-
                     bindCamera()
                 }
                 PHOTO_MODE -> {
                     btPhotoMode.backgroundTintList = getColorStateList(R.color.floral_white)
                     btPhotoMode.setTextColor(getColor(R.color.black))
-
-                    /*sbZoom.visibility = View.VISIBLE
-                    btZoom10.visibility = View.VISIBLE
-                    btZoom05.visibility = View.VISIBLE*/
 
                     if(hdr) // se è attiva l'impostazione del hdr
                         hdrMode()
@@ -1326,22 +1321,12 @@ class MainActivity : AppCompatActivity() {
                     btBokehMode.backgroundTintList = getColorStateList(R.color.floral_white)
                     btBokehMode.setTextColor(getColor(R.color.black))
 
-                    /*sbZoom.progress = changeCameraSeekBar // non ho ancora cambiato la modalità, quindi posso modificare lo zoom
-                    sbZoom.visibility = View.INVISIBLE // non posso cambiare lo zoom
-                    btZoom10.visibility = View.INVISIBLE
-                    btZoom05.visibility = View.INVISIBLE*/
-
                     bokehMode()
                 }
                 NIGHT_MODE -> {
 
                     btNightMode.backgroundTintList = getColorStateList(R.color.floral_white)
                     btNightMode.setTextColor(getColor(R.color.black))
-
-/*                    sbZoom.progress = changeCameraSeekBar // non ho ancora cambiato la modalità, quindi posso modificare lo zoom
-                    sbZoom.visibility = View.INVISIBLE // non posso cambiare lo zoom
-                    btZoom10.visibility = View.INVISIBLE
-                    btZoom05.visibility = View.INVISIBLE*/
 
                     nightMode()
                 }
@@ -1823,12 +1808,12 @@ class MainActivity : AppCompatActivity() {
         savedInstanceState.putInt(KEY_BOKEH, currentMode)
     }
 
-    /**
-     * TODO: boohhh
+    /**  todo forse si può eliminare
+     * chiudo il thread
      */
     override fun onDestroy() {
         super.onDestroy()
-        cameraExecutor.shutdown()
+        //cameraExecutor.shutdown()
     }
 
 }
