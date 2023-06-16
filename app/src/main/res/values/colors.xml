@@ -1,11 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <!-- palette  cromatica https://coolors.co/1a6372-faf8f0-63a375-040404-e63946 -->
+
     <color name="purple_200">#FFBB86FC</color>
     <color name="purple_500">#FF6200EE</color>
     <color name="purple_700">#FF3700B3</color>
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
+    <color name="caribbean_Current">#FF1A6372</color>
+    <color name="floral_white">#FFFAF8F0</color>
     <color name="red">#FFFF0000</color>
-    <color name="black">#FF000000</color>
+    <color name="red_pantone">#FFE63946</color>
+    <color name="mint">#FF63A375</color>
+    <color name="aureolin_yellow">#FFE2DF00</color>
+    <color name="charcoal">#FF424B54</color>
+    <color name="gray_onyx">#FF444243</color>
+    <color name="light_gray">#777777</color>
+    <color name="black">#FF040404</color>
+    <color name="dark_gray">#FF171717</color>
     <color name="white">#FFFFFFFF</color>
 </resources>

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="320dp"
+    android:layout_height="320dp"
+    tools:context=".PermissionFragment">
+
+
+    <View
+        android:id="@+id/vw_backPr"
+        android:layout_width="320dp"
+        android:layout_height="105dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/view_permission"
+        android:layout_width="320dp"
+        android:layout_height="215dp"
+        android:background="@drawable/rounded_corner_100"
+        android:backgroundTint="?attr/colorOnPrimary"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/vw_backPr" />
+
+    <TextView
+        android:id="@+id/TV_permission"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:text="Permessi"
+        android:textColor="?attr/colorOnSecondary"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="@+id/TV_text"
+        app:layout_constraintStart_toStartOf="@+id/TV_text"
+        app:layout_constraintTop_toBottomOf="@+id/imageView" />
+
+    <Button
+        android:id="@+id/BT_closePopUp"
+        android:layout_width="130dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/rounded_corner"
+        android:backgroundTint="@color/light_gray"
+        android:text="Chiudi"
+        android:textColor="@color/floral_white"
+        android:textSize="16sp"
+        app:layout_constraintBottom_toBottomOf="@+id/space3"
+        app:layout_constraintEnd_toStartOf="@+id/space3"
+        app:layout_constraintTop_toTopOf="@+id/space3" />
+
+    <Button
+        android:id="@+id/BT_settingsPopUp"
+        android:layout_width="130dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/rounded_corner"
+        android:backgroundTint="?attr/colorPrimaryVariant"
+        android:text="Impostazioni"
+        android:textColor="@color/floral_white"
+        android:textSize="16sp"
+        app:layout_constraintBottom_toBottomOf="@+id/space3"
+        app:layout_constraintStart_toEndOf="@+id/space3"
+        app:layout_constraintTop_toTopOf="@+id/space3" />
+
+    <TextView
+        android:id="@+id/TV_text"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="@string/PermissionText"
+        android:textColor="?attr/colorOnSecondary"
+        android:textSize="18sp"
+        app:layout_constraintEnd_toEndOf="@+id/view_permission"
+        app:layout_constraintStart_toStartOf="@+id/view_permission"
+        app:layout_constraintTop_toBottomOf="@+id/TV_permission" />
+
+    <Space
+        android:id="@+id/space3"
+        android:layout_width="15dp"
+        android:layout_height="15dp"
+        android:layout_marginTop="32dp"
+        app:layout_constraintEnd_toEndOf="@+id/TV_text"
+        app:layout_constraintStart_toStartOf="@+id/TV_text"
+        app:layout_constraintTop_toBottomOf="@+id/TV_text" />
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:background="@drawable/rounded_corner"
+        android:backgroundTint="@color/aureolin_yellow"
+        android:padding="10dp"
+        android:src="@drawable/warning"
+        app:layout_constraintBottom_toTopOf="@+id/view_permission"
+        app:layout_constraintEnd_toEndOf="@+id/TV_permission"
+        app:layout_constraintStart_toStartOf="@+id/TV_permission"
+        app:layout_constraintTop_toTopOf="@+id/view_permission" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
