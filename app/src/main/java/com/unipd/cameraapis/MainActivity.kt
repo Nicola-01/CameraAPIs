@@ -164,6 +164,7 @@ class MainActivity : AppCompatActivity() {
     private var isNightAvailable = true
     private var feedback = true
     private var saveMode = true
+    private var blockRotation = false
 
     private var savedBundle: Bundle? = null
     private val permissionPopUp = PermissionFragment()
@@ -1074,7 +1075,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         try {
+            blockRotation = true // imposto l'orientamento verticale prima di eseguire il crop
+            changeOrientation(0)
             imageCapture?.setCropAspectRatio(aspectRatioPhoto)
+            changeOrientation(rotation) // in questo modo sono sicuro che reimposta l'angolazione di prima
+            blockRotation = false // ripristino il cambio di orientamento automatico
         }
         catch (e : Exception)
         {
@@ -1432,7 +1437,8 @@ class MainActivity : AppCompatActivity() {
     private val orientationEventListener by lazy {
         object : OrientationEventListener(this) {
             override fun onOrientationChanged(orientation: Int) {
-                if (orientation == ORIENTATION_UNKNOWN) return
+                if (blockRotation || orientation == OrientationEventListener.ORIENTATION_UNKNOWN) return
+
                 rotation = when (orientation) {
                     in 45 + DEADZONEANGLE..135 - DEADZONEANGLE -> 270
                     in 135 + DEADZONEANGLE..225 - DEADZONEANGLE -> 180
@@ -1442,17 +1448,23 @@ class MainActivity : AppCompatActivity() {
                 }
                 // e' stato inserito deadZoneAngle per avere un minimo di gioco prima di cambiare rotazione
 
-                if(!isRecording) // gira solo se non sta registrando, per salvare i video nel orientamento iniziale
-                {
-                    rotateButton(rotation.toFloat())
-                    // Surface.ROTATION_0 e' = 0, ROTATION_90 = 1, ... ROTATION_270 = 3, quindi = rotation/90
-                    videoCapture?.targetRotation = rotation/90
-                }
-                imageCapture?.targetRotation = rotation/90 // e' fuori dal if, in questo modo l'immagine e' sempre orientata correttamente
+                changeOrientation(rotation) // cambia effettivamente la rotazione
             }
         }
     }
 
+    /**
+     * Funzione per impostare l'orientamento dei tasti e della foto/video
+     */
+    private fun changeOrientation(rotate: Int) {
+        if(!isRecording) // gira solo se non sta registrando, per salvare i video nel orientamento iniziale
+        {
+            rotateButton(rotate.toFloat())
+            // Surface.ROTATION_0 e' = 0, ROTATION_90 = 1, ... ROTATION_270 = 3, quindi = rotation/90
+            videoCapture?.targetRotation = rotate/90
+        }
+        imageCapture?.targetRotation = rotate/90 // e' fuori dal if, in questo modo l'immagine e' sempre orientata correttamente
+    }
     /**
      * Classe per riconoscere le gesture semplici, nel nostro caso implementiamo:
      * - [onSingleTapUp] che gestisce la gesture di tocco per fare il focus
@@ -1874,12 +1886,14 @@ class MainActivity : AppCompatActivity() {
         savedInstanceState.putInt(KEY_MODE, currentMode)
     }
 
-    /**  todo forse si può eliminare
-     * chiudo il thread
+    /**
+     * esegui l'unbind
      */
     override fun onDestroy() {
         super.onDestroy()
-        //cameraExecutor.shutdown()
+        //cameraExecutor.shutdown() //todo forse si può eliminare
+        // Libera le risorse della fotocamera
+        cameraProvider.unbindAll()
     }
 
 }
