@@ -353,7 +353,14 @@ class MainActivity : AppCompatActivity() {
                 scrollViewMode.fullScroll(View.FOCUS_RIGHT)
             else
                 scrollViewMode.fullScroll(View.FOCUS_LEFT)
-            setFlashMode() // attivo il flash se sono in modalità video
+
+            try {
+                setFlashMode() // attivo il flash se sono in modalità video
+            }
+            catch (e : Exception) // se non vengono accettati i permessi allora camera è null e non viene impostato il flash
+            { }
+
+
             //aggiustamenti grafici
             changeMode(currentMode, true)
             changeZoom(sbZoom.progress)
