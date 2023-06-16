@@ -1,4 +1,4 @@
-# <img src="https://github.com/Nicola-01/CameraAPIs/blob/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" alt="Logo" width="50" height="50"> A GUI for Assistive Walking Exoskeleton
+# <img src="https://github.com/Nicola-01/CameraAPIs/blob/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" alt="Logo" width="50" height="50"> CameraPaw
 ## 1. Introduzione 
 Progetto sviluppato per il corso di 'Programmazione di sistemi Embedded da 9CFU' presso l'Università degli studi di Padova.
 
