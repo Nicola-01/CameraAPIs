@@ -6,18 +6,10 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.Cursor
-import android.hardware.camera2.CameraCaptureSession
-import android.hardware.camera2.CameraCharacteristics
-import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
-import android.hardware.camera2.CameraMetadata
-import android.hardware.camera2.params.DynamicRangeProfiles
-import android.hardware.camera2.params.OutputConfiguration
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
-import android.os.Handler
 import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.DisplayMetrics
@@ -31,7 +23,6 @@ import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.OrientationEventListener
 import android.view.ScaleGestureDetector
-import android.view.Surface
 import android.view.View
 import android.view.WindowManager
 import android.view.animation.Animation
@@ -42,7 +33,6 @@ import android.widget.HorizontalScrollView
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraControl
@@ -75,7 +65,6 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 import kotlin.math.abs
 import androidx.camera.extensions.ExtensionMode
 import androidx.camera.extensions.ExtensionsManager
@@ -170,12 +159,9 @@ class MainActivity : AppCompatActivity() {
     private var mirror = true
     private var frontCamera = false
     private var hdr = false
-    private var bokehStatus = false
-    private var nightStatus = false
     private var isHdrAvailable = true
     private var isBokehAvailable = true
     private var isNightAvailable = true
-    private var modeAccess = false  // true se ho provato ad accedere a bokeh o night ma non sono disponibili sul dispositivo
     private var feedback = true
     private var saveMode = true
 
@@ -660,39 +646,41 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Passa alla modalità Bokeh (Ritratto), se disponibile sul proprio dispositivo.
+     * @return True se la modalità è disponbile, False altrimenti
      */
-    private fun bokehMode()
+    private fun bokehMode() : Boolean
     {
         if(isBokehAvailable) {
             cameraProvider.unbindAll()
             camera = cameraProvider.bindToLifecycle(this, bokehCameraSelector, imageCapture, preview)
             cameraControl = camera.cameraControl
-            bokehStatus = true
-            nightStatus = false
+
+            return true
         }
-        else {
-            Log.d(TAG, "BOKEH is not available")
-            Toast.makeText(this, "BOKEH non disponibile", Toast.LENGTH_SHORT).show()
-            changeMode(PHOTO_MODE, true)    // serve passare true? Intanto sì, perchè altrimenti si colora bokeh
-        }
+        // altrimenti
+        Log.d(TAG, "BOKEH is not available")
+        Toast.makeText(this, "BOKEH non disponibile", Toast.LENGTH_SHORT).show()
+
+        return false
     }
 
     /**
      * Passa alla modalità Night, se disponibile sul proprio dispositivo.
+     * @return True se la modalità è disponbile, False altrimenti
      */
-    private fun nightMode()
+    private fun nightMode() : Boolean
     {
         if(isNightAvailable) {
             cameraProvider.unbindAll()
             camera = cameraProvider.bindToLifecycle(this, nightCameraSelector, imageCapture, preview)
-            bokehStatus = false
-            nightStatus = true
+
+            return true
         }
-        else {
-            Log.d(TAG, "NIGHT MODE is not available")
-            Toast.makeText(this, "NIGHT MODE non disponibile", Toast.LENGTH_SHORT).show()
-            changeMode(PHOTO_MODE, true)
-        }
+        // altrimenti
+        Log.d(TAG, "NIGHT MODE is not available")
+        Toast.makeText(this, "NIGHT MODE non disponibile", Toast.LENGTH_SHORT).show()
+
+        return false
     }
 
     /**
@@ -704,6 +692,7 @@ class MainActivity : AppCompatActivity() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
 
         cameraProviderFuture.addListener({
+            Log.d(TAG, "Start Camera")
             // recupera l'istanza di ProcessCameraProvider
             cameraProvider = cameraProviderFuture.get()
 
@@ -816,30 +805,31 @@ class MainActivity : AppCompatActivity() {
      * Metodo per iniziare o fermare il multishot.
      */
     private fun multishot(on_off: Boolean) {
-            if(on_off) {
-                if(captureJob == null) {
-                    countMultiShot = 0
-                    countDownText.visibility = View.VISIBLE
-                    // inizia una coroutine che esegue scatti intervallati da brevi pause
-                    captureJob = CoroutineScope(Dispatchers.Main).launch {
-                        while (isActive) {
-                            takePhoto()
-                            countDownText.text = "${++countMultiShot}"
-                            delay(300) // Intervallo tra i singoli scatti
-                            if (feedback) viewPreview.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
-                        }
+        if(on_off) {
+            if(captureJob == null) {
+                countMultiShot = 0
+                countDownText.visibility = View.VISIBLE
+                // inizia una coroutine che esegue scatti intervallati da brevi pause
+                captureJob = CoroutineScope(Dispatchers.Main).launch {
+                    while (isActive) {
+                        takePhoto()
+                        countDownText.text = "${++countMultiShot}"
+                        delay(300) // Intervallo tra i singoli scatti
+                        if (feedback) viewPreview.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
                     }
                 }
             }
-            else {
-                // termina la coroutine
-                captureJob?.cancel()
-                captureJob = null
-                countDownText.postDelayed(Runnable {
-                    countDownText.visibility = View.INVISIBLE
-                }, 1000)
-            }
+        }
+        else {
+            // termina la coroutine
+            captureJob?.cancel()
+            captureJob = null
+            countDownText.postDelayed(Runnable {
+                countDownText.visibility = View.INVISIBLE
+            }, 1000)
+        }
     }
+
     /**
      * Metodo utilizzato per avviare e fermare la registrazione video.
      */
@@ -1266,7 +1256,7 @@ class MainActivity : AppCompatActivity() {
 
                         override fun onFinish() {
                             changeMode(PHOTO_MODE)
-                            if(!nightStatus)   // disattivo il multishot in modalità night
+                            if(currentMode!= NIGHT_MODE)   // disattivo il multishot in modalità night
                                 multishot(true)
                             isVolumeButtonClicked = true
                         }
@@ -1314,11 +1304,12 @@ class MainActivity : AppCompatActivity() {
      * @param force booleano per cambiare comunque la grafica
      */
     private fun changeMode(setMode : Int, force : Boolean = false) {
-        modeAccess = false
         if(scrollViewMode.visibility == View.INVISIBLE) // non posso cambiare modalità mentre registro
             return
 
-        if(force || currentMode != setMode){
+        var mode = setMode
+
+        if(force || currentMode != mode){
             viewPreview.visibility = View.INVISIBLE // nascondo la preview mentre cambio modalità
             countDownText.postDelayed(Runnable {
                 viewPreview.visibility = View.VISIBLE
@@ -1334,13 +1325,29 @@ class MainActivity : AppCompatActivity() {
             btNightMode.setTextColor(getColor(R.color.floral_white))
 
             // modifiche grafiche
-            when(setMode) {
-                VIDEO_MODE -> {
+            when(mode) {
+                NIGHT_MODE -> {
+                    btFlash.visibility = View.INVISIBLE
+                    btNightMode.backgroundTintList = getColorStateList(R.color.floral_white)
+                    btNightMode.setTextColor(getColor(R.color.black))
+                    Log.d(TAG, "NIGHT MODE")
+                    nightMode()
+                    if(!nightMode())   // tento di accedere alla modalità night ma non è disponibile
+                    {
+                        changeMode(PHOTO_MODE, true) // ritorno in modalità foto
+                        return
+                    }
+                }
+                BOKEH_MODE -> {
                     btFlash.visibility = View.VISIBLE
-                    btVideoMode.backgroundTintList = getColorStateList(R.color.floral_white)
-                    btVideoMode.setTextColor(getColor(R.color.black))
-                    Log.d(TAG, "VIDEO MODE")
-                    bindCamera()
+                    btBokehMode.backgroundTintList = getColorStateList(R.color.floral_white)
+                    btBokehMode.setTextColor(getColor(R.color.black))
+                    Log.d(TAG, "BOKEH MODE")
+                    if(!bokehMode())   // tento di accedere alla modalità bokeh ma non è disponibile
+                    {
+                        changeMode(PHOTO_MODE, true) // ritorno in modalità foto
+                        return
+                    }
                 }
                 PHOTO_MODE -> {
                     btFlash.visibility = View.VISIBLE
@@ -1352,63 +1359,46 @@ class MainActivity : AppCompatActivity() {
                     else
                         bindCamera()
                 }
-                BOKEH_MODE -> {
+                VIDEO_MODE -> {
                     btFlash.visibility = View.VISIBLE
-                    btBokehMode.backgroundTintList = getColorStateList(R.color.floral_white)
-                    btBokehMode.setTextColor(getColor(R.color.black))
-                    Log.d(TAG, "BOKEH MODE")
-                    bokehMode()
-                    if(!isBokehAvailable)   // tento di accedere alla modalità bokeh ma non è disponibile
-                        modeAccess = true
-                }
-                NIGHT_MODE -> {
-                    btFlash.visibility = View.INVISIBLE
-                    btNightMode.backgroundTintList = getColorStateList(R.color.floral_white)
-                    btNightMode.setTextColor(getColor(R.color.black))
-                    Log.d(TAG, "NIGHT MODE")
-                    nightMode()
-                    if(!isNightAvailable)   // tento di accedere alla modalità night ma non è disponibile
-                        modeAccess = true
+                    btVideoMode.backgroundTintList = getColorStateList(R.color.floral_white)
+                    btVideoMode.setTextColor(getColor(R.color.black))
+                    Log.d(TAG, "VIDEO MODE")
+                    bindCamera()
                 }
             }
-            if(setMode <= PHOTO_MODE)
+            if(mode <= PHOTO_MODE)
                 scrollViewMode.fullScroll(View.FOCUS_RIGHT)
             else
                 scrollViewMode.fullScroll(View.FOCUS_LEFT)
         }
 
-        /* Controllo se ho tentato l'accesso alla modalità bokeh o night quando queste non sono disponibili sul proprio dispositivo.
-        Altrimenti quando richiamo changeMode(PHOTO_MODE) in bokehMode() o nightMode() passo effettivamente prima in modalità foto, ma poi
-        riprende l'esecuzione della prima chiamata a changeMode(BOKEH_MODE) (ad esempio) e imposta currentMode ad una modalità non disponibile
-        sul dispositivo utilizzato.
-        */
-        if(!modeAccess) {
-            currentMode = setMode
-            Log.d(TAG, "currentMode: $currentMode")
-            val aspect = if (setMode == VIDEO_MODE) aspectRatioVideo else aspectRatioPhoto
-            if (setMode == NIGHT_MODE) selectFlashMode(FlashModes.OFF.ordinal)
-            try {
-                setFlashMode() // se sono in modalità video con flash ON accende il flash, altrimenti lo spegne
-            } catch (e: Exception) {
-                Log.e(TAG, "errore in changeMode $e", e)
-            }
-
-            // cambia rapporto preview
-            val layoutParams = viewPreview.layoutParams as ConstraintLayout.LayoutParams
-            layoutParams.dimensionRatio =
-                "H,${aspect.numerator}:${aspect.denominator}" // Cambia l'aspect ratio desiderato qui
-            viewPreview.layoutParams = layoutParams
-
-
-            if (!timerOn) // se non c'e' il timer attivato
-            {
-                if (!isRecording) // se non sta registrando
-                    btShoot.setBackgroundResource( // cambio la grafica del pulsante in base a se sto registrando o no
-                        if (setMode == VIDEO_MODE) R.drawable.in_recording_button else R.drawable.rounded_corner
-                    )
-                recOptions()
-            }
+        currentMode = setMode
+        Log.d(TAG, "currentMode: $currentMode")
+        val aspect = if (setMode == VIDEO_MODE) aspectRatioVideo else aspectRatioPhoto
+        if (setMode == NIGHT_MODE) selectFlashMode(FlashModes.OFF.ordinal)
+        try {
+            setFlashMode() // se sono in modalità video con flash ON accende il flash, altrimenti lo spegne
+        } catch (e: Exception) {
+            Log.e(TAG, "errore in changeMode $e", e)
         }
+
+        // cambia rapporto preview
+        val layoutParams = viewPreview.layoutParams as ConstraintLayout.LayoutParams
+        layoutParams.dimensionRatio =
+            "H,${aspect.numerator}:${aspect.denominator}" // Cambia l'aspect ratio desiderato qui
+        viewPreview.layoutParams = layoutParams
+
+
+        if (!timerOn) // se non c'e' il timer attivato
+        {
+            if (!isRecording) // se non sta registrando
+                btShoot.setBackgroundResource( // cambio la grafica del pulsante in base a se sto registrando o no
+                    if (setMode == VIDEO_MODE) R.drawable.in_recording_button else R.drawable.rounded_corner
+                )
+            recOptions()
+        }
+
     }
 
     /**
@@ -1427,6 +1417,9 @@ class MainActivity : AppCompatActivity() {
                     else -> return // Angolo morto
                 }
                 // e' stato inserito deadZoneAngle per avere un minimo di gioco prima di cambiare rotazione
+                if(rotation.toFloat() == btRotation.rotation)
+                    return // se è la stessa rotazione non modifico nulla
+
                 Log.d(TAG,"[orientation] $rotation" )
 
                 if(!isRecording) // gira solo se non sta registrando, per salvare i video nel orientamento iniziale
@@ -1839,13 +1832,15 @@ class MainActivity : AppCompatActivity() {
             // necessario gestire, in quel caso allora i dati sono stati salvati dul Bundle
             // e ripristinati da loadFromBundle, se invece viene killata dal utente
             // allora non viene ripristinato lo stato
-            changeZoom(sbZoom.progress)
+            if(::camera.isInitialized)
+            {
+                changeZoom(sbZoom.progress)
+                loadFromSetting() // se camera non è ancora impostata o se è null da errore
+            }
         }
         catch (e : Exception) {
-            Log.e(TAG, "Exception $e")
+            Log.e(TAG, "Exception $e", e)
         }
-        if(::camera.isInitialized)
-            loadFromSetting()
     }
 
     /**
