@@ -204,6 +204,10 @@ class MainActivity : AppCompatActivity() {
          */
         private const val LONGCLICKDURATION = 300L
 
+        /**
+         * Angolo morto nella rotazione 
+         */
+        private const val DEADZONEANGLE = 10
 
         private val REQUIRED_PERMISSIONS =
             mutableListOf (
@@ -1104,7 +1108,7 @@ class MainActivity : AppCompatActivity() {
         hdr = pm.getBoolean("SW_HDR", false)
         feedback = pm.getBoolean("SW_feedback", true)
         saveMode = pm.getBoolean("SW_mode", true)
-        
+
         createRecorder() // costruita un'istanza di Recorder
         changeMode(currentMode, true) // richiamo per cambiare la grandezza della preview e
         // ri eseguire il bind nel caso in cui si attivi/disattivi l'hdr
@@ -1401,10 +1405,10 @@ class MainActivity : AppCompatActivity() {
 
         setFlashMode() // se sono in modalità video con flash ON accende il flash, altrimenti lo spegne
 
-        val aspect = if (setMode == VIDEO_MODE) aspectRatioVideo else aspectRatioPhoto
         if (setMode == NIGHT_MODE) selectFlashMode(FlashModes.OFF.ordinal)
 
         // cambia rapporto preview
+        val aspect = if (setMode == VIDEO_MODE) aspectRatioVideo else aspectRatioPhoto
         val layoutParamsPreview = viewPreview.layoutParams as ConstraintLayout.LayoutParams
         layoutParamsPreview.dimensionRatio =
             "H,${aspect.numerator}:${aspect.denominator}" // Cambia l'aspect ratio desiderato qui
@@ -1428,20 +1432,15 @@ class MainActivity : AppCompatActivity() {
     private val orientationEventListener by lazy {
         object : OrientationEventListener(this) {
             override fun onOrientationChanged(orientation: Int) {
-                val deadZoneAngle = 10
                 if (orientation == ORIENTATION_UNKNOWN) return
                 rotation = when (orientation) {
-                    in 45 + deadZoneAngle..135 - deadZoneAngle -> 270
-                    in 135 + deadZoneAngle..225 - deadZoneAngle -> 180
-                    in 225 + deadZoneAngle..315 - deadZoneAngle -> 90
-                    in 315 + deadZoneAngle..360, in 0..45 - deadZoneAngle -> 0
+                    in 45 + DEADZONEANGLE..135 - DEADZONEANGLE -> 270
+                    in 135 + DEADZONEANGLE..225 - DEADZONEANGLE -> 180
+                    in 225 + DEADZONEANGLE..315 - DEADZONEANGLE -> 90
+                    in 315 + DEADZONEANGLE..360, in 0..45 - DEADZONEANGLE -> 0
                     else -> return // Angolo morto
                 }
                 // e' stato inserito deadZoneAngle per avere un minimo di gioco prima di cambiare rotazione
-                if(rotation.toFloat() == btRotation.rotation)
-                    return // se è la stessa rotazione non modifico nulla
-
-                Log.d(TAG,"[orientation] $rotation" )
 
                 if(!isRecording) // gira solo se non sta registrando, per salvare i video nel orientamento iniziale
                 {
