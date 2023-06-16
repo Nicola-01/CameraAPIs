@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="selfie_shortcut"
+        android:enabled="true"
+        android:icon="@drawable/shortcut_selfie"
+        android:shortcutShortLabel="@string/ScSelfie">
+        <intent
+            android:action="shortcut.selfie"
+            android:targetPackage="com.unipd.cameraapis"
+            android:targetClass="com.unipd.cameraapis.MainActivity" />
+    </shortcut>
+
+    <shortcut
+    android:shortcutId="photo_shortcut"
+    android:enabled="true"
+    android:icon="@drawable/shortcut_photo"
+    android:shortcutShortLabel="@string/ScPhoto">
+    <intent
+        android:action="shortcut.photo"
+        android:targetPackage="com.unipd.cameraapis"
+        android:targetClass="com.unipd.cameraapis.MainActivity" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="video_shortcut"
+        android:enabled="true"
+        android:icon="@drawable/shortcut_video"
+        android:shortcutShortLabel="@string/ScVideo">
+        <intent
+            android:action="shortcut.video"
+            android:targetPackage="com.unipd.cameraapis"
+            android:targetClass="com.unipd.cameraapis.MainActivity" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="qrcode_shortcut"
+        android:enabled="true"
+        android:icon="@drawable/shortcut_qrcode"
+        android:shortcutShortLabel="@string/scQrCode">
+        <intent
+            android:action="shortcut.qrcode"
+            android:targetPackage="com.unipd.cameraapis"
+            android:targetClass="com.unipd.cameraapis.MainActivity" />
+    </shortcut>
+</shortcuts>

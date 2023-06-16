@@ -2,12 +2,16 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/constraintLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/dark_gray"
+    android:visibility="visible"
     tools:context=".MainActivity">
 
+
     <androidx.camera.view.PreviewView
-        android:id="@+id/viewFinder"
+        android:id="@+id/view_Preview"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -16,49 +20,422 @@
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.35000002">
+        app:layout_constraintVertical_bias="0.35000002" />
 
-    </androidx.camera.view.PreviewView>
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/Group_grid"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:constraint_referenced_ids="GR_vert1,GR_vert2,GR_horiz1,GR_horiz2" />
+
+    <View
+        android:id="@+id/VW_bottomBand"
+        android:layout_width="wrap_content"
+        android:layout_height="200dp"
+        android:background="#99171717"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <View
+        android:id="@+id/VW_topBand"
+        android:layout_width="wrap_content"
+        android:layout_height="200dp"
+        android:background="#99171717"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/vertical_centerline"
+        android:id="@+id/vertical_centerline1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.5" />
+        app:layout_constraintGuide_percent="0.25" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/vertical_centerline2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.50" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/vertical_centerline3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.75" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/vertical_centerline4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="1" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.11" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.8618331" />
 
     <Button
         android:id="@+id/BT_shoots"
-        android:contentDescription="prova descrizione"
-        android:layout_width="80dp"
-        android:layout_height="80dp"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:background="@drawable/rounded_corner"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.501"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/viewFinder"
-        app:layout_constraintVertical_bias="0.111" />
+        app:layout_constraintTop_toTopOf="@+id/guideline2"
+        app:layout_constraintVertical_bias="0.0" />
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/Group_rec"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="invisible"
+        app:constraint_referenced_ids="BT_pause,BT_stop" />
+
+    <Button
+        android:id="@+id/BT_pause"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_marginEnd="-35dp"
+        android:background="@drawable/pause_button"
+        app:layout_constraintBottom_toBottomOf="@+id/BT_shoots"
+        app:layout_constraintEnd_toStartOf="@+id/BT_shoots"
+        app:layout_constraintTop_toTopOf="@+id/guideline2" />
+
+    <Button
+        android:id="@+id/BT_stop"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_marginStart="-35dp"
+        android:background="@drawable/stop_button"
+        app:layout_constraintBottom_toBottomOf="@+id/BT_shoots"
+        app:layout_constraintStart_toEndOf="@+id/BT_shoots"
+        app:layout_constraintTop_toTopOf="@+id/guideline2" />
+
+    <Button
+        android:id="@+id/BT_0.5"
+        android:layout_width="45dp"
+        android:layout_height="35dp"
+        android:background="@drawable/rounded_corner"
+        android:backgroundTint="@color/gray_onyx"
+        android:text="@string/zoom_0.5x"
+        android:textColor="@color/floral_white"
+        android:textSize="10sp"
+        app:layout_constraintBottom_toTopOf="@+id/SB_zoom"
+        app:layout_constraintEnd_toStartOf="@+id/space" />
+
+    <Button
+        android:id="@+id/BT_1.0"
+        android:layout_width="45dp"
+        android:layout_height="35dp"
+        android:background="@drawable/rounded_corner"
+        android:contextClickable="false"
+        android:text="@string/zoom_1.0x"
+        android:textColor="@color/black"
+        android:backgroundTint="@color/floral_white"
+        android:textSize="10sp"
+        app:layout_constraintBottom_toTopOf="@+id/SB_zoom"
+        app:layout_constraintStart_toEndOf="@+id/space" />
 
     <SeekBar
         android:id="@+id/SB_zoom"
         style="@style/Widget.AppCompat.SeekBar"
-        android:layout_width="match_parent"
-        android:layout_height="59dp"
-        android:max="35"
-        android:progress="5"
-        app:layout_constraintBottom_toBottomOf="@+id/viewFinder"
-        tools:layout_editor_absoluteX="4dp" />
+        android:layout_width="fill_parent"
+        android:layout_height="35dp"
+        android:max="200"
+        android:min="0"
+        android:progress="50"
+        android:progressBackgroundTint="@color/dark_gray"
+        android:progressTint="@android:color/transparent"
+        android:thumbTint="@color/white"
+        android:tickMark="@drawable/rounded_corner"
+        app:layout_constraintBottom_toTopOf="@+id/VW_bottomBand"
+        app:layout_constraintEnd_toEndOf="@+id/view_Preview"
+        app:layout_constraintStart_toStartOf="@+id/view_Preview"
+        app:tickVisible="true" />
 
-    <!-- pulsante per cambiare da camera frontale a dorsale -->
+    <Space
+        android:id="@+id/space"
+        android:layout_width="10dp"
+        android:layout_height="35dp"
+        app:layout_constraintBottom_toTopOf="@+id/SB_zoom"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
     <Button
-        android:id="@+id/switch_camera"
+        android:id="@+id/BT_zoomRec"
+        android:layout_width="45dp"
+        android:layout_height="35dp"
+        android:background="@drawable/rounded_corner"
+        android:text="1.0x"
+        android:textColor="@color/black"
+        android:textSize="10sp"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toTopOf="@+id/SB_zoom"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/BT_rotation"
+        android:layout_width="55dp"
+        android:layout_height="55dp"
+        android:background="@drawable/rotate"
+        android:backgroundTintMode="src_in"
+        app:layout_constraintBottom_toBottomOf="@+id/BT_shoots"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.508"
+        app:layout_constraintStart_toEndOf="@+id/BT_shoots"
+        app:layout_constraintTop_toTopOf="@+id/BT_shoots" />
+
+    <Button
+        android:id="@+id/BT_gallery"
+        android:layout_width="55dp"
+        android:layout_height="55dp"
+        android:background="@drawable/gallery"
+        app:layout_constraintBottom_toBottomOf="@+id/BT_shoots"
+        app:layout_constraintEnd_toStartOf="@+id/BT_shoots"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/BT_shoots" />
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/Group_extraFunc"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="37dp"
-        android:contentDescription="Camera rotation"
+        app:constraint_referenced_ids="BT_timer,BT_qrcode" />
+
+    <Button
+        android:id="@+id/BT_settings"
+        android:layout_width="35dp"
+        android:layout_height="35dp"
+        android:background="@drawable/settings"
+        android:backgroundTint="@color/floral_white"
+        app:layout_constraintBottom_toTopOf="@+id/guideline"
+        app:layout_constraintEnd_toStartOf="@+id/vertical_centerline1"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/BT_timer"
+        android:layout_width="35dp"
+        android:layout_height="35dp"
+        android:background="@drawable/timer_0"
+        android:backgroundTint="@color/floral_white"
+        app:layout_constraintBottom_toTopOf="@+id/guideline"
+        app:layout_constraintEnd_toStartOf="@+id/vertical_centerline2"
+        app:layout_constraintStart_toStartOf="@+id/vertical_centerline1" />
+
+    <Button
+        android:id="@+id/BT_qrcode"
+        android:layout_width="35dp"
+        android:layout_height="35dp"
+        android:background="@drawable/qrcode"
+        android:backgroundTint="@color/aureolin_yellow"
+        app:layout_constraintBottom_toTopOf="@+id/guideline"
+        app:layout_constraintEnd_toStartOf="@+id/vertical_centerline3"
+        app:layout_constraintStart_toStartOf="@+id/vertical_centerline2" />
+
+
+    <!-- Risultato dello scan -->
+
+    <Button
+        android:id="@+id/BT_flash"
+        android:layout_width="35dp"
+        android:layout_height="35dp"
+        android:background="@drawable/flash_off"
+        android:backgroundTint="@color/floral_white"
+        app:layout_constraintBottom_toTopOf="@+id/guideline"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.816"
-        app:layout_constraintStart_toStartOf="@+id/BT_shoots"
-        app:layout_constraintTop_toBottomOf="@+id/viewFinder"
-        tools:layout_editor_absoluteY="640dp" />
+        app:layout_constraintStart_toStartOf="@+id/vertical_centerline3" />
+
+    <View
+        android:id="@+id/FocusCircle"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:background="@drawable/focus_circle"
+        android:visibility="invisible"
+        tools:layout_editor_absoluteY="64dp"
+        tools:ignore="MissingConstraints,Viene settata la posizione in base a dove viene
+            cliccato il dito,usato per la messa a fuoco" />
+
+    <Chronometer
+        android:id="@+id/CM_RecTimer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/rounded_corner_red"
+        android:paddingLeft="5dp"
+        android:paddingRight="5dp"
+        android:textColor="@color/floral_white"
+        android:textSize="18sp"
+        android:visibility="invisible"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/VW_topBand" />
+
+    <TextView
+        android:id="@+id/TextTimer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/floral_white"
+        android:textSize="84sp"
+        app:layout_constraintBottom_toTopOf="@+id/GR_horiz1"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/VW_topBand" />
+
+    <View
+        android:id="@+id/GR_vert1"
+        android:layout_width="1dp"
+        android:layout_height="0dp"
+        android:alpha="0.5"
+        android:background="@android:color/white"
+        android:elevation="2dp"
+        app:layout_constraintBottom_toBottomOf="@+id/view_Preview"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.33"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/view_Preview" />
+
+    <View
+        android:id="@+id/GR_vert2"
+        android:layout_width="1dp"
+        android:layout_height="0dp"
+        android:alpha="0.5"
+        android:background="@android:color/white"
+        android:elevation="2dp"
+        app:layout_constraintBottom_toBottomOf="@+id/view_Preview"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.67"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/view_Preview" />
+
+    <View
+        android:id="@+id/GR_horiz1"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:alpha="0.5"
+        android:background="@android:color/white"
+        android:elevation="2dp"
+        app:layout_constraintBottom_toBottomOf="@+id/view_Preview"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/view_Preview"
+        app:layout_constraintVertical_bias="0.33" />
+
+    <View
+        android:id="@+id/GR_horiz2"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:alpha="0.5"
+        android:background="@android:color/white"
+        android:elevation="2dp"
+        app:layout_constraintBottom_toBottomOf="@+id/view_Preview"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/view_Preview"
+        app:layout_constraintVertical_bias="0.67" />
+
+
+    <HorizontalScrollView
+        android:id="@+id/scrollMode"
+        android:layout_width="300dp"
+        android:layout_height="50dp"
+        android:layout_alignParentTop="true"
+        android:fillViewport="true"
+        android:measureAllChildren="false"
+        android:scrollbars="none"
+        app:layout_constraintBottom_toTopOf="@+id/guideline2"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/VW_bottomBand"
+        app:layout_constraintTop_toTopOf="@+id/VW_bottomBand">
+
+        <LinearLayout
+            android:id="@+id/innerLay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal" >
+
+            <Button
+                android:id="@+id/BT_nightMode"
+                android:layout_width="80dp"
+                android:layout_height="45dp"
+                android:background="@drawable/rounded_corner"
+                android:backgroundTint="@color/gray_onyx"
+                android:text="@string/Night_function"
+                android:textColor="@color/floral_white"/>
+
+            <Space
+                android:id="@+id/space2"
+                android:layout_width="15dp"
+                android:layout_height="33dp"/>
+
+            <Button
+                android:id="@+id/BT_bokehMode"
+                android:layout_width="80dp"
+                android:layout_height="45dp"
+                android:background="@drawable/rounded_corner"
+                android:backgroundTint="@color/gray_onyx"
+                android:text="@string/Bokeh_function"
+                android:textColor="@color/floral_white"/>
+
+            <Space
+                android:id="@+id/space3"
+                android:layout_width="15dp"
+                android:layout_height="33dp"/>
+
+            <Button
+                android:id="@+id/BT_photoMode"
+                android:layout_width="80dp"
+                android:layout_height="45dp"
+                android:background="@drawable/rounded_corner"
+                android:backgroundTint="@color/floral_white"
+                android:text="@string/Photo_function"
+                android:textColor="@color/black"/>
+
+            <Space
+                android:id="@+id/space4"
+                android:layout_width="15dp"
+                android:layout_height="33dp"/>
+
+            <Button
+                android:id="@+id/BT_recordMode"
+                android:layout_width="80dp"
+                android:layout_height="45dp"
+                android:background="@drawable/rounded_corner"
+                android:backgroundTint="@color/gray_onyx"
+                android:text="@string/Video_function"
+                android:textColor="@color/floral_white" />
+        </LinearLayout>
+
+    </HorizontalScrollView>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/floatingPhoto"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="15dp"
+        android:background="@drawable/rounded_corner"
+        android:clickable="true"
+        android:visibility="invisible"
+        app:backgroundTint="@color/floral_white"
+        app:layout_constraintBottom_toTopOf="@+id/SB_zoom"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:srcCompat="@drawable/aperture" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

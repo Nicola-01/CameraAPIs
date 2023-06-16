@@ -1,7 +1,36 @@
 <resources>
-    <string name="app_name">CameraAPIs</string>
-    <string name="take_photo">Take Photo</string>
-    <string name="start_capture">Start Capture</string>
-    <string name="stop_capture">Stop Capture</string>
-    <string name="rotate"></string>
+    <string name="app_name">CameraPaw</string>
+
+    <string name="zoom_1.0x">1.0x</string>
+    <string name="zoom_0.5x">0.5x</string>
+    <string name="Video_function">VIDEO</string>
+    <string name="Photo_function">FOTO</string>
+    <string name="Night_function">NIGHT</string>
+    <string name="Bokeh_function">BOKEH</string>
+
+    <string name="title_activity_settings">Impostazioni Fotocamera</string>
+
+    <!-- PopUpFragment -->
+    <string name="PermissionText">Per procedere è necessario l\'accesso alla fotocamera e ai microfono all\'applicazione.</string>
+
+    <!-- QrCodeFragment -->
+    <string name="QrCodeFrag">https://stem.elearning.unipd.it/</string>
+
+    <!-- PermissionDenyActivity -->
+    <string name="permission_denied_message">I permessi sono necessari per utilizzare l\'app. Si prega di concedere i permessi nelle impostazioni dell\'applicazione.</string>
+
+    <!-- Setting -->
+    <string name="swMode">Avvia l\'app nell\'ultima modalità usata tra le quattro disponibili.</string>
+    <string name="swMirror">Salva le foto selfie come visualizzato nell\'anteprima, senza capovolgerli.</string>
+    <string name="swGrid">Attiva o disattiva la griglia 3x3 per un allineamento preciso degli elementi.</string>
+    <string name="swHDR">Cattura più dettagli nelle aree più o meno luminose della foto.</string>
+    <string name="swFeedback">Se attiva alcuni tasti restituiranno una vibrazione.</string>
+
+    <!-- ShortCut -->
+    <string name="ScSelfie">Scatta Selfie</string>
+    <string name="ScPhoto">Scatta Foto</string>
+    <string name="ScVideo">Registra Video</string>
+    <string name="scQrCode">Acquisisci QrCode</string>
+
+
 </resources>

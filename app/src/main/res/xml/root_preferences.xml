@@ -1,0 +1,87 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        android:title="Impostazioni Tasti"
+        app:iconSpaceReserved="false">
+
+        <ListPreference
+            android:defaultValue="zoom"
+            android:entries="@array/volumeKey_entries"
+            android:entryValues="@array/volumeKey_values"
+            android:key="LS_volumeKey"
+            android:title="Usat tasti volume per:"
+            app:iconSpaceReserved="false"
+            app:useSimpleSummaryProvider="true" />
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:title="Foto"
+        app:iconSpaceReserved="false">
+
+        <ListPreference
+            android:defaultValue="3_4"
+            android:entries="@array/ratio_entries"
+            android:entryValues="@array/ratio_values"
+            android:key="LS_ratioPhoto"
+            android:title="Rapporto Foto"
+            app:iconSpaceReserved="false"
+            app:useSimpleSummaryProvider="true" />
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:title="Video"
+        app:iconSpaceReserved="false">
+
+        <ListPreference
+            android:defaultValue="3_4"
+            android:entries="@array/ratioVideo_entries"
+            android:entryValues="@array/ratioVideo_values"
+            android:key="LS_ratioVideo"
+            android:title="Rapporto Video"
+            app:iconSpaceReserved="false"
+            app:useSimpleSummaryProvider="true" />
+        <ListPreference
+            android:defaultValue="UHD"
+            android:entries="@array/videoQuality_entries"
+            android:entryValues="@array/videoQuality_values"
+            android:key="LS_videoResolution"
+            android:title="Risoluzione Video"
+            app:iconSpaceReserved="false"
+            app:useSimpleSummaryProvider="true" />
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:title="Generali"
+        app:iconSpaceReserved="false">
+
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="SW_mode"
+            android:title="Mantieni ultima modalità"
+            app:iconSpaceReserved="false"
+            app:summary="@string/swMode" />
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="SW_mirror"
+            android:title="Salva selfie come mostrati"
+            app:iconSpaceReserved="false"
+            app:summary="@string/swMirror" />
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="SW_grid"
+            android:title="Griglia"
+            app:iconSpaceReserved="false"
+            app:summary="@string/swGrid" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="SW_HDR"
+            android:title="HDR"
+            app:iconSpaceReserved="false"
+            app:summary="@string/swHDR" />
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="SW_feedback"
+            android:title="Feedback vibrazione"
+            app:iconSpaceReserved="false"
+            app:summary="@string/swFeedback" />
+    </PreferenceCategory>
+
+</PreferenceScreen>

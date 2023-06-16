@@ -1,0 +1,71 @@
+<resources>
+
+    <!-- List volume key -->
+    <string-array name="volumeKey_entries">
+        <item>Scatta foto e registra video</item>
+        <item>Controllo zoom</item>
+        <item>Volume sistema</item>
+    </string-array>
+
+    <string-array name="volumeKey_values">
+        <item>shot</item>
+        <item>zoom</item>
+        <item>volume</item>
+    </string-array>
+
+    <!-- List power -->
+    <string-array name="power_entries">
+        <item>Cambio camera</item>
+        <item>Scatta foto o Registra video</item>
+        <item>Cambia modalità</item>
+        <item>Non fare nulla</item>
+    </string-array>
+
+    <string-array name="power_values">
+        <item>changeCamera</item>
+        <item>shot</item>
+        <item>changeMode</item>
+        <item>nothing</item>
+    </string-array>
+
+    <!-- List ratio -->
+    <string-array name="ratio_entries">
+        <item>1:1</item>
+        <item>3:4</item>
+        <item>9:16</item>
+        <item>Full</item>
+    </string-array>
+
+    <string-array name="ratio_values">
+        <item>1_1</item>
+        <item>3_4</item>
+        <item>9_16</item>
+        <item>full</item>
+    </string-array>
+
+    <!-- List ratio Video -->
+    <string-array name="ratioVideo_entries">
+        <item>3:4</item>
+        <item>9:16</item>
+    </string-array>
+
+    <string-array name="ratioVideo_values">
+        <item>3_4</item>
+        <item>9_16</item>
+    </string-array>
+
+    <!-- List ratio -->
+    <string-array name="videoQuality_entries">
+        <item>4K</item>
+        <item>1080p</item>
+        <item>720p</item>
+        <item>480p</item>
+    </string-array>
+
+    <string-array name="videoQuality_values">
+        <item>UHD</item>
+        <item>FHD</item>
+        <item>HD</item>
+        <item>SD</item>
+    </string-array>
+</resources>
