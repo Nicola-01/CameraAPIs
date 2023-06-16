@@ -227,7 +227,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Ciamato al avvio del app, si occupa del inizializzazione
+     * Chiamato al avvio del app, si occupa del inizializzazione
      * degli elementi e del avvio della camera
      */
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -454,10 +454,13 @@ class MainActivity : AppCompatActivity() {
      */
     private fun createListener()
     {
-        //Con un click sul pulsante si passa alla modalita' successiva del flash
+        /*
+            Listener per il pulsante del flash:
+            - Con un singolo click è possibile passare alla successiva modalità della lista FlashModes
+            - Con un click prolungato si apre un menù contestuale che permette di selezionare la modalità
+              desiderata
+         */
         btFlash.setOnClickListener { switchFlashMode() }
-        /*Con un click prolungato si apre un menu' contestuale che permette di selezionare una
-          specifica modalita' del flash*/
         btFlash.setOnCreateContextMenuListener { menu, _, _ ->
             menu.setHeaderTitle("Flash")
             for(mode in FlashModes.values()) {
@@ -468,7 +471,10 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-        //Con un click sul pulsante di apre la galleria
+        /*
+            Listener per il pulsante della galleria:
+            - Con un singolo click viene selezionata la foto più recente e viene usato un intent per aprirla
+         */
         btGallery.setOnClickListener{
             val uriExternal: Uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
 
@@ -514,7 +520,13 @@ class MainActivity : AppCompatActivity() {
             if(feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         }
 
-        // todo commentare, a cosa serve, e poi perchè è evidenziato giallo? xD
+        /*
+            Listener per il bottone di scatto:
+            - Quando viene rilasciato si disattiva il multiscatto
+            - Se viene premuto in modalità foto scatta (con anche l'opzione di scatto temporizzato)
+            - floatingPhoto ?
+            - Se viene premuto a lungo in modalità foto inizia il multiscatto, altrimenti ?
+         */
         btShoot.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_UP) {
                 multishot(false)
@@ -535,7 +547,7 @@ class MainActivity : AppCompatActivity() {
             if(feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         }
 
-        // gestione long clock
+        // gestione long click
         btShoot.setOnLongClickListener{
             if (currentMode == PHOTO_MODE || currentMode == BOKEH_MODE)
             {
@@ -578,8 +590,11 @@ class MainActivity : AppCompatActivity() {
             override fun onStopTrackingTouch(seek: SeekBar) = Unit
         })
 
-        // Con un click sulla view che contiene la preview della camera si può spostare il focus su
-        // una specifica zona
+        /*
+            Listener sulla view della preview:
+            - Viene impostato un riconoscitore di gesture per identificare le gesture di tocco semplice e swipe
+            - Viene impostato un riconoscitore di scale gesture
+         */
         viewPreview.setOnTouchListener(View.OnTouchListener setOnTouchListener@{ _, event ->
             gestureDetector.onTouchEvent(event)
             scaleGestureDetector.onTouchEvent(event)
@@ -805,6 +820,7 @@ class MainActivity : AppCompatActivity() {
                 if(captureJob == null) {
                     countMultiShot = 0
                     countDownText.visibility = View.VISIBLE
+                    // inizia una coroutine che esegue scatti intervallati da brevi pause
                     captureJob = CoroutineScope(Dispatchers.Main).launch {
                         while (isActive) {
                             takePhoto()
@@ -816,6 +832,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             else {
+                // termina la coroutine
                 captureJob?.cancel()
                 captureJob = null
                 countDownText.postDelayed(Runnable {
@@ -1318,12 +1335,14 @@ class MainActivity : AppCompatActivity() {
             // modifiche grafiche
             when(setMode) {
                 VIDEO_MODE -> {
+                    btFlash.visibility = View.VISIBLE
                     btVideoMode.backgroundTintList = getColorStateList(R.color.floral_white)
                     btVideoMode.setTextColor(getColor(R.color.black))
 
                     bindCamera()
                 }
                 PHOTO_MODE -> {
+                    btFlash.visibility = View.VISIBLE
                     btPhotoMode.backgroundTintList = getColorStateList(R.color.floral_white)
                     btPhotoMode.setTextColor(getColor(R.color.black))
 
@@ -1333,13 +1352,14 @@ class MainActivity : AppCompatActivity() {
                         bindCamera()
                 }
                 BOKEH_MODE -> {
+                    btFlash.visibility = View.VISIBLE
                     btBokehMode.backgroundTintList = getColorStateList(R.color.floral_white)
                     btBokehMode.setTextColor(getColor(R.color.black))
 
                     bokehMode()
                 }
                 NIGHT_MODE -> {
-
+                    btFlash.visibility = View.INVISIBLE
                     btNightMode.backgroundTintList = getColorStateList(R.color.floral_white)
                     btNightMode.setTextColor(getColor(R.color.black))
 
@@ -1356,7 +1376,7 @@ class MainActivity : AppCompatActivity() {
         currentMode = setMode
         Log.d(TAG, "currentMode: $currentMode")
         val aspect = if(setMode == VIDEO_MODE) aspectRatioVideo else aspectRatioPhoto
-
+        if(setMode == NIGHT_MODE) selectFlashMode(FlashModes.OFF.ordinal)
         try {
             setFlashMode() // se sono in modalità video con flash ON accende il flash, altrimenti lo spegne
         }
@@ -1409,28 +1429,34 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-    
+
+    /**
+     * Classe per riconoscere le gesture semplici, nel nostro caso implementiamo:
+     * - [onSingleTapUp] che gestisce la gesture di tocco per fare il focus
+     * - [onFling] che gestisce gli swipe per cambiare modalità/camera
+     */
     private inner class MyGestureListener : GestureDetector.SimpleOnGestureListener() {
+
+        /**
+         * Gestisce il singolo tocco
+         */
         override fun onSingleTapUp(motionEvent: MotionEvent): Boolean {
             when (motionEvent.action) {
                 MotionEvent.ACTION_UP -> {
+                    // calcola la posizione corretta dove inserire il cerchietto del focus
                     focusView.x = viewPreview.x - focusView.width / 2 + motionEvent.x
                     focusView.y = viewPreview.y - focusView.height / 2 + motionEvent.y
                     focusView.visibility = View.VISIBLE
+                    // mantiene il cerchietto visibile per un secondo
                     focusView.postDelayed(Runnable {
                         focusView.visibility = View.INVISIBLE
                     }, 1000)
-                    // Get the MeteringPointFactory from PreviewView
+                    // crea un punto di esposizione nella zona della preview toccata per gestire il focus
                     val factory = viewBinding.viewPreview.meteringPointFactory
-
-                    // Create a MeteringPoint from the tap coordinates
                     val point = factory.createPoint(motionEvent.x, motionEvent.y)
-
-                    // Create a MeteringAction from the MeteringPoint, you can configure it to specify the metering mode
+                    // crea un'azione di focus a partire dal punto trovato
                     val action = FocusMeteringAction.Builder(point).build()
-
-                    // Trigger the focus and metering. The method returns a ListenableFuture since the operation
-                    // is asynchronous. You can use it get notified when the focus is successful or if it fails.
+                    // inizia il focus nel punto specificato
                     cameraControl.startFocusAndMetering(action)
                 }
             }
@@ -1478,6 +1504,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Classe per riconoscere la gesture di scaling per modificare lo zoom
+     */
     private inner class ScaleGestureListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
         override fun onScale(detector: ScaleGestureDetector): Boolean {
             val scaleFactor = detector.scaleFactor
@@ -1689,9 +1718,9 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Metodo per passare alla prossima modalita' del flash, nell'ordine:
-     *  - OFF
-     *  - ON
-     *  - AUTO
+     *  - OFF -> (0)
+     *  - ON -> (1)
+     *  - AUTO -> (2)
      */
     private fun switchFlashMode() {
         currFlashMode = FlashModes.next(currFlashMode)
@@ -1720,8 +1749,6 @@ class MainActivity : AppCompatActivity() {
                 btFlash.setBackgroundResource(R.drawable.flash_off)
                 btFlash.backgroundTintList = getColorStateList(R.color.floral_white)
                 imageCapture?.flashMode = ImageCapture.FLASH_MODE_OFF
-                //Nel caso in cui si stia registrando disattiva il flash in modalita' OFF
-                //if(currentMode == VIDEO_MODE) cameraControl.enableTorch(false)
             }
             FlashModes.ON -> {
                 btFlash.setBackgroundResource(R.drawable.flash_on)
@@ -1734,8 +1761,6 @@ class MainActivity : AppCompatActivity() {
                 btFlash.setBackgroundResource(R.drawable.flash_auto)
                 btFlash.backgroundTintList = getColorStateList(R.color.aureolin_yellow)
                 imageCapture?.flashMode = ImageCapture.FLASH_MODE_AUTO
-                //Nel caso in cui si stia registrando disattiva il flash in modalita' AUTO
-                //if(currentMode == VIDEO_MODE) cameraControl.enableTorch(false)
             }
         }
     }
