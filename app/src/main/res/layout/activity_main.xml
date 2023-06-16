@@ -2,6 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/constraintLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/dark_gray"
@@ -42,22 +43,23 @@
         android:layout_height="200dp"
         android:background="#99171717"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/vertical_centerline"
+        android:id="@+id/vertical_centerline1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.50" />
+        app:layout_constraintGuide_percent="0.25" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/vertical_centerline2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.25" />
+        app:layout_constraintGuide_percent="0.50" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/vertical_centerline3"
@@ -65,6 +67,13 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         app:layout_constraintGuide_percent="0.75" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/vertical_centerline4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="1" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline"
@@ -211,14 +220,24 @@
         app:constraint_referenced_ids="BT_timer,BT_qrcode" />
 
     <Button
+        android:id="@+id/BT_settings"
+        android:layout_width="35dp"
+        android:layout_height="35dp"
+        android:background="@drawable/settings"
+        android:backgroundTint="@color/floral_white"
+        app:layout_constraintBottom_toTopOf="@+id/guideline"
+        app:layout_constraintEnd_toStartOf="@+id/vertical_centerline1"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
         android:id="@+id/BT_timer"
         android:layout_width="35dp"
         android:layout_height="35dp"
         android:background="@drawable/timer_0"
         android:backgroundTint="@color/floral_white"
         app:layout_constraintBottom_toTopOf="@+id/guideline"
-        app:layout_constraintEnd_toStartOf="@+id/vertical_centerline"
-        app:layout_constraintStart_toStartOf="@+id/vertical_centerline2" />
+        app:layout_constraintEnd_toStartOf="@+id/vertical_centerline2"
+        app:layout_constraintStart_toStartOf="@+id/vertical_centerline1" />
 
     <Button
         android:id="@+id/BT_qrcode"
@@ -228,7 +247,8 @@
         android:backgroundTint="@color/aureolin_yellow"
         app:layout_constraintBottom_toTopOf="@+id/guideline"
         app:layout_constraintEnd_toStartOf="@+id/vertical_centerline3"
-        app:layout_constraintStart_toStartOf="@+id/vertical_centerline" />
+        app:layout_constraintStart_toStartOf="@+id/vertical_centerline2" />
+
 
     <!-- Risultato dello scan -->
 
@@ -251,16 +271,6 @@
         tools:layout_editor_absoluteY="64dp"
         tools:ignore="MissingConstraints,Viene settata la posizione in base a dove viene
             cliccato il dito,usato per la messa a fuoco" />
-
-    <Button
-        android:id="@+id/BT_settings"
-        android:layout_width="35dp"
-        android:layout_height="35dp"
-        android:background="@drawable/settings"
-        android:backgroundTint="@color/floral_white"
-        app:layout_constraintBottom_toTopOf="@+id/guideline"
-        app:layout_constraintEnd_toStartOf="@+id/vertical_centerline2"
-        app:layout_constraintStart_toStartOf="parent" />
 
     <Chronometer
         android:id="@+id/CM_RecTimer"

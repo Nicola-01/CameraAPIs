@@ -1097,9 +1097,6 @@ class MainActivity : AppCompatActivity() {
             else -> QualitySelector.from(Quality.SD)
         }
 
-        createRecorder() // costruita un'istanza di Recorder
-        changeMode(currentMode) // richiamo per cambiare la grandezza della preview
-
         // -- Generali
         findViewById<Group>(R.id.Group_grid).visibility =
             if(pm.getBoolean("SW_grid", true)) View.VISIBLE else View.INVISIBLE // le righe sono al interno di un gruppo, quindi prendo direttamente quello
@@ -1107,6 +1104,10 @@ class MainActivity : AppCompatActivity() {
         hdr = pm.getBoolean("SW_HDR", false)
         feedback = pm.getBoolean("SW_feedback", true)
         saveMode = pm.getBoolean("SW_mode", true)
+        
+        createRecorder() // costruita un'istanza di Recorder
+        changeMode(currentMode, true) // richiamo per cambiare la grandezza della preview e
+        // ri eseguire il bind nel caso in cui si attivi/disattivi l'hdr
 
         try {
             changeZoom(sbZoom.progress, true)
@@ -1314,9 +1315,7 @@ class MainActivity : AppCompatActivity() {
         if(scrollViewMode.visibility == View.INVISIBLE) // non posso cambiare modalità mentre registro
             return
 
-        var mode = setMode
-
-        if(force || currentMode != mode){
+        if(force || currentMode != setMode){
             viewPreview.visibility = View.INVISIBLE // nascondo la preview mentre cambio modalità
             countDownText.postDelayed(Runnable {
                 viewPreview.visibility = View.VISIBLE
@@ -1331,33 +1330,31 @@ class MainActivity : AppCompatActivity() {
             btNightMode.backgroundTintList = getColorStateList(R.color.gray_onyx)
             btNightMode.setTextColor(getColor(R.color.floral_white))
 
-            // modifiche grafiche
-            when(mode) {
+            btFlash.visibility = View.VISIBLE
+
+            // modifiche grafiche e attivazione funzioni particolari
+            when(setMode) {
                 NIGHT_MODE -> {
                     btFlash.visibility = View.INVISIBLE
                     btNightMode.backgroundTintList = getColorStateList(R.color.floral_white)
                     btNightMode.setTextColor(getColor(R.color.black))
                     Log.d(TAG, "NIGHT MODE")
                     nightMode()
-                    if(!nightMode())   // tento di accedere alla modalità night ma non è disponibile
-                    {
+                    if(!nightMode()) {  // tento di accedere alla modalità night ma non è disponibile
                         changeMode(PHOTO_MODE, true) // ritorno in modalità foto
                         return
                     }
                 }
                 BOKEH_MODE -> {
-                    btFlash.visibility = View.VISIBLE
                     btBokehMode.backgroundTintList = getColorStateList(R.color.floral_white)
                     btBokehMode.setTextColor(getColor(R.color.black))
                     Log.d(TAG, "BOKEH MODE")
-                    if(!bokehMode())   // tento di accedere alla modalità bokeh ma non è disponibile
-                    {
+                    if(!bokehMode()) {   // tento di accedere alla modalità bokeh ma non è disponibile
                         changeMode(PHOTO_MODE, true) // ritorno in modalità foto
                         return
                     }
                 }
                 PHOTO_MODE -> {
-                    btFlash.visibility = View.VISIBLE
                     btPhotoMode.backgroundTintList = getColorStateList(R.color.floral_white)
                     btPhotoMode.setTextColor(getColor(R.color.black))
                     Log.d(TAG, "PHOTO MODE")
@@ -1367,34 +1364,51 @@ class MainActivity : AppCompatActivity() {
                         bindCamera()
                 }
                 VIDEO_MODE -> {
-                    btFlash.visibility = View.VISIBLE
                     btVideoMode.backgroundTintList = getColorStateList(R.color.floral_white)
                     btVideoMode.setTextColor(getColor(R.color.black))
                     Log.d(TAG, "VIDEO MODE")
                     bindCamera()
                 }
             }
-            if(mode <= PHOTO_MODE)
+            if(setMode <= PHOTO_MODE)
                 scrollViewMode.fullScroll(View.FOCUS_RIGHT)
             else
                 scrollViewMode.fullScroll(View.FOCUS_LEFT)
         }
 
+
         currentMode = setMode
         Log.d(TAG, "currentMode: $currentMode")
+
+        val constraintLayout: ConstraintLayout = findViewById(R.id.constraintLayout)
+
+        val layoutParamsSetting = btSettings.layoutParams as ConstraintLayout.LayoutParams
+        layoutParamsSetting.endToStart =    if(currentMode == NIGHT_MODE) R.id.vertical_centerline2
+                                            else  R.id.vertical_centerline1
+        btSettings.layoutParams = layoutParamsSetting
+
+        val layoutParamsTimer = btTimer.layoutParams as ConstraintLayout.LayoutParams
+        layoutParamsTimer.endToStart =  if(currentMode == NIGHT_MODE) R.id.vertical_centerline3
+                                        else R.id.vertical_centerline2
+        btTimer.layoutParams = layoutParamsTimer
+
+        val layoutParamsQR = btQR.layoutParams as ConstraintLayout.LayoutParams
+        layoutParamsQR.endToStart =   if(currentMode == NIGHT_MODE) R.id.vertical_centerline4
+                                    else R.id.vertical_centerline3
+        btQR.layoutParams = layoutParamsQR
+
+        constraintLayout.requestLayout()
+
+        setFlashMode() // se sono in modalità video con flash ON accende il flash, altrimenti lo spegne
+
         val aspect = if (setMode == VIDEO_MODE) aspectRatioVideo else aspectRatioPhoto
         if (setMode == NIGHT_MODE) selectFlashMode(FlashModes.OFF.ordinal)
-        try {
-            setFlashMode() // se sono in modalità video con flash ON accende il flash, altrimenti lo spegne
-        } catch (e: Exception) {
-            Log.e(TAG, "errore in changeMode $e", e)
-        }
 
         // cambia rapporto preview
-        val layoutParams = viewPreview.layoutParams as ConstraintLayout.LayoutParams
-        layoutParams.dimensionRatio =
+        val layoutParamsPreview = viewPreview.layoutParams as ConstraintLayout.LayoutParams
+        layoutParamsPreview.dimensionRatio =
             "H,${aspect.numerator}:${aspect.denominator}" // Cambia l'aspect ratio desiderato qui
-        viewPreview.layoutParams = layoutParams
+        viewPreview.layoutParams = layoutParamsPreview
 
 
         if (!timerOn) // se non c'e' il timer attivato
