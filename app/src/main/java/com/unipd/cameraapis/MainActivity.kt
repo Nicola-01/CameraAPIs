@@ -82,8 +82,9 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var cameraExecutor: ExecutorService // todo forse si puo' eliminare
 
-    // Select back camera as a default
+    // Seleziona la camera posteriore di default
     private var cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+    // CameraSelector per attivare le funzionalità avanzate
     private lateinit var hdrCameraSelector: CameraSelector
     private lateinit var bokehCameraSelector: CameraSelector
     private lateinit var nightCameraSelector: CameraSelector
@@ -147,7 +148,8 @@ class MainActivity : AppCompatActivity() {
     private var inPause = false
     private var timerOn = false
     private var captureJob: Job? = null
-    private var isVolumeButtonClicked : Boolean = false
+    // boolean per gestire diverse azioni con i pulsanti del volume a seguito di longClick
+    private var isVolumeButtonClicked = false
     private var isVolumeButtonLongPressed = false
 
     private lateinit var volumeKey : String
@@ -201,7 +203,7 @@ class MainActivity : AppCompatActivity() {
         private const val TRESHOLD : Float = 100.0f
 
         /**
-         * Durata pressione del pulsante del volume per far iniziare la registrazione video.
+         * Durata pressione del pulsante del volume per far iniziare la registrazione video o chiamare [multishot].
          */
         private const val LONGCLICKDURATION = 300L
 
@@ -221,8 +223,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Chiamato al avvio del app, si occupa del inizializzazione
-     * degli elementi e del avvio della camera
+     * Chiamato all'avvio dell'app, si occupa dell'inizializzazione
+     * degli elementi e dell'avvio della camera.
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -561,10 +563,14 @@ class MainActivity : AppCompatActivity() {
         }
 
         btStop.setOnClickListener{
-            timerShot(true) // terma la registrazione
+            timerShot(true) // ferma la registrazione
         }
 
-        //todo commentare
+        /*
+            Listener per il pulsante del timer:
+            - con un singolo click passa alla modalità successiva, selezionando i secondi di countdown per l'autoscatto (0, 3, 5, 10);
+            - con un tocco prolungato apre un menu a tendina che permette di selezionare la modalità desiderata.
+         */
         btTimer.setOnClickListener { switchTimerMode() }
         btTimer.setOnCreateContextMenuListener { menu, _, _ ->
             menu.setHeaderTitle("Timer")
@@ -572,7 +578,7 @@ class MainActivity : AppCompatActivity() {
                 val item: MenuItem = menu.add(Menu.NONE, mode.ordinal, Menu.NONE, mode.text)
                 item.setOnMenuItemClickListener { i: MenuItem? ->
                     selectTimerMode(i?.itemId)
-                    true // Signifies you have consumed this event, so propogation can stop.
+                    true
                 }
             }
         }
@@ -614,13 +620,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Modifica il valore di [qrCodePopUp] con il contenuto letto dal QR code.
+     * Lancia l'activity [QrCodeRunner] per la lettura di un codice Qr.
      */
     private fun qrCode()
     {
         val intent = Intent(this, QrCodeRunner::class.java)
         intent.putExtra("flashOn", currFlashMode == FlashModes.ON)
-        //startActivity(intent)
         startActivityForResult(intent, 1)
     }
 
@@ -698,7 +703,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Crea la Preview della fotocamera e ne seleziona l'output, l'aspect ratio e la qualita' video.
+     * Crea la Preview della fotocamera e ne seleziona l'output, l'aspect ratio e la qualità video.
      */
     private fun startCamera() {
         // si ottiene un'istanza di tipo ListenableFuture che rappresenta un'istanza di ProcessCameraProvider, disponibile in seguito
@@ -710,6 +715,7 @@ class MainActivity : AppCompatActivity() {
             // recupera l'istanza di ProcessCameraProvider
             cameraProvider = cameraProviderFuture.get()
 
+            // gestione delle estensioni
             extensionsManagerFuture = ExtensionsManager.getInstanceAsync(this, cameraProvider)
             extensionsManagerFuture.addListener({
 
@@ -1017,7 +1023,7 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Metodo per ricaricare i valori nel bundle o nelle preferences.
-     * Non e' nel onCreate perche' usa variabili che vengono dichiarate nel startCamera.
+     * Non e' nel [onCreate] perche' usa variabili che vengono dichiarate nel [startCamera].
      */
     private fun loadFromBundle(savedInstanceState : Bundle?)
     {
@@ -1138,8 +1144,8 @@ class MainActivity : AppCompatActivity() {
     /**
      * Metodo usato per cambiare lo zoom della camera.
      *
-     * @param progress  valore della SeekBar
-     * @param bindAnyway booleano per forzare il rebind
+     * @param progress  valore della SeekBar.
+     * @param bindAnyway booleano per forzare il rebind.
      */
     private fun changeZoom(progress : Int, bindAnyway : Boolean = false)
     {
@@ -1155,7 +1161,7 @@ class MainActivity : AppCompatActivity() {
 
 
         if(isRecording) // se sto registrando, non posso cambiare camera, quindi c'e' un valore di zoom diverso
-            zoomLv = progress/sbZoom.max.toFloat() // calcolo per ottenere un valore compreso ltra 0 e 1 per lo zoom
+            zoomLv = progress/sbZoom.max.toFloat() // calcolo per ottenere un valore compreso tra 0 e 1 per lo zoom
         else
         {
             if(progress<CHANGECAMERASEEKBAR) // sono sulle camere ultra grand angolari (changeCameraSeekBar = 50)
@@ -1264,9 +1270,9 @@ class MainActivity : AppCompatActivity() {
                             if(!isRecording) {
                                 val temporaryCountDown = countdown
                                 countdown = 0   // faccio partire direttamente il video, senza countdown
-                                changeMode(VIDEO_MODE)
-                                timerShot(true)
-                                countdown = temporaryCountDown
+                                changeMode(VIDEO_MODE)  // passo in modalità video
+                                timerShot(true) // inizio la registrazione
+                                countdown = temporaryCountDown  // re-imposto il valore del countdown
                                 isVolumeButtonLongPressed = true
                             }
                         }
@@ -1299,7 +1305,7 @@ class MainActivity : AppCompatActivity() {
             (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP || event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
             volumeTimer?.cancel()   // fermo il timer quando sollevo il dito dal pulsante
             volumeTimer = null
-            if(isVolumeButtonLongPressed) {       // se sto registrando tenendo premuto il tasto interrompo la registrazione
+            if(isVolumeButtonLongPressed) {       // se sto registrando tenendo premuto il tasto, interrompo la registrazione
                 timerShot(true)
                 isVolumeButtonLongPressed = false
                 return true
@@ -1484,7 +1490,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Funzione per impostare l'orientamento dei tasti e della foto/video
+     * Funzione per impostare l'orientamento dei tasti e della foto o del video.
      */
     private fun changeOrientation(rotate: Int) {
         if(!isRecording) // gira solo se non sta registrando, per salvare i video nel orientamento iniziale
@@ -1493,10 +1499,10 @@ class MainActivity : AppCompatActivity() {
             // Surface.ROTATION_0 e' = 0, ROTATION_90 = 1, ... ROTATION_270 = 3, quindi = rotation/90
             videoCapture?.targetRotation = rotate/90
         }
-        imageCapture?.targetRotation = rotate/90 // e' fuori dal if, in questo modo l'immagine e' sempre orientata correttamente
+        imageCapture?.targetRotation = rotate/90 // e' fuori dall'if, in questo modo l'immagine e' sempre orientata correttamente
     }
     /**
-     * Classe per riconoscere le gesture semplici, nel nostro caso implementiamo:
+     * Classe per riconoscere le gesture semplici; nel nostro caso implementiamo:
      * - [onSingleTapUp] che gestisce la gesture di tocco per fare il focus
      * - [onFling] che gestisce gli swipe per cambiare modalita'/camera
      */
@@ -1569,7 +1575,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Classe per riconoscere la gesture di scaling per modificare lo zoom
+     * Classe per riconoscere la gesture di scaling per modificare lo zoom.
      */
     private inner class ScaleGestureListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
         override fun onScale(detector: ScaleGestureDetector): Boolean {
@@ -1587,8 +1593,8 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Seleziona la fotocamera anteriore se attiva quella posteriore e viceversa.
-     * @param override permette di decidere quale camera usare
-     * @param back se true mette seleziona la camera back
+     * @param override permette di decidere quale camera usare.
+     * @param back se true seleziona la camera back.
      */
     private fun rotateCamera(override:Boolean = false, back: Boolean = true) { // id = 0 default back, id = 1 front default
 
@@ -1605,7 +1611,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * cambio la camera in base a quella selezionata
+     * Cambia la camera in base a quella selezionata.
      */
     private fun changeSelectCamera()
     {
@@ -1624,37 +1630,38 @@ class MainActivity : AppCompatActivity() {
 
         val extensionsManager = extensionsManagerFuture.get()
 
-        //Use cases
+        // Gestisce tre diversi use cases
         isHdrAvailable = false
         isBokehAvailable = false
         isNightAvailable = false
 
+        // Verifica che queste funzionalità siano disponibili per il dispositivo dell'utente
         if(extensionsManager.isExtensionAvailable(cameraSelector, ExtensionMode.HDR)) {
             hdrCameraSelector = extensionsManager.getExtensionEnabledCameraSelector(
-                cameraSelector, ExtensionMode.HDR)
+                cameraSelector, ExtensionMode.HDR)  // attiva l'estensione HDR
             isHdrAvailable = true
         }
 
         if(extensionsManager.isExtensionAvailable(cameraSelector, ExtensionMode.BOKEH)){
             bokehCameraSelector = extensionsManager.getExtensionEnabledCameraSelector(
-                cameraSelector, ExtensionMode.BOKEH)
+                cameraSelector, ExtensionMode.BOKEH)    // attiva l'estensione BOKEH
             isBokehAvailable = true
         }
 
 
         if(extensionsManager.isExtensionAvailable(cameraSelector, ExtensionMode.NIGHT)) {
             nightCameraSelector = extensionsManager.getExtensionEnabledCameraSelector(
-                cameraSelector, ExtensionMode.NIGHT)
+                cameraSelector, ExtensionMode.NIGHT)    // attiva l'estensione NIGHT
             isNightAvailable = true
         }
 
-        Log.d(TAG, "change Camera, currente [$currentCamera], status: hdr: [$isHdrAvailable]; bokeh: [$isBokehAvailable]; Night: [$isNightAvailable]")
+        Log.d(TAG, "change Camera, current [$currentCamera], status: hdr: [$isHdrAvailable]; bokeh: [$isBokehAvailable]; Night: [$isNightAvailable]")
     }
 
     /**
      * Metodo che permette di scattare una foto o di registrare un video tenendo conto dei secondi di countdown per l'autoscatto.
      *
-     * @param record True se in modalita' video;
+     * @param record True se in modalita' video.
      *               False se in modalita' foto.
      */
     private fun timerShot(record : Boolean){
@@ -1678,13 +1685,13 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        timerOn = true
+        timerOn = true  // il timer si attiva
         timer = object : CountDownTimer(countdown*1000, 1000){
             override fun onTick(remainingMillis: Long) {
                 //btTimer.visibility = View.INVISIBLE //rendo invisibile il pulsante del timer durante il countdown
                 findViewById<Group>(R.id.Group_extraFunc).visibility = View.INVISIBLE
-                btShoot.setBackgroundResource(R.drawable.rounded_stop_button)
-                countDownText.text = "${remainingMillis/1000 + 1}"
+                btShoot.setBackgroundResource(R.drawable.rounded_stop_button)   // tasto per fermare il countdown e l'autoscatto
+                countDownText.text = "${remainingMillis/1000 + 1}"  // mostra a schermo i secondi rimanenti allo scatto o alla registrazione
                 countDownText.visibility = View.VISIBLE
                 scrollViewMode.visibility = View.INVISIBLE
                 Log.d(TAG, "Secondi rimanenti: "+remainingMillis/1000)
@@ -1698,7 +1705,7 @@ class MainActivity : AppCompatActivity() {
                     captureVideo()
                 else
                     takePhoto()
-                changeMode(currentMode) // richiamo change mode per impostre la grafica corretta
+                changeMode(currentMode) // richiamo change mode per impostare la grafica corretta
             }
 
         }.start()
@@ -1706,7 +1713,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Ruoto i pulsanti per far si che siano dritti.
+     * Ruota i pulsanti a seconda dell'orientamento dello schermo.
      *
      * @param angle e' il numero di gradi per ruotare i tasti.
      */
@@ -1736,12 +1743,13 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Permette di selezionare i secondi di countdown desiderati da una lista di possibili valori (0, 3, 5, 10).
+     * @param ordinal l'indice che indica l'elemento da selezionare dalla lista dei valori di [TimerModes].
      */
     private fun selectTimerMode(ordinal: Int?): Boolean{
         if(ordinal == null) {
             throw IllegalArgumentException()
         }
-        currTimerMode = TimerModes.values()[ordinal]
+        currTimerMode = TimerModes.values()[ordinal]    // cambia la modalità corrente
         setTimerMode()
         setTimerIcon(currTimerMode.text)
         return true
@@ -1784,7 +1792,7 @@ class MainActivity : AppCompatActivity() {
      * Metodo per passare alla prossima modalita' del flash, nell'ordine:
      *  - OFF -> (0)
      *  - ON -> (1)
-     *  - AUTO -> (2)
+     *  - AUTO -> (2).
      */
     private fun switchFlashMode() {
         currFlashMode = FlashModes.next(currFlashMode)
@@ -1792,7 +1800,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Metodo per cambiare [currFlashMode]
+     * Metodo per cambiare [currFlashMode].
      */
     private fun selectFlashMode(ordinal: Int?): Boolean {
         if(ordinal == null) {
@@ -1804,7 +1812,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Metodo che permette di impostare la modalita' del flash specificata da [currFlashMode]
+     * Metodo che permette di impostare la modalita' del flash specificata da [currFlashMode].
      */
     private fun setFlashMode() {
         cameraControl.enableTorch(false)
@@ -1830,7 +1838,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * abilita il "sensore" per l'angolo
+     * Abilita il "sensore" per l'angolo.
      */
     override fun onStart() {
         super.onStart()
@@ -1838,7 +1846,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * disabilita il "sensore" per l'angolo
+     * Disabilita il "sensore" per l'angolo.
      */
     override fun onStop() {
         super.onStop()
@@ -1846,11 +1854,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * quando l'applicazione viene messa in background salvo le preference
-     * da ripristinare al avvio, anche se viene completamente chiusa
+     * Quando l'applicazione viene messa in background salva le preference
+     * da ripristinare all'avvio, anche se viene completamente chiusa.
      *
      * Ho deciso di non salvare tutti i dati, quindi escludo lo zoom
-     * e anche la modalita' in cui viene lasciata
+     * e anche la modalita' in cui viene lasciata.
      */
     override fun onPause()
     {
@@ -1880,20 +1888,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Ripristino lo zoom
+     * Ripristina lo zoom.
      */
     override fun onResume()
     {
         super.onResume()
         Log.d(TAG, "onResume")
-        try { // il lifecycle dello zoom viene chiuso con la chiusura dell'app,
-            // e non viene ripristinato manualmente, quindi chiamo changeZoom
-            // con il valore sbZoom.progress che e' ancora salvato
-            // Se invece l'applicazione va in background e viene killata da android
-            // allora changeZoom(sbZoom.progress) restituisce errore che non e'
-            // necessario gestire, in quel caso allora i dati sono stati salvati dul Bundle
-            // e ripristinati da loadFromBundle, se invece viene killata dal utente
-            // allora non viene ripristinato lo stato
+        try { /*
+            il lifecycle dello zoom viene chiuso con la chiusura dell'app,
+             e non viene ripristinato manualmente, quindi chiamo changeZoom
+             con il valore sbZoom.progress che e' ancora salvato
+             Se invece l'applicazione va in background e viene killata da android
+             allora changeZoom(sbZoom.progress) restituisce errore che non e'
+             necessario gestire, in quel caso allora i dati sono stati salvati dal Bundle
+             e ripristinati da loadFromBundle; se invece viene killata dall'utente
+             allora non viene ripristinato lo stato
+             */
             if(::camera.isInitialized)
             {
                 changeZoom(sbZoom.progress)
@@ -1906,8 +1916,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * salvo la camera corrente (a differenza delle preference in cui salvo solo
-     * se e' anteriore o posteriore, lo zoom e la modalita'
+     * Salva la camera corrente (a differenza delle preference in cui salvo solo
+     * se e' anteriore o posteriore), lo zoom e la modalita'.
      */
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
@@ -1917,7 +1927,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * esegui l'unbind
+     * Esegue l'unbind.
      */
     override fun onDestroy() {
         super.onDestroy()
