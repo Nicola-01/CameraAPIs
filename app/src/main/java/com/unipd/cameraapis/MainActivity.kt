@@ -1931,7 +1931,7 @@ class MainActivity : AppCompatActivity() {
              e ripristinati da loadFromBundle; se invece viene killata dall'utente
              allora non viene ripristinato lo stato
              */
-            if(::camera.isInitialized)
+            if(::camera.isInitialized && allPermissionsGranted())
             {
                 changeZoom(sbZoom.progress)
                 loadFromSetting() // se camera non e' ancora impostata o se e' null da errore
@@ -1960,6 +1960,5 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         //cameraExecutor.shutdown() //todo forse si puo' eliminare
         // Libera le risorse della fotocamera
-        cameraProvider.unbindAll()
     }
 }
