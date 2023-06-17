@@ -80,8 +80,6 @@ class MainActivity : AppCompatActivity() {
     private var videoCapture: VideoCapture<Recorder>? = null
     private var recording: Recording? = null
 
-    private lateinit var cameraExecutor: ExecutorService // todo forse si puo' eliminare
-
     // Seleziona la camera posteriore di default
     private var cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
     // CameraSelector per attivare le funzionalita' avanzate
@@ -241,10 +239,6 @@ class MainActivity : AppCompatActivity() {
             startCamera()
         else
             askPermission()
-
-        // todo forse si puo' eliminare
-        //cameraExecutor = Executors.newSingleThreadExecutor() //si assicura che tutte le attivita'
-        // in cameraExecutor vengano eseguite in modo sequenziale su un singolo thread
     }
 
     /**
@@ -370,7 +364,7 @@ class MainActivity : AppCompatActivity() {
             else
                 scrollViewMode.fullScroll(View.FOCUS_LEFT)
 
-            ajustmentGUI()
+            adjustmentGUI()
 
             val preferences = getPreferences(MODE_PRIVATE)
 
@@ -413,13 +407,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun ajustmentGUI() {
+    /**
+     * Sistema certe impostazioni grafiche
+     */
+    private fun adjustmentGUI() {
         try{
             setFlashMode() // attivo il flash se sono in modalita' video
             //aggiustamenti grafici
             changeMode(currentMode, true)
             changeZoom(sbZoom.progress)
-        }
+        } // e' in un try e catch perche' in potrebbe essere chiamato senza che la camera sia inizializzata
         catch (e:Exception)
         { }
     }
@@ -466,7 +463,6 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Funzione per l'assegnazione dei Listener ai widget.
-     * Todo: da finire di commentare
      */
     private fun createListener()
     {
@@ -518,6 +514,7 @@ class MainActivity : AppCompatActivity() {
             cursor.close()
         }
 
+        // listener per i tasti modalita'
         btVideoMode.setOnClickListener { changeMode(VIDEO_MODE)
             if (feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM) }
         btPhotoMode.setOnClickListener { changeMode(PHOTO_MODE)
@@ -527,10 +524,12 @@ class MainActivity : AppCompatActivity() {
         btNightMode.setOnClickListener { changeMode(NIGHT_MODE)
             if (feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM) }
 
+        // pulsante per mettere in pausa la registrazione
         btPause.setOnClickListener{ pauseVideo()
             if (feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         }
 
+        // gira la camera
         btRotation.setOnClickListener {
             rotateCamera()
             if(feedback) it.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
@@ -575,6 +574,7 @@ class MainActivity : AppCompatActivity() {
             true // Restituisce true per indicare che l'evento di click lungo e' stato gestito correttamente
         }
 
+        // listener per fermare la registrazione video
         btStop.setOnClickListener{
             timerShot(true) // ferma la registrazione
         }
@@ -761,7 +761,7 @@ class MainActivity : AppCompatActivity() {
                 loadFromSetting()           // recupera le impostazioni
                 loadFromBundle(savedBundle) // carica gli elementi dal Bundle/Preferences
                 openByShortCut()            // controlla come e' stata aperta l'app
-                ajustmentGUI()
+                adjustmentGUI()
             }, ContextCompat.getMainExecutor(this))
 
         }, ContextCompat.getMainExecutor(this)) // specifica che le operazioni del listener vengano eseguite nel thread principale
@@ -1971,14 +1971,5 @@ class MainActivity : AppCompatActivity() {
         savedInstanceState.putInt(KEY_CAMERA, currentCamera)
         savedInstanceState.putInt(KEY_ZOOM, sbZoom.progress)
         savedInstanceState.putInt(KEY_MODE, currentMode)
-    }
-
-    /**
-     * Esegue l'unbind.
-     */
-    override fun onDestroy() {
-        super.onDestroy()
-        //cameraExecutor.shutdown() //todo forse si puo' eliminare
-        // Libera le risorse della fotocamera
     }
 }
