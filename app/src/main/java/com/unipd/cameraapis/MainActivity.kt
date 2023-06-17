@@ -84,7 +84,7 @@ class MainActivity : AppCompatActivity() {
 
     // Seleziona la camera posteriore di default
     private var cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-    // CameraSelector per attivare le funzionalità avanzate
+    // CameraSelector per attivare le funzionalita' avanzate
     private lateinit var hdrCameraSelector: CameraSelector
     private lateinit var bokehCameraSelector: CameraSelector
     private lateinit var nightCameraSelector: CameraSelector
@@ -554,7 +554,7 @@ class MainActivity : AppCompatActivity() {
         btShoot.setOnLongClickListener{
             if (currentMode == PHOTO_MODE)
             {
-                multishot(true) // multi shot solo per modalità foto
+                multishot(true) // multi shot solo per modalita' foto
                 if(feedback) it.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
             }
             else
@@ -568,8 +568,8 @@ class MainActivity : AppCompatActivity() {
 
         /*
             Listener per il pulsante del timer:
-            - con un singolo click passa alla modalità successiva, selezionando i secondi di countdown per l'autoscatto (0, 3, 5, 10);
-            - con un tocco prolungato apre un menu a tendina che permette di selezionare la modalità desiderata.
+            - con un singolo click passa alla modalita' successiva, selezionando i secondi di countdown per l'autoscatto (0, 3, 5, 10);
+            - con un tocco prolungato apre un menu a tendina che permette di selezionare la modalita' desiderata.
          */
         btTimer.setOnClickListener { switchTimerMode() }
         btTimer.setOnCreateContextMenuListener { menu, _, _ ->
@@ -703,7 +703,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Crea la Preview della fotocamera e ne seleziona l'output, l'aspect ratio e la qualità video.
+     * Crea la Preview della fotocamera e ne seleziona l'output, l'aspect ratio e la qualita' video.
      */
     private fun startCamera() {
         // si ottiene un'istanza di tipo ListenableFuture che rappresenta un'istanza di ProcessCameraProvider, disponibile in seguito
@@ -807,24 +807,44 @@ class MainActivity : AppCompatActivity() {
             btShoot.startAnimation(scaleDown)
         viewPreview.startAnimation(scaleUp)
 
+        disableButton(true) // blocco il passaggio di modalita'
+
         imageCapture!!.takePicture( // caso d'uso
             outputOptions, ContextCompat.getMainExecutor(this),
             object : ImageCapture.OnImageSavedCallback {
 
                 override fun onError(exc: ImageCaptureException) {
                     Log.e(TAG, "Photo capture failed: ${exc.message}", exc)
-                    Toast.makeText(baseContext, "Photo capture failed:", Toast.LENGTH_SHORT).show()
+                    //Toast.makeText(baseContext, "Photo capture failed:", Toast.LENGTH_SHORT).show()
+                    disableButton(false) // sblocco il passaggio di modalita'
                 }
 
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                    blockChangeMode = true
-                    countDownText.postDelayed(Runnable {
-                        blockChangeMode = false
-                    }, 1000)
+                    disableButton(false) // sblocco il passaggio di modalita'
                 }
             }
         )
         btTimer.visibility = View.VISIBLE   //rendo di nuovo visibile il pulsante del timer dopo aver scattato la foto
+    }
+
+    /**
+     * Blocca tutti gli elementi che potrebbero portare ad eseguire un unbind mentre si sta salvando
+     * una foto, questo impedirebbe il corretto salvataggio della foto
+     * @return True se si vuole bloccare False altrimenti
+     */
+    private fun disableButton(status : Boolean)
+    {
+        blockChangeMode = status // blocca gesture, tasti volume e changeMode
+        btRotation.isEnabled = !status
+        btTimer.isEnabled = !status
+        btZoom05.isEnabled = !status
+        btZoom10.isEnabled = !status
+        btZoomRec.isEnabled = !status
+        btVideoMode.isEnabled = !status
+        btPhotoMode.isEnabled = !status
+        btBokehMode.isEnabled = !status
+        btNightMode.isEnabled = !status
+        sbZoom.isEnabled = !status
     }
 
     /**
@@ -902,6 +922,7 @@ class MainActivity : AppCompatActivity() {
                         inPause = false
                         startRecording(true) // cambio la grafica
                         scrollViewMode.visibility = View.INVISIBLE
+                        disableButton(true) // blocco il passaggio di modalita'
                     }
                     is VideoRecordEvent.Finalize -> { // finisce la registrazione
                         if (recordEvent.hasError()) { // se c'e' un errore
@@ -909,6 +930,8 @@ class MainActivity : AppCompatActivity() {
                             recording = null
                             Log.e(TAG, "Errore nella registrazione: " + "${recordEvent.error}")
                         }
+
+                        disableButton(false) // sblocco il passaggio di modalita'
                         //if(currFlashMode == FlashModes.ON) cameraControl.enableTorch(false)
                         // resetto la grafica..
                         startRecording(false)
@@ -1248,11 +1271,15 @@ class MainActivity : AppCompatActivity() {
      * premuto il tasto [KeyEvent.KEYCODE_VOLUME_DOWN] o viene richiamato il metodo [multishot] premendo [KeyEvent.KEYCODE_VOLUME_UP].
      */
     override fun dispatchKeyEvent(event: KeyEvent?): Boolean
-    {   // gestisco la registrazione video tenendo premuto il pulsante del volume per almeno 1 secondo e lo interrompo quando alzo il dito
-        if (event?.action == KeyEvent.ACTION_DOWN &&
-            (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP || event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
+    {
+        if(!(event?.keyCode == KeyEvent.KEYCODE_VOLUME_UP || event?.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN))
+            return super.dispatchKeyEvent(event)
+
+        // gestisco la registrazione video tenendo premuto il pulsante del volume per almeno 1 secondo e lo interrompo quando alzo il dito
+        if (event?.action == KeyEvent.ACTION_DOWN) {
             when(volumeKey) {
                 "zoom" -> {
+                    if(blockChangeMode) return true
                     // Volume_UP -> zoom in, Volume_DOWN -> zoom out
                     sbZoom.incrementProgressBy(if (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP) 1 else -1)
                     return true
@@ -1261,6 +1288,7 @@ class MainActivity : AppCompatActivity() {
             }
             if(volumeTimer==null && volumeKey == "shot") {
                 if(event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) { // video tenendo premuto il pulsante per abbassare il volume
+                    if(blockChangeMode) return true
                     volumeTimer = object: CountDownTimer(LONGCLICKDURATION, LONGCLICKDURATION) {
                         override fun onTick(millisUntilFinished: Long) {
                             // non fa nulla
@@ -1270,7 +1298,7 @@ class MainActivity : AppCompatActivity() {
                             if(!isRecording) {
                                 val temporaryCountDown = countdown
                                 countdown = 0   // faccio partire direttamente il video, senza countdown
-                                changeMode(VIDEO_MODE)  // passo in modalità video
+                                changeMode(VIDEO_MODE)  // passo in modalita' video
                                 timerShot(true) // inizio la registrazione
                                 countdown = temporaryCountDown  // re-imposto il valore del countdown
                                 isVolumeButtonLongPressed = true
@@ -1289,7 +1317,7 @@ class MainActivity : AppCompatActivity() {
                             when (currentMode) {
                                 VIDEO_MODE   // sono in modalita' video passo in foto
                                 -> changeMode(PHOTO_MODE)
-                                PHOTO_MODE   // disattivo il multishot in modalita' night
+                                PHOTO_MODE   // multishot disponibile solo in modalita' poto
                                 -> multishot(true)
                                 else -> takePhoto()
                             }
@@ -1301,8 +1329,7 @@ class MainActivity : AppCompatActivity() {
             }
             return true
         }
-        else if (event?.action == KeyEvent.ACTION_UP &&
-            (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP || event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
+        else if (event?.action == KeyEvent.ACTION_UP) {
             volumeTimer?.cancel()   // fermo il timer quando sollevo il dito dal pulsante
             volumeTimer = null
             if(isVolumeButtonLongPressed) {       // se sto registrando tenendo premuto il tasto, interrompo la registrazione
@@ -1335,7 +1362,6 @@ class MainActivity : AppCompatActivity() {
                         timerShot(true) // Stoppa la registrazione video
                     }
 
-
                     return true
                 }
             }
@@ -1351,6 +1377,8 @@ class MainActivity : AppCompatActivity() {
      * @param force booleano per cambiare comunque la grafica
      */
     private fun changeMode(setMode : Int, force : Boolean = false) {
+        if(blockChangeMode) return
+
         if(scrollViewMode.visibility == View.INVISIBLE) // non posso cambiare modalita' mentre registro
             return
 
@@ -1360,10 +1388,8 @@ class MainActivity : AppCompatActivity() {
                 sbZoom.progress = CHANGECAMERASEEKBAR // ripiristino lo zoom
 
             viewPreview.visibility = View.INVISIBLE // nascondo la preview mentre cambio modalita'
-            btShoot.visibility = View.INVISIBLE // nascondo la preview mentre cambio modalita'
             countDownText.postDelayed(Runnable {
                 viewPreview.visibility = View.VISIBLE
-                btShoot.visibility = View.VISIBLE
             }, 900)
 
             btVideoMode.backgroundTintList = getColorStateList(R.color.gray_onyx)
@@ -1547,6 +1573,8 @@ class MainActivity : AppCompatActivity() {
             velocityX: Float,
             velocityY: Float
         ): Boolean {
+            if(blockChangeMode) return super.onFling(e1, e2, velocityX, velocityY)
+
             val deltaY = e2.y - e1.y
             val deltaX = e2.x - e1.x
 
@@ -1635,7 +1663,7 @@ class MainActivity : AppCompatActivity() {
         isBokehAvailable = false
         isNightAvailable = false
 
-        // Verifica che queste funzionalità siano disponibili per il dispositivo dell'utente
+        // Verifica che queste funzionalita' siano disponibili per il dispositivo dell'utente
         if(extensionsManager.isExtensionAvailable(cameraSelector, ExtensionMode.HDR)) {
             hdrCameraSelector = extensionsManager.getExtensionEnabledCameraSelector(
                 cameraSelector, ExtensionMode.HDR)  // attiva l'estensione HDR
@@ -1749,7 +1777,7 @@ class MainActivity : AppCompatActivity() {
         if(ordinal == null) {
             throw IllegalArgumentException()
         }
-        currTimerMode = TimerModes.values()[ordinal]    // cambia la modalità corrente
+        currTimerMode = TimerModes.values()[ordinal]    // cambia la modalita' corrente
         setTimerMode()
         setTimerIcon(currTimerMode.text)
         return true
