@@ -363,16 +363,13 @@ class MainActivity : AppCompatActivity() {
             else
                 scrollViewMode.fullScroll(View.FOCUS_LEFT)
 
-            try {
+            if(allPermissionsGranted()) { // controllo di avere i permessi
                 setFlashMode() // attivo il flash se sono in modalita' video
+                //aggiustamenti grafici
+                changeMode(currentMode, true)
+                changeZoom(sbZoom.progress)
             }
-            catch (e : Exception) // se non vengono accettati i permessi allora camera e' null e non viene impostato il flash
-            { }
 
-
-            //aggiustamenti grafici
-            changeMode(currentMode, true)
-            changeZoom(sbZoom.progress)
 
             val preferences = getPreferences(MODE_PRIVATE)
 
@@ -1912,6 +1909,8 @@ class MainActivity : AppCompatActivity() {
 
         editor.apply()
 
+        disableButton(false) // sblocco il passaggio di modalita'
+
         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
@@ -1963,5 +1962,4 @@ class MainActivity : AppCompatActivity() {
         // Libera le risorse della fotocamera
         cameraProvider.unbindAll()
     }
-
 }
