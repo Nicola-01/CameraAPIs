@@ -1,11 +1,11 @@
 package com.unipd.cameraapis
 
-import android.content.DialogInterface
 import android.content.Intent
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
 import android.widget.Button
 
 class PermissionDenyActivity : AppCompatActivity() {
@@ -22,7 +22,11 @@ class PermissionDenyActivity : AppCompatActivity() {
             val uri = Uri.fromParts("package", packageName, null)
             intent.data = uri
             startActivity(intent)
-            ask = true
+            val  preferences = getPreferences(MODE_PRIVATE)
+            val editor = preferences.edit() // in questo modo sono sicuro anche quando viene eliminato il contenuto
+            editor.putBoolean("PermissionDenyAsk", true)
+            editor.apply()
+            Log.d("CameraXApp", "PermissionDeny Setting")
         }
 
         BT_close.setOnClickListener {
@@ -30,15 +34,19 @@ class PermissionDenyActivity : AppCompatActivity() {
             finish()
         }
     }
-    var ask = false
+
     override fun onResume() {
         super.onResume()
-        if(ask) // senza questo controllo continuerebbe a fare richieste
+        val  preferences = getPreferences(MODE_PRIVATE)
+        Log.d("CameraXApp", "PermissionDeny Resume")
+        if(preferences.getBoolean("PermissionDenyAsk", false)) // controlo se ho fatto la richiesta
         {
             setResult(1, Intent())
             finish()
         }
-        ask = false
+        val editor = preferences.edit()
+        editor.putBoolean("PermissionDenyAsk", false)
+        editor.apply()
     }
 
 }

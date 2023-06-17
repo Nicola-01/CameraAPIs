@@ -314,8 +314,14 @@ class MainActivity : AppCompatActivity() {
                     if (allPermissionsGranted())    // controllo se sono stati accettati i permessi
                         startCamera()               // se si lancio la camera
                     else {                          // altimenti mosto un altra activity
-                        val intent = Intent(this, PermissionDenyActivity::class.java)
-                        startActivityForResult(intent, 0)
+                        try{
+                            val intent = Intent(this, PermissionDenyActivity::class.java)
+                            startActivityForResult(intent, 0)
+                        }
+                        catch (e : Exception)
+                        {
+                            Log.e("CameraXApp","Errore $e", e)
+                        }
                     }
                 }
                 popUpVisible = true
@@ -355,7 +361,7 @@ class MainActivity : AppCompatActivity() {
      */
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) {
+        if (hasFocus && allPermissionsGranted()) { // controllo di avere i permessi
 
             // aggiustamento scrollBar tasto selezionato
             if(currentMode <= PHOTO_MODE)
@@ -363,19 +369,16 @@ class MainActivity : AppCompatActivity() {
             else
                 scrollViewMode.fullScroll(View.FOCUS_LEFT)
 
-            if(allPermissionsGranted()) { // controllo di avere i permessi
-                setFlashMode() // attivo il flash se sono in modalita' video
-                //aggiustamenti grafici
-                changeMode(currentMode, true)
-                changeZoom(sbZoom.progress)
-            }
-
+            setFlashMode() // attivo il flash se sono in modalita' video
+            //aggiustamenti grafici
+            changeMode(currentMode, true)
+            changeZoom(sbZoom.progress)
 
             val preferences = getPreferences(MODE_PRIVATE)
 
             // recupero le variabili dalle preferences
             var hB = preferences.getInt("bottomBandHeight", -1)
-            var hT = preferences.getInt("topBandHeight", -1)
+            var hT = preferences.getInt("topBandHeight", 1)
 
             Log.d(TAG, "height bottom $hB")
             Log.d(TAG, "height top $hT")
@@ -397,6 +400,10 @@ class MainActivity : AppCompatActivity() {
                 val editor = preferences.edit()
                 editor.putInt("bottomBandHeight", hB)
                 editor.putInt("topBandHeight", hT)
+
+                Log.d(TAG, "set height bottom $hB")
+                Log.d(TAG, "set height top $hT")
+
                 editor.apply()
             }
 
@@ -1356,7 +1363,7 @@ class MainActivity : AppCompatActivity() {
                         if(event.keyCode == KeyEvent.KEYCODE_VOLUME_UP)
                             takePhoto() // funziona indipendentemente dalla modalita'
                         else
-                        timerShot(true) // Stoppa la registrazione video
+                            timerShot(true) // Stoppa la registrazione video
                     }
 
                     return true
@@ -1933,9 +1940,12 @@ class MainActivity : AppCompatActivity() {
              */
             if(::camera.isInitialized && allPermissionsGranted())
             {
+                Log.d(TAG, "---IN")
                 changeZoom(sbZoom.progress)
                 loadFromSetting() // se camera non e' ancora impostata o se e' null da errore
             }
+            else
+                Log.d(TAG, "---OUT")
         }
         catch (e : Exception) {
             Log.e(TAG, "Exception $e", e)
