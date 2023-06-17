@@ -152,6 +152,7 @@ class MainActivity : AppCompatActivity() {
     private var isVolumeButtonClicked = false
     private var isVolumeButtonLongPressed = false
 
+
     private lateinit var volumeKey : String
     private var aspectRatioPhoto = Rational(3, 4)
     private var aspectRatioVideo = Rational(3, 4)
@@ -369,10 +370,7 @@ class MainActivity : AppCompatActivity() {
             else
                 scrollViewMode.fullScroll(View.FOCUS_LEFT)
 
-            setFlashMode() // attivo il flash se sono in modalita' video
-            //aggiustamenti grafici
-            changeMode(currentMode, true)
-            changeZoom(sbZoom.progress)
+            ajustmentGUI()
 
             val preferences = getPreferences(MODE_PRIVATE)
 
@@ -413,6 +411,17 @@ class MainActivity : AppCompatActivity() {
             layoutParamsT.height = hT
             topBand.layoutParams = layoutParamsT
         }
+    }
+
+    private fun ajustmentGUI() {
+        try{
+            setFlashMode() // attivo il flash se sono in modalita' video
+            //aggiustamenti grafici
+            changeMode(currentMode, true)
+            changeZoom(sbZoom.progress)
+        }
+        catch (e:Exception)
+        { }
     }
 
     /**
@@ -752,7 +761,7 @@ class MainActivity : AppCompatActivity() {
                 loadFromSetting()           // recupera le impostazioni
                 loadFromBundle(savedBundle) // carica gli elementi dal Bundle/Preferences
                 openByShortCut()            // controlla come e' stata aperta l'app
-
+                ajustmentGUI()
             }, ContextCompat.getMainExecutor(this))
 
         }, ContextCompat.getMainExecutor(this)) // specifica che le operazioni del listener vengano eseguite nel thread principale
@@ -1382,6 +1391,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun changeMode(setMode : Int, force : Boolean = false) {
         if(blockChangeMode) return
+        Log.d(TAG, "changeMode")
 
         if(scrollViewMode.visibility == View.INVISIBLE) // non posso cambiare modalita' mentre registro
             return
