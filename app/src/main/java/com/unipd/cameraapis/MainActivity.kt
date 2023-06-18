@@ -1743,11 +1743,11 @@ class MainActivity : AppCompatActivity() {
                 countDownText.visibility = View.INVISIBLE
                 scrollViewMode.visibility = View.VISIBLE
                 findViewById<Group>(R.id.Group_extraFunc).visibility = View.VISIBLE
+                changeMode(currentMode) // richiamo change mode per impostare la grafica corretta
                 if(record)
                     captureVideo()
                 else
                     takePhoto()
-                changeMode(currentMode) // richiamo change mode per impostare la grafica corretta
             }
 
         }.start()
