@@ -760,15 +760,14 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Metodo per scattare una foto usando le impostazioni di [imageCapture].
-     * Todo: finire commentare il funzionamento
+     *
      */
     private fun takePhoto() {
-        // Get a stable reference of the modifiable image capture use case
+        // Verifica che siano disponibili le impostazioni di cattura
         if(imageCapture == null)
             return
 
-        // creazione degli elementi necessari per avviare la cattura delle immagini
-
+        // Creazione degli elementi necessari per avviare la cattura delle immagini
         val contentValues = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME,
                 SimpleDateFormat(FILENAME_FORMAT, Locale.US).format(System.currentTimeMillis()))    // nome con cui salvare il file
@@ -787,25 +786,27 @@ class MainActivity : AppCompatActivity() {
             })
             .build()
 
-        // Set up image capture listener, which is triggered after photo has been taken
-
         // imposto le animazioni per lo scatto
         if(currentMode != VIDEO_MODE)
             btShoot.startAnimation(scaleDown)
         viewPreview.startAnimation(scaleUp)
 
+        // cattura un'immagine
         imageCapture!!.takePicture( // caso d'uso
             outputOptions, ContextCompat.getMainExecutor(this),
+            // callback chiamato dopo la cattura dell'immagine
             object : ImageCapture.OnImageSavedCallback {
-
+                // se la cattura non va a buon fine mostro un messaggi di errore
                 override fun onError(exc: ImageCaptureException) {
                     Log.e(TAG, "Photo capture failed: ${exc.message}", exc)
                 }
-
+                // se la cattura va a buon fine si salva il file risultante
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {}
             }
         )
-        btTimer.visibility = View.VISIBLE   //rendo di nuovo visibile il pulsante del timer dopo aver scattato la foto
+
+        //rendo di nuovo visibile il pulsante del timer dopo aver scattato la foto
+        btTimer.visibility = View.VISIBLE
     }
 
     /**
@@ -860,19 +861,19 @@ class MainActivity : AppCompatActivity() {
             put(MediaStore.Video.Media.RELATIVE_PATH, "DCIM/CameraAPIs")                            // percorso dove salvare il file
         }
 
-        // output per il salvataggio di un file video
+        // Output per il salvataggio di un file video
         val mediaStoreOutputOptions = MediaStoreOutputOptions
             .Builder(contentResolver, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
             .setContentValues(contentValues)
             .build()
 
-        //if(currFlashMode == FlashModes.ON) cameraControl.enableTorch(true)  // se si e' impostato il flash su on questo viene acceso
-
+        /*  Controlla che sia presente il permesso per registrare l'audio
+            NB. e' un controllo ridondante, dato che non si può avviare la telecamera se
+            non si accettano tutti i permessi*/
         if (ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
-            return false // Controlla che sia presente il permesso per registrare l'audio
-        // NB. e' un controllo ridondante, dato che non si può avviare la telecamera se
-        // non si accettano tutti i permessi,
+            return false
+
 
         recording = videoCapture!!.output
             .prepareRecording(this, mediaStoreOutputOptions)
