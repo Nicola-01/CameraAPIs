@@ -9,9 +9,9 @@ L'applicazione implementa tutte le funzioni necessarie per un utilizzo completo 
 - Cambio camera tra anteriore e posteriore
 - Cambio camera automatico tra grand angolare e untra grand angolare in base al valore di zoom, **non supportato da tutti i dispositivi**
 - Flash On/Off/Automatico per le foto e possibilità di accenderlo e spegnerlo in manuale in modalità video
-- Messa a fuoco nella posizione in cui si preme sulla preview
+- Messa a fuoco tramite "tap to focus", quindi dove si preme sulla preview la camera mette a fuoco
 - Timer regolabile per il tempo di scatto, spento, 3, 5 o 10 secondi
-- Lettura codice QrCode, dopo la lettura viene mostrato un PopUp a schermo che in base al tipo di QR cambiano le funzioni, tipi di Qr supportati: link a siti, testo e reti wifi
+- Lettura codice QrCode, dopo la lettura viene mostrato un PopUp a schermo che in base al tipo di Qr cambiano le funzioni, tipi di Qr supportati: link a siti, testo e reti wifi
 - È possibile modificare le impostazioni in base alle proprie esigenze
 - Accesso a funziono avanzate: HDR, Bokeh e Night, **non supportato da tutti i dispositivi**
 
@@ -26,6 +26,12 @@ Inoltre è stato imposatato che i tasti e i PopUp vengano sempre livellati rispe
 
 ## Shortcut
 Nel launcher dell'app sono state aggiunte delle shortcut per facilitare l'utilizzo di determinate operazioni
+
+## Output
+Le immagini e i video ottenute dall'applicazione vengono salvati nella galleria nel percorso `DCIM/CameraAPIs`
+
+## Other
+Al interno del progetto è presente una cartella, nominata `Other` [Other] contenente il report e delle immagini di esempio ottenute tramite la nostra applicazione.
 
 ## Avviso compatibilità
 Il corretto funzionamento è stato eseguito sul dispositivo **_Samsung Galaxy S21_**, mentre sugli altri dispositivi del gruppo non c'è piena compatibilità con tutte le funzioni, ma è comunque progettata per non crashare e permettere di usufruire delle funzioni non segnate sopra nel elenco
