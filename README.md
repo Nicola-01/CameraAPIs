@@ -31,7 +31,7 @@ Nel launcher dell'app sono state aggiunte delle shortcut per facilitare l'utiliz
 Le immagini e i video ottenute dall'applicazione vengono salvati nella galleria nel percorso `DCIM/CameraAPIs`
 
 ## Other
-Al interno del progetto è presente una cartella, nominata `[Other](https://github.com/Nicola-01/CameraAPIs/tree/main/Other/)` contenente il report e delle immagini di esempio ottenute tramite la nostra applicazione.
+Al interno del progetto è presente una cartella, nominata [Other](https://github.com/Nicola-01/CameraAPIs/tree/main/Other/) contenente il report e delle immagini di esempio ottenute tramite la nostra applicazione.
 
 ## Avviso compatibilità
 Il corretto funzionamento è stato eseguito sul dispositivo **_Samsung Galaxy S21_**, mentre sugli altri dispositivi del gruppo non c'è piena compatibilità con tutte le funzioni, ma è comunque progettata per non crashare e permettere di usufruire delle funzioni non segnate sopra nel elenco
