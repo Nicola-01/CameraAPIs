@@ -191,6 +191,9 @@ class MainActivity : AppCompatActivity() {
         private const val BOKEH_MODE = 2
         private const val NIGHT_MODE = 3
 
+        // Directory di destinazione delle immagini/video
+        private const val DIR = "DCIM/CameraPaw"
+
         /**
          * Velocita' minima per rilevare lo swipe.
          */
@@ -799,7 +802,7 @@ class MainActivity : AppCompatActivity() {
             put(MediaStore.MediaColumns.DISPLAY_NAME,
                 SimpleDateFormat(FILENAME_FORMAT, Locale.US).format(System.currentTimeMillis()))    // nome con cui salvare il file
             put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")                                    // formato del file
-            put(MediaStore.Images.Media.RELATIVE_PATH, "DCIM/CameraAPIs")                           // percorso dove salvare il file
+            put(MediaStore.Images.Media.RELATIVE_PATH, DIR)                                         // percorso dove salvare il file
         }
 
         // Create output options object which contains file + metadata
@@ -909,7 +912,7 @@ class MainActivity : AppCompatActivity() {
             put(MediaStore.MediaColumns.DISPLAY_NAME,
                 SimpleDateFormat(FILENAME_FORMAT, Locale.US).format(System.currentTimeMillis()))    // nome con cui salvare il file
             put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")                                     // formato del file
-            put(MediaStore.Video.Media.RELATIVE_PATH, "DCIM/CameraAPIs")                            // percorso dove salvare il file
+            put(MediaStore.Video.Media.RELATIVE_PATH, DIR)                                          // percorso dove salvare il file
         }
 
         // output per il salvataggio di un file video
