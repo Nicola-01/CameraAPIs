@@ -28,7 +28,7 @@ Inoltre è stato imposatato che i tasti e i PopUp vengano sempre livellati rispe
 Nel launcher dell'app sono state aggiunte delle shortcut per facilitare l'utilizzo di determinate operazioni
 
 ## Output
-Le immagini e i video ottenute dall'applicazione vengono salvati nella galleria nel percorso `DCIM/CameraAPIs`
+Le immagini e i video ottenute dall'applicazione vengono salvati nella galleria nel percorso `DCIM/CameraPaw`
 
 ## Report e immagini esempio
 Al interno del progetto è presente una cartella, nominata [Other](https://github.com/Nicola-01/CameraAPIs/tree/main/Other/) contenente il report e delle immagini di esempio ottenute tramite la nostra applicazione.
