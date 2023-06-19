@@ -837,9 +837,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         )
-
-        //rendo di nuovo visibile il pulsante del timer dopo aver scattato la foto
-        btTimer.visibility = View.VISIBLE
     }
 
     /**
@@ -949,7 +946,6 @@ class MainActivity : AppCompatActivity() {
                         startRecording(false)
                         inPause = false
                         btPause.setBackgroundResource(R.drawable.pause_button) // cambio grafica al pulsante
-                        btTimer.visibility = View.VISIBLE   //rendo di nuovo visibile il pulsante del timer dopo la registrazione
                         scrollViewMode.visibility = View.VISIBLE
                     }
                 }
@@ -1185,6 +1181,7 @@ class MainActivity : AppCompatActivity() {
     private fun changeZoom(progress : Int, bindAnyway : Boolean = false)
     {
         var reBind = false // evito di costruire la camera ogni volta
+        var startCamera = currentCamera
 
         // sbZoom va da 0 a 150, quindi i primi 50 valori sono per lo zoom con la ultra grand angolare,
         // gli altri per la camera grand angolare, non sono riuscito a recuperare la telephoto
@@ -1265,6 +1262,16 @@ class MainActivity : AppCompatActivity() {
             btZoom05.setTextColor(getColor(R.color.black))
         }
 
+        if(reBind && blockChangeMode) //se sono in blockChangeMode allora posso cambiare lo zoom ma senza cambio camera
+        {
+            currentCamera = startCamera
+            if(currentCamera==0 || currentCamera==3)
+                sbZoom.progress = CHANGECAMERASEEKBAR + 1
+            else
+                sbZoom.progress = CHANGECAMERASEEKBAR
+            return
+        }
+
         if(bindAnyway || (reBind && !isRecording)) // se sta registrando non cambia fotocamera
         {
             changeSelectCamera()
@@ -1291,7 +1298,6 @@ class MainActivity : AppCompatActivity() {
         if (event.action == KeyEvent.ACTION_DOWN) {
             when(volumeKey) {
                 "zoom" -> {
-                    if(blockChangeMode) return true
                     // Volume_UP -> zoom in, Volume_DOWN -> zoom out
                     sbZoom.incrementProgressBy(if (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP) 1 else -1)
                     return true
@@ -1620,8 +1626,6 @@ class MainActivity : AppCompatActivity() {
      */
     private inner class ScaleGestureListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
         override fun onScale(detector: ScaleGestureDetector): Boolean {
-            if(blockChangeMode) return true
-
             val scaleFactor = detector.scaleFactor
             // Aggiorna lo zoom della fotocamera
             Log.d(TAG, "[zoom] $scaleFactor")
@@ -1710,11 +1714,13 @@ class MainActivity : AppCompatActivity() {
     private fun timerShot(record : Boolean){
         if(timerOn) { // se c'e' il timer in funzione allora lo blocco
             Log.d(TAG,"Timer bloccato")
+            blockChangeMode = false
             timerOn = false
             timer.cancel()
             countDownText.visibility = View.INVISIBLE
             scrollViewMode.visibility = View.VISIBLE
-            findViewById<Group>(R.id.Group_extraFunc).visibility = View.VISIBLE
+            findViewById<Group>(R.id.Group_extraFunc).visibility = View.VISIBLE // rendo di nuovo visibile il pulsante del timer e QR alla fine del timer
+            btRotation.visibility = View.INVISIBLE
             changeMode(currentMode) // ripristino visuale tasti corretta
             return
         }
@@ -1731,19 +1737,23 @@ class MainActivity : AppCompatActivity() {
         timerOn = true  // il timer si attiva
         timer = object : CountDownTimer(countdown*1000, 1000){
             override fun onTick(remainingMillis: Long) {
-                //btTimer.visibility = View.INVISIBLE //rendo invisibile il pulsante del timer durante il countdown
-                findViewById<Group>(R.id.Group_extraFunc).visibility = View.INVISIBLE
+                findViewById<Group>(R.id.Group_extraFunc).visibility = View.INVISIBLE // nascondo il pulsante del timer e QR alla fine del timer
                 btShoot.setBackgroundResource(R.drawable.rounded_stop_button)   // tasto per fermare il countdown e l'autoscatto
                 countDownText.text = "${remainingMillis/1000 + 1}"  // mostra a schermo i secondi rimanenti allo scatto o alla registrazione
                 countDownText.visibility = View.VISIBLE
                 scrollViewMode.visibility = View.INVISIBLE
+                btRotation.visibility = View.INVISIBLE
+                blockChangeMode = true
                 Log.d(TAG, "Secondi rimanenti: "+remainingMillis/1000)
             }
             override fun onFinish() {
                 timerOn = false
                 countDownText.visibility = View.INVISIBLE
                 scrollViewMode.visibility = View.VISIBLE
-                findViewById<Group>(R.id.Group_extraFunc).visibility = View.VISIBLE
+                btRotation.visibility = View.VISIBLE
+                findViewById<Group>(R.id.Group_extraFunc).visibility = View.VISIBLE  // rendo di nuovo visibile il pulsante del timer e QR alla fine del timer
+                blockChangeMode = true
+                btShoot.setBackgroundResource(R.drawable.rounded_corner)   // ripristino grafica
                 changeMode(currentMode) // richiamo change mode per impostare la grafica corretta
                 if(record)
                     captureVideo()
