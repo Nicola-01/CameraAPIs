@@ -64,7 +64,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
-import java.util.concurrent.ExecutorService
 import kotlin.math.abs
 import androidx.camera.extensions.ExtensionMode
 import androidx.camera.extensions.ExtensionsManager
@@ -603,7 +602,7 @@ class MainActivity : AppCompatActivity() {
         btZoom10.setOnClickListener { sbZoom.progress = CHANGECAMERASEEKBAR }
         btZoom05.setOnClickListener{ sbZoom.progress = 0 }
         sbZoom.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            //listenere per quando cambia la progressione della seekbar
+            // Listener per quando cambia la progressione della seekbar
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 changeZoom(progress) // posso cambiare zoom solo in photo e video
                 if(feedback && progress%5 == 0 && fromUser) // ogni 5 do un feedback, e solo se muovo manualmente la SB
@@ -938,7 +937,6 @@ class MainActivity : AppCompatActivity() {
                         inPause = false
                         startRecording(true) // cambio la grafica
                         scrollViewMode.visibility = View.INVISIBLE
-                        disableButton(true) // blocco il passaggio di modalita'
                     }
                     is VideoRecordEvent.Finalize -> { // finisce la registrazione
                         if (recordEvent.hasError()) { // se c'e' un errore
@@ -947,8 +945,6 @@ class MainActivity : AppCompatActivity() {
                             Log.e(TAG, "Errore nella registrazione: " + "${recordEvent.error}")
                         }
 
-                        disableButton(false) // sblocco il passaggio di modalita'
-                        //if(currFlashMode == FlashModes.ON) cameraControl.enableTorch(false)
                         // resetto la grafica..
                         startRecording(false)
                         inPause = false
@@ -1020,7 +1016,7 @@ class MainActivity : AppCompatActivity() {
     /**
      * Funzione per mettere in pausa o ripristinare la registrazione.
      */
-    private fun pauseVideo(set: Boolean? = false) {
+    private fun pauseVideo() {
         // inPause = true se la registrazione e' in pausa
         if(inPause) {
             recording?.resume() // ripristina registrazione
@@ -1292,7 +1288,7 @@ class MainActivity : AppCompatActivity() {
             return super.dispatchKeyEvent(event)
 
         // gestisco la registrazione video tenendo premuto il pulsante del volume per almeno 1 secondo e lo interrompo quando alzo il dito
-        if (event?.action == KeyEvent.ACTION_DOWN) {
+        if (event.action == KeyEvent.ACTION_DOWN) {
             when(volumeKey) {
                 "zoom" -> {
                     if(blockChangeMode) return true
@@ -1345,7 +1341,7 @@ class MainActivity : AppCompatActivity() {
             }
             return true
         }
-        else if (event?.action == KeyEvent.ACTION_UP) {
+        else if (event.action == KeyEvent.ACTION_UP) {
             volumeTimer?.cancel()   // fermo il timer quando sollevo il dito dal pulsante
             volumeTimer = null
             if(isVolumeButtonLongPressed) {       // se sto registrando tenendo premuto il tasto, interrompo la registrazione
@@ -1389,15 +1385,15 @@ class MainActivity : AppCompatActivity() {
      * Funzione per switchare tra le modalita';
      * quindi cambia i pulsanti visualizzati
      *
-     * @param changeMode e' un intero che corrisponde alla modalita'
+     * @param setMode e' un intero che corrisponde alla modalita'
      * @param force booleano per cambiare comunque la grafica
      */
     private fun changeMode(setMode : Int, force : Boolean = false) {
-        if(blockChangeMode) return
-        Log.d(TAG, "changeMode")
-
-        if(scrollViewMode.visibility == View.INVISIBLE) // non posso cambiare modalita' mentre registro
+        if(blockChangeMode || isRecording) // non posso cambiare modalita'
+            // se ho appena scattato una foto o se sto registro
             return
+
+        Log.d(TAG, "changeMode, setMode: $setMode")
 
         if(force || currentMode != setMode){
 
@@ -1516,7 +1512,7 @@ class MainActivity : AppCompatActivity() {
     private val orientationEventListener by lazy {
         object : OrientationEventListener(this) {
             override fun onOrientationChanged(orientation: Int) {
-                if (blockRotation || orientation == OrientationEventListener.ORIENTATION_UNKNOWN) return
+                if (blockRotation || orientation == ORIENTATION_UNKNOWN) return
 
                 rotation = when (orientation) {
                     in 45 + DEADZONEANGLE..135 - DEADZONEANGLE -> 270
@@ -1953,12 +1949,9 @@ class MainActivity : AppCompatActivity() {
              */
             if(::camera.isInitialized && allPermissionsGranted())
             {
-                Log.d(TAG, "---IN")
                 changeZoom(sbZoom.progress)
                 loadFromSetting() // se camera non e' ancora impostata o se e' null da errore
             }
-            else
-                Log.d(TAG, "---OUT")
         }
         catch (e : Exception) {
             Log.e(TAG, "Exception $e", e)
