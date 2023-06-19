@@ -1395,11 +1395,12 @@ class MainActivity : AppCompatActivity() {
      * @param force booleano per cambiare comunque la grafica
      */
     private fun changeMode(setMode : Int, force : Boolean = false) {
+
+        Log.d(TAG, "changeMode, setMode: $setMode")
+
         if(blockChangeMode || isRecording) // non posso cambiare modalita'
             // se ho appena scattato una foto o se sto registro
             return
-
-        Log.d(TAG, "changeMode, setMode: $setMode")
 
         if(force || currentMode != setMode){
 
@@ -1752,7 +1753,7 @@ class MainActivity : AppCompatActivity() {
                 scrollViewMode.visibility = View.VISIBLE
                 btRotation.visibility = View.VISIBLE
                 findViewById<Group>(R.id.Group_extraFunc).visibility = View.VISIBLE  // rendo di nuovo visibile il pulsante del timer e QR alla fine del timer
-                blockChangeMode = true
+                blockChangeMode = false
                 btShoot.setBackgroundResource(R.drawable.rounded_corner)   // ripristino grafica
                 changeMode(currentMode) // richiamo change mode per impostare la grafica corretta
                 if(record)
