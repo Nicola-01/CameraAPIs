@@ -1620,6 +1620,8 @@ class MainActivity : AppCompatActivity() {
      */
     private inner class ScaleGestureListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
         override fun onScale(detector: ScaleGestureDetector): Boolean {
+            if(blockChangeMode) return true
+
             val scaleFactor = detector.scaleFactor
             // Aggiorna lo zoom della fotocamera
             Log.d(TAG, "[zoom] $scaleFactor")
