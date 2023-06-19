@@ -788,7 +788,6 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Metodo per scattare una foto usando le impostazioni di [imageCapture].
-     * Todo: finire commentare il funzionamento
      */
     private fun takePhoto() {
         // Get a stable reference of the modifiable image capture use case
@@ -815,31 +814,32 @@ class MainActivity : AppCompatActivity() {
             })
             .build()
 
-        // Set up image capture listener, which is triggered after photo has been taken
-
         // imposto le animazioni per lo scatto
         if(currentMode != VIDEO_MODE)
             btShoot.startAnimation(scaleDown)
         viewPreview.startAnimation(scaleUp)
 
-        disableButton(true) // blocco il passaggio di modalita'
+        // blocco il passaggio di modalita'
+        disableButton(true)
 
         imageCapture!!.takePicture( // caso d'uso
             outputOptions, ContextCompat.getMainExecutor(this),
+            // metodo di callback eseguito dopo aver scattato
             object : ImageCapture.OnImageSavedCallback {
-
+                // avviso se la cattura non è andata a buon fine
                 override fun onError(exc: ImageCaptureException) {
                     Log.e(TAG, "Photo capture failed: ${exc.message}", exc)
-                    //Toast.makeText(baseContext, "Photo capture failed:", Toast.LENGTH_SHORT).show()
                     disableButton(false) // sblocco il passaggio di modalita'
                 }
-
+                // salvo l'immagine nel caso la cattura abbia avuto successo
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
                     disableButton(false) // sblocco il passaggio di modalita'
                 }
             }
         )
-        btTimer.visibility = View.VISIBLE   //rendo di nuovo visibile il pulsante del timer dopo aver scattato la foto
+
+        //rendo di nuovo visibile il pulsante del timer dopo aver scattato la foto
+        btTimer.visibility = View.VISIBLE
     }
 
     /**
